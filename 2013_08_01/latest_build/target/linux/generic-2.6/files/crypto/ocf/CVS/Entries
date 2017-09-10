@@ -1,0 +1,22 @@
+/ChangeLog/1.1/Thu Apr  1 22:10:23 2010/-kkv/Tar71xx_4g
+/Config.in/1.1/Thu Apr  1 22:10:23 2010/-kkv/Tar71xx_4g
+/Kconfig/1.1/Thu Apr  1 22:10:23 2010/-kkv/Tar71xx_4g
+/Makefile/1.1/Thu Apr  1 22:10:23 2010/-kkv/Tar71xx_4g
+/criov.c/1.1/Thu Apr  1 22:10:23 2010/-kkv/Tar71xx_4g
+/crypto.c/1.1/Thu Apr  1 22:10:23 2010/-kkv/Tar71xx_4g
+/cryptodev.c/1.1/Thu Apr  1 22:10:23 2010/-kkv/Tar71xx_4g
+/cryptodev.h/1.1/Thu Apr  1 22:10:23 2010/-kkv/Tar71xx_4g
+/cryptosoft.c/1.1/Thu Apr  1 22:10:23 2010/-kkv/Tar71xx_4g
+/ocf-bench.c/1.1/Thu Apr  1 22:10:23 2010/-kkv/Tar71xx_4g
+/ocf-compat.h/1.1/Thu Apr  1 22:10:23 2010/-kkv/Tar71xx_4g
+/random.c/1.1/Thu Apr  1 22:10:23 2010/-kkv/Tar71xx_4g
+/rndtest.c/1.1/Thu Apr  1 22:10:23 2010/-kkv/Tar71xx_4g
+/rndtest.h/1.1/Thu Apr  1 22:10:23 2010/-kkv/Tar71xx_4g
+/uio.h/1.1/Thu Apr  1 22:10:23 2010/-kkv/Tar71xx_4g
+D/ep80579////
+D/hifn////
+D/ixp4xx////
+D/ocfnull////
+D/pasemi////
+D/safe////
+D/talitos////

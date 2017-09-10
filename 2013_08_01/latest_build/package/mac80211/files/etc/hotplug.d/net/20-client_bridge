@@ -1,0 +1,45 @@
+######################################################################
+# Bob Sheng
+# Copyright Microhard Systems Inc
+######################################################################
+is_wlan=$(echo $INTERFACE | grep wlan)
+if [ -n "$is_wlan" ] ; then
+	if [ "$ACTION" = "add" -o "$ACTION" = "register" ] ; then
+		sleep 2
+		managed=$(iwconfig $INTERFACE 2>/dev/null | grep "Mode:Managed")
+		if [ -n "$managed" ] ; then
+			sta_section=$(uci show wireless | grep "mode=sta$" | sed 's/\.mode=sta$//g' )			
+			if [ -n "$sta_section" ] ; then
+				client_bridge=$(uci get "$sta_section.network")
+				wds_setting=$(uci get "$sta_section.wds")
+				if [ "$client_bridge" = "lan" -a "$wds_setting" -lt 1 ] ; then
+					
+					if_mac=$(ifconfig "$INTERFACE" | grep HWaddr | awk ' { print $5 } ' )	
+					ifconfig br-lan hw ether $if_mac
+					
+					ebtables -t nat -F PREROUTING
+					ebtables -t nat -F POSTROUTING
+					ebtables -t broute -F BROUTING
+				
+					ebtables -t nat -A PREROUTING  --in-interface  $INTERFACE -j arpnat --arpnat-target ACCEPT
+					ebtables -t nat -A POSTROUTING --out-interface $INTERFACE -j arpnat --arpnat-target ACCEPT
+					ebtables -t broute -A BROUTING --in-interface  $INTERFACE --protocol 0x888e -j DROP
+					
+					mkdir -p /tmp/client_bridge
+					touch "/tmp/client_bridge/$INTERFACE"
+				fi
+			fi
+		fi
+	fi
+	if [ "$ACTION" = "remove" -o "$ACTION" = "register" ] ; then
+		if [ -e "/tmp/client_bridge/$INTERFACE" ] ; then
+                        # restore the bridge mac addr  
+                        if_mac=$(cat /sys/class/net/eth0/address)              
+                        ifconfig br-lan hw ether $if_mac
+			#flush the ebtables
+			ebtables -t nat -F PREROUTING
+			ebtables -t nat -F POSTROUTING
+			ebtables -t broute -F BROUTING
+		fi			
+	fi
+fi

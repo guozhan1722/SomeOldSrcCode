@@ -1,0 +1,6 @@
+::sysinit:/etc/init.d/rcS S boot
+::shutdown:/etc/init.d/rcS K stop
+
+ttyS0::respawn:/sbin/getty -l /bin/login ttyS0 115200 vt100
+ttyGS0::respawn:/sbin/getty -l /bin/login ttyGS0 115200 vt100
+

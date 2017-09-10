@@ -1,0 +1,55 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+. /etc/version
+
+START=95
+boot() {
+	[ -d /tmp/root ] && {
+		lock /tmp/.switch2jffs
+		firstboot switch2jffs
+		lock -u /tmp/.switch2jffs
+	}
+
+	# process user commands
+	[ -f /etc/rc.local ] && {
+		sh /etc/rc.local
+	}
+
+	# set leds to normal state
+
+                   
+if [ "$PRODUCT" = "VIP421EXP49G" -o "$PRODUCT" = "VIP4214900X" -o "$PRODUCT" = "VIP4214900XEXP" -o "$PRODUCT" = "VIP4215800X" -o "$PRODUCT" = "VIP4215800XEXP" -o "$PRODUCT" = "VIP4212400X" -o "$PRODUCT" = "VIP4212400XEXP" ]; then 
+    mdf -r
+    sleep 3
+    config_load wireless
+    config_get exmode radio0 ex49gmode
+    cardtype=$(cat /lib/mdf/cardtype |cut -d " " -f1)
+
+    [ "$exmode" = "x" ] && {
+        mdf -w "$cardtype" >/dev/null 2>&1
+    }||{
+        mdf -w "${cardtype}ST" >/dev/null 2>&1
+    }
+    wifi down
+    wifi up
+
+fi                   
+
+    #set time and date if user select local
+    usr_mode=`uci get system.datetime.mode`                                     
+    usr_date=`uci get system.datetime.date`                                     
+    usr_time=`uci get system.datetime.time`  
+
+    [ "$usr_mode" = "local" ] && {
+        cur=$(date -s "${usr_date}-${usr_time}")
+    }            
+
+    #restart vlan
+    /etc/init.d/vlan stop
+    /etc/init.d/vlan start
+
+
+	. /etc/diag.sh
+       # iwconfig wlan0 chan 1
+	set_state done
+}

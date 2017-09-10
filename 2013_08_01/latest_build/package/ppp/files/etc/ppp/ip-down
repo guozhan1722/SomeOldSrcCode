@@ -1,0 +1,45 @@
+#!/bin/sh
+. /etc/functions.sh
+PPP_IFACE="$1"
+PPP_TTY="$2"
+PPP_SPEED="$3"
+PPP_LOCAL="$4"
+PPP_REMOTE="$5"
+PPP_IPPARAM="$(echo $6 | sed 's/\./_/g')"
+export PPP_IFACE PPP_TTY PPP_SPEED PPP_LOCAL PPP_REMOTE PPP_IPPARAM
+[ -z "$PPP_IPPARAM" ] || {
+	env -i ACTION="ifdown" INTERFACE="$PPP_IPPARAM" DEVICE="$PPP_IFACE" PROTO=ppp /sbin/hotplug-call "iface"
+
+	# remove the interface's network state
+	uci_revert_state network "$PPP_IPPARAM"
+}
+
+[ -f /var/run/ipsecfirewall/firewall.$PPP_IFACE ] && rm -f /var/run/ipsecfirewall/firewall.$PPP_IFACE
+iptables -D forwarding_rule -i $PPP_IFACE -j ACCEPT
+iptables -D forwarding_rule -o $PPP_IFACE -j ACCEPT
+if [ -f /var/run/"$PPP_IFACE".x2c ]; then
+
+x2ct=$(cat /var/run/"$PPP_IFACE".x2c)
+ttype=$(uci get ipsec.$x2ct)
+[ $ttype = "x2ctunnel" ] && {
+rm -f /var/log/mipsec.$x2ct
+echo "action=ipdown" > /var/run/mipsec/$x2ct
+echo "status=waiting for connection" >> /var/run/mipsec/$x2ct
+echo "constat=Connect" >> /var/run/mipsec/$x2ct
+echo "inf=" >> /var/run/mipsec/$x2ct
+/usr/sbin/xl2tpd-control remove $x2ct >/dev/null 2>&1
+ipsec auto --delete $x2ct >/dev/null 2>&1
+/sbin/xlpconnect $x2ct 60 &
+}
+rm -f /var/run/"$PPP_IFACE".x2c >/dev/null 2>&1
+
+fi
+
+rm -f /var/run/"$PPP_IFACE".status
+
+[ -d /etc/ppp/ip-down.d ] && {
+	for SCRIPT in /etc/ppp/ip-down.d/*
+	do
+		[ -x "$SCRIPT" ] && "$SCRIPT" "$@"
+	done
+}

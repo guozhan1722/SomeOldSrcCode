@@ -1,0 +1,125 @@
+#!/bin/sh /etc/rc.common
+
+. /etc/version
+
+START=99
+STOP=99
+
+COM2EnableFile="/etc/soipd2_runing"
+
+
+start(){
+        killall -9 modbusds
+        rm -f $COM2EnableFile
+
+        echo "Starting modbus device slave service..."
+        config_load modbusd
+        config_get mode modbus_conf Modbus_S_COM_chmode
+        config_get status modbus_conf Modbus_S_Enable
+        config_get comen modbus_conf Modbus_S_COM_en
+        config_get Data_Baud_Rate modbus_conf Modbus_S_COM_rate
+
+        case "$Data_Baud_Rate" in
+            "A")
+                FORM_COM12_Data_Baud_Rate="300"
+                ;;
+            "B")
+                FORM_COM12_Data_Baud_Rate="600"
+                ;;
+            "C")
+                FORM_COM12_Data_Baud_Rate="1200"
+                ;;
+            "D")
+                FORM_COM12_Data_Baud_Rate="2400"
+                ;;
+            "E")
+                FORM_COM12_Data_Baud_Rate="3600"
+                ;;
+            "F")
+                FORM_COM12_Data_Baud_Rate="4800"
+                ;;
+            "G")
+                FORM_COM12_Data_Baud_Rate="7200"
+                ;;
+            "H")
+                FORM_COM12_Data_Baud_Rate="9600"
+                ;;
+            "I")
+                FORM_COM12_Data_Baud_Rate="14400"
+                ;;
+            "J")
+                FORM_COM12_Data_Baud_Rate="19200"
+                ;;
+        
+            "K")
+                FORM_COM12_Data_Baud_Rate="28800"
+                ;;
+            "L")
+                FORM_COM12_Data_Baud_Rate="38400"
+                ;;
+            "M")
+                FORM_COM12_Data_Baud_Rate="57600"
+                ;;
+            "N")
+                FORM_COM12_Data_Baud_Rate="115200"
+                ;;
+        esac
+
+        if [ "B" == "$status" ]; then
+        if [ "A" == "$comen" ]; then
+            /bin/modbusds &
+        else
+            logger "Enable  Modbus Com Port"
+            echo "$Data_Baud_Rate" > $COM2EnableFile
+            if [ -n "`ps aux | grep getty| grep ttyS0 | grep -v 'grep ttyS0'`" ]; then 
+                    _pid=`ps | grep "ttyS0" | grep -v "grep" | awk '{print $1}'` 
+                    kill $_pid
+                    logger "Kill getty" 
+            else
+                        /bin/modbusds &
+            fi
+
+
+                if [ "A" = "$mode" ];then
+                        #for 232 mode
+                        logger "COM channel mode: 232"
+                        mpci -gpio set 0 1
+                        mpci -gpio set 1 0
+                        echo 0 > /sys/class/leds/RS232_RS485/brightness
+                elif [ "B" = "$mode" ];then
+                        #for 485 RX-only mode
+                        logger "COM channel mode: 485"
+                        mpci -gpio set 0 0
+                        mpci -gpio set 1 0
+                        echo 255 > /sys/class/leds/RS232_RS485/brightness
+                elif [ "C" = "$mode" ];then
+                        #for 422 mode
+                        logger "COM channel mode: 422"
+                        mpci -gpio set 0 0
+                        mpci -gpio set 1 1
+                        echo 255 > /sys/class/leds/RS232_RS485/brightness
+                else
+                        #default mode for 232 mode
+                        logger "COM channel default mode: 232"
+                        mpci -gpio set 0 1
+                        mpci -gpio set 1 0
+                        echo 0 > /sys/class/leds/RS232_RS485/brightness
+                fi
+
+             echo "modbusds start."
+
+        fi
+
+        fi
+
+
+}
+stop(){
+            mpci -gpio set 0 1
+            mpci -gpio set 1 0
+            echo 0 > /sys/class/leds/RS232_RS485/brightness
+
+       killall -9 modbusds
+       rm -f $COM2EnableFile
+}
+

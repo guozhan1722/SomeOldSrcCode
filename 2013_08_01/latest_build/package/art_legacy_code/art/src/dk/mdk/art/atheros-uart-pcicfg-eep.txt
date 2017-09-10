@@ -1,0 +1,343 @@
+;Atheros Reference Card EEPROM contents (UART)
+;Version 1.0 1/5/2004
+;-------------------------------------------------------------------------------
+;REVISION HISTORY
+;-------------------------------------------------------------------------------
+;Ver  Revision History							            Date
+;
+;1.00 Initial Relase of Tuples                                      	01/05/04
+;
+;-------------------------------------------------------------------------------
+;DESCRIPTION OF FORMAT:
+;-------------------------------------------------------------------------------
+;EEPROM has 256 locations with 16 bits per location
+;
+;for CONFIGURATION...
+;double byte per line for now
+;bytes are in 'readable' order
+;the parser will swap the bytes for programming into the EEPROM (little-endian)
+;
+;for TUPLES ...
+;single byte per line - single byte easier to read, & mk notes
+;bytes are in the same order as one would expect to see tuples in
+;the parser swaps the bytes for burning into the EEPROM
+;the 'above' byte goes into bits 7-0 and the 'below' byte goes into bits 15-8
+;so a
+;13
+;03
+;would go into the EEPROM as 0313
+;ascii-text version of the hex numbers w/o 0x before or h after
+;the 0 or F fill lines after tuples (if tpl don't use space) are dbl byte/line
+;
+;for VENDOR SPECIFIC DATA
+;double byte per line for now
+;bytes are in 'readable' order
+;the parser will swap the bytes for programming into the EEPROM (little-endian)
+;
+;PCI configuration data first in 00-3F locations (64 WORDS)
+;CIS information next in 40-BE locations (112 WORDS)
+;VENDOR OEM information next in B0-BE locations (15 WORDS)
+;Device specific information next in BF-FF locations (65 WORDS)
+;ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+;PCI CONFIGURATION LOCATIONS uart_base+00-uart_base+3F (UART)
+;ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+1001	;00;    Device_ID
+168C	;01;    Vendor_ID
+0700	;02;    Class Code (24 b) 23:8 of code -> 15:0 of word
+0201	;03;    Class Code         7:0 of code -> 15:8 of word, Revision ID -> 7:0
+0000	;04;    
+0102	;05;    CIS_PTR (total of 32 bits) [15:0] (the lower 16 bits here)
+0000	;06;    CIS_PTR                    [31:16](the upper 16 bits here)
+0000	;07;    SSYS_ID (Subsystem ID)
+168C	;08;    SSYS_VEND_ID (Subsystem Vendor ID)
+1C0A	;09;    MAX_LAT [15:8], MIN_GNT [7:0]   ###FIX###
+0100	;0a;    INT_PIN [15:8], 0'S [7:0]
+0000	;0b;    Reserved
+0002	;0c;    PM_CAP (Power Management Capabilities)
+0002	;0d;    0'S [15:2], PM_DATA_SCALE [1:0] 
+0803	;0e;    PM_DATA_D0 [15:8], PM_DATA_D3 [7:0]:C606 = 1.98W in D0, .06W in D3
+0000	;0f;    DIS_UART_CLK[3] DIS_MEM_SPACE[2] DIS_IO_SPACE[1] UART_CLK_SEL[0]
+;ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+;CIS LOCATIONS 40-AF (REALLY uart_base+10 to uart-base+af)
+;ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+;32-bit memory with even word in lower 16 bits and odd word in upper 16 bits
+;this space does not correspond to the PCI configuration space
+;
+;1st tuple
+13	;40;    13=LINKTARGET [3.1.4]
+03	;40;    03=Link to next tuple chain
+43	;41;    "C"
+49	;41;    "I"
+53	;42;    "S"
+
+;2nd tuple
+20	;42;    20=MANFID, Manufacturer ID tuple [3.2.9]
+04	;43;    04=Link to next tuple chain
+71	;43;   
+02	;44;    0271=Atheros manufacturing code
+12	;44;   
+00	;45;    0007=Atheros Device ID for AR5001
+
+;3rd tuple
+04	;45;    04=CONFIG_CB, configuration for a cardbus card [3.3.5]
+06	;46;    06=Link to next tuple chain
+03	;46;    size of fields - must be 3 to represent 4 bytes per field
+01	;47;    indx # of last entry in card config table -> see 4th tuple below
+00	;47;   
+00	;48;   
+00	;48;   
+00	;49;    address of 0000 0000 because we don't have any status registers
+
+;4th tuple
+05	;49;    05=CFTABLE_ENTRY_CB, config table entry for cardbus card [3.3.3]
+0E	;4a;    0E=Link to next tuple chain
+41	;4a;    bit 6 set = the default config; 01=last entry in config table
+B1	;4b;    b1:0 = 01 = VCC power description only
+	;    b3 = 0 for no I/O space description
+	;    b4 = 1 for interrupt structure description
+	;    b5 = 1 for memory space description
+	;    b7 = 1 for a miscellaneous field structure
+39	;4b;    b0 = 1 for nominal operating voltage
+	;      b3 = 1 for static current
+	;      b4 = 1 for average current
+	;      b5 = 1 for peak current
+B5	;4c;    b6:3=mant=0110=6->3 b2:0=exp=101=5->1V range -> 3V for VCC power
+1E	;4c;    1E hex = 30 decimal, goes to rt of above value, so total VCC = 3.3
+2D	;4d;    b6:3=mant=0101=5->2.5 b2:0=exp=101=4=10ma Static Current = 25ma for 3.3V  
+4E	;4d;    b6:3=mant=1001=9->4.5 b2:0=exp=110=6=100mA Avg Current = 450ma.  	
+56	;4e;    b6:3=mant=1010=A->5 b2:0=exp=110=6=100mA Avg Current = 500ma.  	
+30	;4e;    b7=0 for NO INTERRUPT SHARING among several cards
+	;      b6=0 for no pulse interrupts
+	;      b5=1 for level interrupts
+	;      b4=1 for linking the int to any int shown by the following 2 bytes
+FF	;4f;    interrupts 7-0
+FF	;4f;    interrupts 15-8
+02	;50;    b1=1 for first BAR to use for memory
+E9	;50;    b7=1 for there is one more byte -> required by METAFORMAT.
+	;    b6=1 for fast back-to-back supported
+	;    b5=1 for SERR# supported
+	;    b4=0 for no wait cycle control supported
+	;    b3=1 for Parity error response
+	;    b2=0 for no VGA palette snoop
+	;    b1=0 for no memory write & invalidate
+	;    b0=1 for Bus Master
+00	;51;    no wake up events 
+
+;5th tuple
+07	;51;    07=CISTPL_BAR Base address register [3.3.1]
+06	;52;    06=Link to next tuple
+01	;52;    01 = BAR1, mem space, no prefetch, no cache, no mapping restriction
+00	;53;    RESERVED - must be 0
+00	;53;    Base Address Register Size - 4 bytes altogether 
+00	;54;    Size in Bytes of the memory space the BAR is mapped to
+01	;54;    Card has 64KB memory space -> 2^16 = 64KB
+00	;55;    0001 0000 = 65,536 of memory
+
+;6th tuple
+15	;55;    15=CISTPL_VERS_1 Level 1 version and product informatoin [3.2.10]
+52	;56;    50=Link to next tuple
+07	;56;    07=major version 7
+01	;57;    01=minor version 1 -> both bytes together mean version 7.1
+41   ;57;   A
+74   ;58;   t
+68   ;58;   h
+65   ;59;   e
+72   ;59;   r
+6f   ;5a;   o
+73   ;5a;   s
+20   ;5b;   <space>
+43   ;5b;   C
+6f   ;5c;   o
+6d   ;5c;   m
+6d   ;5d;   m
+75   ;5d;   u
+6e   ;5e;   n
+69   ;5e;   i
+63   ;5f;   c
+61   ;5f;   a
+74   ;60;   t
+69   ;60;   i
+6f   ;61;   o
+6e   ;61;   n
+73   ;62;   s
+2c   ;62;   ,
+20   ;63;   <space>
+49   ;63;   I
+6e   ;64;   n
+63   ;64;   c
+2e   ;65;   .
+00   ;65;   <null>
+41   ;66;   A
+52   ;66;   R
+35   ;67;   5
+30   ;67;   0
+30   ;68;   0
+31   ;68;   1
+2d   ;69;   -
+30   ;69;   0
+30   ;6a;   0
+30   ;6a;   0
+30   ;6b;   0
+2d   ;6b;   -
+30   ;6c;   0
+30   ;6c;   0
+30   ;6d;   0
+30   ;6d;   0
+00   ;6e;   <null>
+57   ;6e;   W
+69   ;6f;   i
+72   ;6f;   r
+65   ;70;   e
+6c   ;70;   l
+65   ;71;   e
+73   ;71;   s
+73   ;72;   s
+20   ;72;   <space>
+4c   ;73;   L
+41   ;73;   A
+4e   ;74;   N
+20   ;74;   <space>
+52   ;75;   R
+65   ;75;   e
+66   ;76;   f
+65   ;76;   e
+72   ;77;   r
+65   ;77;   e
+6e   ;78;   n
+63   ;78;   c
+65   ;79;   e
+20   ;79;   <space>
+43   ;7a;   C
+61   ;7a;   a
+72   ;7b;   r
+64   ;7b;   d
+00   ;7c;   <null>
+30   ;7c;   0
+30   ;7d;   0
+00   ;7d;   <null>
+FF	;7e;    end of tuple
+00  ;7e;    allow for version extension
+00	;7f;    Place MAC Address on even boudnary
+
+;7th tuple
+21	;7f;    21=CISTPL_FUNCID - describes the cards function [3.2.7]
+02	;80;    02=Link to next Tuple
+06	;80;    06=function Network Adapter
+01	;81;    01=POST routines may attempt to config card during system init
+
+;8th tuple
+22	;81;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+05	;82;    05=Link to next Tuple
+02	;82;    Lan Speed information follows - raw bit rate
+80	;83;    32 bit integer value for the raw speed
+8D	;83;    format is 808D5B00 is read as 00 5B 8D 80
+5B	;84;   
+00	;84;    005B 8D80 = 6,000,000 bits per second
+
+;9th tuple
+22	;85;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+05	;85;    05=Link to next Tuple
+02	;86;    Lan Speed information follows - raw bit rate
+40	;86;   
+54	;87;   
+89	;87;   
+00	;88;    0089 5440 = 9,000,000 bits per second
+
+;10th tuple
+22	;88;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+05	;89;    05=Link to next Tuple
+02	;89;    Lan Speed information follows - raw bit rate
+00	;8a;   
+1B	;8a;   
+B7	;8b;   
+00	;8b;    00B7 1B00 = 12,000,000 bits per second
+
+;11th tuple
+22	;8c;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+05	;8c;    05=Link to next Tuple
+02	;8d;    Lan Speed information follows - raw bit rate
+80	;8d;   
+A8	;8e;   
+12	;8e;   
+01	;8f;    0112 A880 = 18,000,000 bits per second
+
+;12th tuple
+22	;8f;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+05	;90;    05=Link to next Tuple
+02	;90;    Lan Speed information follows - raw bit rate
+00	;91;   
+36	;91;   
+6E	;92;   
+01	;92;    016E 3600 = 24,000,000 bits per second
+
+;13th tuple
+22	;93;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+05	;93;    05=Link to next Tuple
+02	;94;    Lan Speed information follows - raw bit rate
+00	;94;   
+51	;95;   
+25	;95;   
+02	;96;    0225 5100 = 36,000,000 bits per second
+
+;14th tuple
+22	;96;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+05	;97;    05=Link to next Tuple
+02	;97;    Lan Speed information follows - raw bit rate
+00	;98;   
+6C	;98;   
+DC	;99;   
+02	;99;    02DC 6C00 = 48,000,000 bits per second
+
+;15th tuple
+22	;9a;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+05	;9a;    05=Link to next Tuple
+02	;9b;    Lan Speed information follows - raw bit rate
+80	;9b;   
+F9	;9c;   
+37	;9c;   
+03	;9d;    0337 F980 = 54,000,000 bits per second
+
+;16th tuple
+22	;9d;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+05	;9e;   ; 05=Link to next Tuple
+02	;9e;    Lan Speed information follows - raw bit rate
+00	;9f;   
+A2	;9f;   
+4A	;a0;   
+04	;a0;    044A A200 = 72,000,000 bits per second
+
+;17th tuple
+22	;a1;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+02	;a1;    02=Link to next Tuple
+03	;a2;    LAN technology tuple
+08	;a2;    Spread spectrum radio 5.4 GHz
+;we are actually OFDM, not spread spectrum
+
+;18th tuple
+22	;a3;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+08	;a3;    08=Link to next Tuple
+04	;a4;    LAN network ID
+06	;a4;    06=6 bytes in the network ID
+00	;a5;   
+03	;a5;   
+7F	;a6;    00 03 7F XX XX XX 
+00	;a6;   
+00	;a7;   
+00	;a7;   
+
+;19th tuple
+22	;a8;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+02	;a8;    02=Link to next Tuple
+05	;a9;    LAN connection type
+01	;a9;    Closed connector standard
+
+;20th tuple
+FF	;aa;    End of tuples 
+	
+;Tuple extra area - blank - double word zeros.
+00	;aa;   Extra byte to start on even word boundary.
+0000	;ab;   
+0000	;ac;   
+0000	;ad;   
+0000	;ae;   
+0000	;af;

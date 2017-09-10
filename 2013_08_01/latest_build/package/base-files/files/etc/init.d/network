@@ -1,0 +1,87 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+. /etc/version
+START=11
+STOP=90
+
+config_cb() {
+      local cfg_type="$1"
+
+      case "$cfg_type" in
+         wifi-device)
+            cfg_cnt=$(($cfg_cnt + 1))
+         ;;
+
+         switch)
+            switch_cnt=$(($switch_cnt + 1))
+         ;;
+            
+      esac
+}
+
+boot() {
+        cfg_cnt=0
+        switch_cnt=0  
+
+	if [ "$HARDWARE" = "5.0.0" -o "$HARDWARE" = "3.0.0" ]; then 
+        	echo "none" > /sys/class/leds/phy0_rssi1/trigger
+       		echo "none" > /sys/class/leds/phy0_rssi2/trigger
+       		echo "none" > /sys/class/leds/phy0_rssi3/trigger
+	fi
+
+        config_load network
+        [ "$switch_cnt" -le 0 ] && {
+            cat >>/etc/config/network<<EOF
+
+config switch ar8316
+	option name eth0
+	option reset 1
+	option enable_vlan 0
+
+config switch_vlan vlan1
+	option device eth0
+	option vlan 1
+	option ports "0 1 2 3 4"
+EOF
+        }
+
+	setup_switch() { return 0; }
+
+        mii-tool -R eth0
+	include /lib/network
+	setup_switch
+
+        # the wifi detect called here will check the macaddr 
+        /sbin/wifi detect           
+        config_load wireless        
+        [ "$cfg_cnt" -le 0 ] && \
+            rm -rf /etc/config/wireless
+
+	[ -s /etc/config/wireless ] || \
+		/sbin/wifi detect > /etc/config/wireless
+	/sbin/wifi up
+        /etc/init.d/mconfread restart
+}
+
+start() {
+	setup_switch() { return 0; }
+
+        mii-tool -R eth0
+	include /lib/network
+	setup_switch
+	ifup -a
+	/sbin/wifi up
+        /etc/init.d/mconfread restart
+}
+
+stop() {
+	ifdown wan
+        ifdown wan2
+	ifdown lan
+}
+
+restart() {
+	stop
+	start
+}

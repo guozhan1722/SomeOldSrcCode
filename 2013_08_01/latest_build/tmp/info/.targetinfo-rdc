@@ -1,0 +1,121 @@
+Source-Makefile: target/linux/rdc/Makefile
+Target: rdc
+Target-Board: rdc
+Target-Kernel: 2.6
+Target-Name: RDC 321x
+Target-Path: /home/zguo/project/2013_08_01/latest_build
+Target-Arch: i386
+Target-Features: gpio jffs2 pci pcmcia squashfs usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -march=i486 -funit-at-a-time
+Linux-Version: 2.6.30.10
+Linux-Release: 1
+Linux-Kernel-Arch: x86
+Target-Description:
+        Build firmware images for RDC321x based routers
+        (e.g. Airlink101 AR525W, Linksys WRT54GR, Sitecom WL-153)
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall wpad-mini kmod-r6040 kmod-input-core kmod-input-polldev kmod-input-gpio-buttons kmod-button-hotplug
+Target: rdc/amit
+Target-Board: rdc
+Target-Kernel: 2.6
+Target-Name: Devices from AMIT
+Target-Path: target/linux/rdc
+Target-Arch: i386
+Target-Features: gpio jffs2 pci pcmcia squashfs usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -march=i486 -funit-at-a-time
+Linux-Version: 2.6.30.10
+Linux-Release: 1
+Linux-Kernel-Arch: x86
+Target-Description:
+        Build firmware images for RDC321x based routers
+        (e.g. Airlink101 AR525W, Linksys WRT54GR, Sitecom WL-153)
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall wpad-mini kmod-r6040 kmod-input-core kmod-input-polldev kmod-input-gpio-buttons kmod-button-hotplug
+Target: rdc/ar525w
+Target-Board: rdc
+Target-Kernel: 2.6
+Target-Name: Airlink AR525W
+Target-Path: target/linux/rdc
+Target-Arch: i386
+Target-Features: gpio jffs2 pci pcmcia squashfs usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -march=i486 -funit-at-a-time
+Linux-Version: 2.6.30.10
+Linux-Release: 1
+Linux-Kernel-Arch: x86
+Target-Description:
+        Build firmware images for RDC321x based routers
+        (e.g. Airlink101 AR525W, Linksys WRT54GR, Sitecom WL-153)
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall kmod-rt61-pci wpad-mini kmod-r6040 kmod-input-core kmod-input-polldev kmod-input-gpio-buttons kmod-button-hotplug
+Target: rdc/r8610
+Target-Board: rdc
+Target-Kernel: 2.6
+Target-Name: RDC R8160 Evaluation Board
+Target-Path: target/linux/rdc
+Target-Arch: i386
+Target-Features: gpio jffs2 pci pcmcia squashfs usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -march=i486 -funit-at-a-time
+Linux-Version: 2.6.30.10
+Linux-Release: 1
+Linux-Kernel-Arch: x86
+Target-Description:
+        Build firmware images for RDC321x based routers
+        (e.g. Airlink101 AR525W, Linksys WRT54GR, Sitecom WL-153)
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall kmod-r6040 kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-hwmon-core kmod-hwmon-w83627hf kmod-ide-core kmod-ide-it821x kmod-rtc-core kmod-rtc-m48t86 kmod-fs-ext2 kmod-fs-ext3 wpad-mini kmod-r6040 kmod-input-core kmod-input-polldev kmod-input-gpio-buttons kmod-button-hotplug
+Target: rdc/dir-450
+Target-Board: rdc
+Target-Kernel: 2.6
+Target-Name: D-Link DIR-450
+Target-Path: target/linux/rdc
+Target-Arch: i386
+Target-Features: gpio jffs2 pci pcmcia squashfs usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -march=i486 -funit-at-a-time
+Linux-Version: 2.6.30.10
+Linux-Release: 1
+Linux-Kernel-Arch: x86
+Target-Description:
+        Build firmware images for RDC321x based routers
+        (e.g. Airlink101 AR525W, Linksys WRT54GR, Sitecom WL-153)
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall kmod-madwifi kmod-pcmcia-core kmod-nozomi wpad-mini kmod-r6040 kmod-input-core kmod-input-polldev kmod-input-gpio-buttons kmod-button-hotplug
+Target: rdc/sitecom
+Target-Board: rdc
+Target-Kernel: 2.6
+Target-Name: Devices from Sitecom (WL-153, DC-230)
+Target-Path: target/linux/rdc
+Target-Arch: i386
+Target-Features: gpio jffs2 pci pcmcia squashfs usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -march=i486 -funit-at-a-time
+Linux-Version: 2.6.30.10
+Linux-Release: 1
+Linux-Kernel-Arch: x86
+Target-Description:
+        Build firmware images for RDC321x based routers
+        (e.g. Airlink101 AR525W, Linksys WRT54GR, Sitecom WL-153)
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall wpad-mini kmod-r6040 kmod-input-core kmod-input-polldev kmod-input-gpio-buttons kmod-button-hotplug
+Target: rdc/bifferboard
+Target-Board: rdc
+Target-Kernel: 2.6
+Target-Name: Bifferboard
+Target-Path: target/linux/rdc
+Target-Arch: i386
+Target-Features: gpio jffs2 pci pcmcia squashfs usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -march=i486 -funit-at-a-time
+Linux-Version: 2.6.30.10
+Linux-Release: 1
+Linux-Kernel-Arch: x86
+Target-Description:
+        Build firmware images for RDC321x based routers
+        (e.g. Airlink101 AR525W, Linksys WRT54GR, Sitecom WL-153)
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall wpad-mini kmod-r6040 kmod-input-core kmod-input-polldev kmod-input-gpio-buttons kmod-button-hotplug
+

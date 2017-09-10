@@ -1,0 +1,5 @@
+/001-remove_pcap_debug.patch/1.2/Tue Jul 20 22:34:56 2010/-kkv/Tar71xx_4g
+/002-remove_static_libpcap_check.patch/1.1/Tue Jul 20 22:34:56 2010/-kkv/Tar71xx_4g
+/003-fix_ipv6_compile.patch/1.1/Tue Jul 20 22:34:56 2010/-kkv/Tar71xx_4g
+/100-tcpdump_mini.patch/1.1/Tue Jul 20 22:34:56 2010/-kkv/Tar71xx_4g
+D

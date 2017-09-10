@@ -1,0 +1,18 @@
+Source-Makefile: target/linux/mpc83xx/Makefile
+Target: mpc83xx
+Target-Board: mpc83xx
+Target-Kernel: 2.6
+Target-Name: Freescale MPC83xx
+Target-Path: /home/zguo/project/2013_08_01/latest_build
+Target-Arch: powerpc
+Target-Features: broken gpio pci pcie squashfs tgz
+Target-Depends: 
+Target-Optimization: -Os -pipe -funit-at-a-time
+Linux-Version: 2.6.31.12
+Linux-Release: 1
+Linux-Kernel-Arch: powerpc
+Target-Description:
+	Build firmware images for Freescale MPC83xx based boards (eg. RouterBoard 600).
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall kmod-via-velocity
+

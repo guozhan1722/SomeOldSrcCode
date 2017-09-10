@@ -1,0 +1,15 @@
+Source-Makefile: package/smodem/Makefile
+Package: smodem
+Version: 1
+Depends: +kmod-vip-bsp
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Microhard smodem utility
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  This package contains the microhard home grown smodem utility.
+@@
+
+

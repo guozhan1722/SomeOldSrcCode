@@ -1,0 +1,30 @@
+diff -Nuar brctl.bak/brctl_cmd.c brctl/brctl_cmd.c
+--- a/brctl/brctl_cmd.c	2011-10-27 09:44:06.000000000 -0600
++++ b/brctl/brctl_cmd.c	2011-10-27 09:49:00.000000000 -0600
+@@ -338,8 +338,15 @@
+ 
+ static int br_cmd_show(int argc, char *const* argv)
+ {
++	int i = 0;
++
+ 	printf("bridge name\tbridge id\t\tSTP enabled\tinterfaces\n");
+-	br_foreach_bridge(show_bridge, NULL);
++	if (argc == 1)
++		br_foreach_bridge(show_bridge, NULL);
++	else
++		for(i = 2; i <= argc; i++)
++			show_bridge(argv[i - 1], NULL);
++
+ 	return 0;
+ }
+ 
+@@ -416,7 +423,8 @@
+ 	  "<bridge> <port> <cost>\tset path cost" },
+ 	{ 3, "setportprio", br_cmd_setportprio,
+ 	  "<bridge> <port> <prio>\tset port priority" },
+-	{ 0, "show", br_cmd_show, "\t\t\tshow a list of bridges" },
++	{ 0, "show", br_cmd_show,
++	  "[ <bridge> ]\t\tshow a list of bridges" },
+ 	{ 1, "showmacs", br_cmd_showmacs, 
+ 	  "<bridge>\t\tshow a list of mac addrs"},
+ 	{ 1, "showstp", br_cmd_showstp, 

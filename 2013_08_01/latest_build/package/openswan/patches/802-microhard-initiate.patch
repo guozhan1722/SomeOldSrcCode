@@ -1,0 +1,100 @@
+--- a/programs/pluto/initiate.c	2013-07-15 15:51:06.265086134 -0600
++++ b/programs/pluto/initiate.c	2013-07-15 17:53:11.870710800 -0600
+@@ -233,6 +233,7 @@
+ 	
+ 	{
+ 	    whackfd = dup(whackfd);
++        openswan_log("ipsecdoi_init by init_a_connection");
+ 	    ipsecdoi_initiate(whackfd, c, c->policy, 1
+ 			      , SOS_NOBODY, importance
+ #ifdef HAVE_LABELED_IPSEC
+@@ -262,6 +263,7 @@
+ 
+     if (c != NULL)
+     {
++    openswan_log("cause c!=null initiate_connection to initiate_a_connection='%s'\n", name);
+ 	initiate_a_connection(c, &is);
+ 	close_any(is.whackfd);
+ 	return;
+@@ -319,6 +321,7 @@
+ 		)
+ #endif /* DYNAMICDNS */
+ 		)
++           openswan_log("restart_connections_by_peer initiate_connection='%s'\n", d->name);
+ 	       initiate_connection(d->name, NULL_FD, 0, pcim_demand_crypto);
+     }
+ }
+@@ -542,6 +545,7 @@
+     b.failure_shunt = 0;
+     b.whackfd = whackfd;
+     b.step = fos_start;
++    openswan_log("initiate_ondemand to initiate_ondemand_body\n");
+     return initiate_ondemand_body(&b, NULL, NULL
+ #ifdef HAVE_LABELED_IPSEC
+ 				 , uctx
+@@ -615,6 +619,7 @@
+     }
+     else
+     {
++        openswan_log("continue_oppo to initiate_ondemand_body\n");
+ 	(void)initiate_ondemand_body(&cr->b, &cr->ac, ugh
+ #ifdef HAVE_LABELED_IPSEC
+ 				     , NULL
+@@ -862,6 +867,8 @@
+ #endif
+ 
+ 	if(!loggedit) { openswan_log("%s", demandbuf); loggedit=TRUE; }
++    openswan_log("ipsecdoi_init by init_ondemand_body 1");
++    openswan_log("%s", demandbuf);
+ 	ipsecdoi_initiate(b->whackfd, c, c->policy, 1
+ 			  , SOS_NOBODY, pcim_local_crypto
+ #ifdef HAVE_LABELED_IPSEC
+@@ -1284,11 +1291,15 @@
+ 		    }
+ #endif
+ 		    c->gw_info->key->last_tried_time = now();
++            openswan_log("ipsecdoi_init by init_ondemand_body 2");
+ 		    DBG(DBG_OPPO|DBG_CONTROL,
+ 			DBG_log("initiate on demand from %s:%d to %s:%d proto=%d state: %s because: %s"
+ 				, ours, ourport, his, hisport, b->transport_proto
+ 				, oppo_step_name[b->step], b->want));
+ 
++			openswan_log("initiate on demand from %s:%d to %s:%d proto=%d state: %s because: %s"
++				, ours, ourport, his, hisport, b->transport_proto
++				, oppo_step_name[b->step], b->want);
+ 		    ipsecdoi_initiate(b->whackfd, c, c->policy, 1
+ 				      , SOS_NOBODY, pcim_local_crypto 
+ #ifdef HAVE_LABELED_IPSEC
+@@ -1700,6 +1711,8 @@
+      * lookup
+      */
+     update_host_pairs(c);
++	    openswan_log("connection_check_ddns1 initconnection=%s"
++			 , c->name);
+     initiate_connection(c->name, NULL_FD, 0, pcim_demand_crypto);
+ 
+     /* no host pairs,  no more to do */
+@@ -1714,9 +1727,12 @@
+ 	if ((c->dnshostname && d->dnshostname &&
+ 		(strcmp(c->dnshostname, d->dnshostname) == 0))
+ 		|| (c->dnshostname == NULL && d->dnshostname == NULL && 
+-		sameaddr(&d->spd.that.host_addr, &c->spd.that.host_addr)))
++		sameaddr(&d->spd.that.host_addr, &c->spd.that.host_addr))){
++	    openswan_log("connection_check_ddns1-2 initconnection=%s"
++			 , d->name);
+ 	    initiate_connection(d->name, NULL_FD, 0, pcim_demand_crypto);
+     }
++    }
+ }
+ 
+ 
+@@ -1800,7 +1816,8 @@
+ 		is.whackfd   = NULL_FD;
+ 		is.moredebug = 0;
+ 		is.importance= pcim_local_crypto;
+-		
++			    openswan_log("connection_check_phase2 init-a-connection=%s"
++			 , c->name);
+ 		initiate_a_connection(c, &is);
+ 	    }
+ 	}

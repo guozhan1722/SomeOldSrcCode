@@ -1,0 +1,150 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+. /etc/version
+
+COM2EnableFile="/etc/soipd2_runing"
+
+start() {
+        logger "soip2.getty start"
+        rm -f /var/run/com2_packet
+        rm -f $COM2EnableFile
+
+        config_load comport2
+        config_get status com2 COM2_Port_Status
+        config_get Data_Baud_Rate com2 COM2_Data_Baud_Rate
+
+        case "$Data_Baud_Rate" in
+            "A")
+                FORM_COM12_Data_Baud_Rate="300"
+                ;;
+            "B")
+                FORM_COM12_Data_Baud_Rate="600"
+                ;;
+            "C")
+                FORM_COM12_Data_Baud_Rate="1200"
+                ;;
+            "D")
+                FORM_COM12_Data_Baud_Rate="2400"
+                ;;
+            "E")
+                FORM_COM12_Data_Baud_Rate="3600"
+                ;;
+            "F")
+                FORM_COM12_Data_Baud_Rate="4800"
+                ;;
+            "G")
+                FORM_COM12_Data_Baud_Rate="7200"
+                ;;
+            "H")
+                FORM_COM12_Data_Baud_Rate="9600"
+                ;;
+            "I")
+                FORM_COM12_Data_Baud_Rate="14400"
+                ;;
+            "J")
+                FORM_COM12_Data_Baud_Rate="19200"
+                ;;
+        
+            "K")
+                FORM_COM12_Data_Baud_Rate="28800"
+                ;;
+            "L")
+                FORM_COM12_Data_Baud_Rate="38400"
+                ;;
+            "M")
+                FORM_COM12_Data_Baud_Rate="57600"
+                ;;
+            "N")
+                FORM_COM12_Data_Baud_Rate="115200"
+                ;;
+        esac    
+
+        [ "A" == "$status" ] || {
+                echo "$FORM_COM12_Data_Baud_Rate" > $COM2EnableFile
+                if [ "$HARDWARE" != "v2.0.0" ]; then
+                         exec>/dev/null
+                	/bin/soipd2
+                else
+                         exec>/dev/null
+                         logger "/bin/soipdmpci2 start"
+                	 /bin/soipdmpci2
+	        fi
+        }
+
+
+        config_load modbusd
+        config_get mdstatus modbus_conf Modbus_S_Enable
+        config_get mdcom modbus_conf Modbus_S_COM_en
+        config_get mdData_Baud_Rate modbus_conf Modbus_S_COM_rate
+        
+        case "$mdData_Baud_Rate" in
+            "A")
+                FORM_COM12_Data_Baud_Rate="300"
+                ;;
+            "B")
+                FORM_COM12_Data_Baud_Rate="600"
+                ;;
+            "C")
+                FORM_COM12_Data_Baud_Rate="1200"
+                ;;
+            "D")
+                FORM_COM12_Data_Baud_Rate="2400"
+                ;;
+            "E")
+                FORM_COM12_Data_Baud_Rate="3600"
+                ;;
+            "F")
+                FORM_COM12_Data_Baud_Rate="4800"
+                ;;
+            "G")
+                FORM_COM12_Data_Baud_Rate="7200"
+                ;;
+            "H")
+                FORM_COM12_Data_Baud_Rate="9600"
+                ;;
+            "I")
+                FORM_COM12_Data_Baud_Rate="14400"
+                ;;
+            "J")
+                FORM_COM12_Data_Baud_Rate="19200"
+                ;;
+        
+            "K")
+                FORM_COM12_Data_Baud_Rate="28800"
+                ;;
+            "L")
+                FORM_COM12_Data_Baud_Rate="38400"
+                ;;
+            "M")
+                FORM_COM12_Data_Baud_Rate="57600"
+                ;;
+            "N")
+                FORM_COM12_Data_Baud_Rate="115200"
+                ;;
+        esac    
+
+        if [ "A" == "$mdcom" ]; then
+            logger "Com Port modbus is disabled" 
+        else
+                echo "$mdData_Baud_Rate" > $COM2EnableFile
+                 exec>/dev/null
+                 logger "/bin/modbusd start"
+           	 /bin/modbusds
+
+        fi
+
+}
+
+stop() {
+        logger "soip2.getty stop"
+        if [ "$HARDWARE" != "v2.0.0" ]; then
+            killall soipd2 
+        else
+            killall soipdmpci2
+        fi
+	rm -f /var/run/com2_packet
+        rm -f $COM2EnableFile
+}
+
+

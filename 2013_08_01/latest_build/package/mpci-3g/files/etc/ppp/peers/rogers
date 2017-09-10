@@ -1,0 +1,53 @@
+#=====================
+#ISP provide---rogers
+#=====================
+
+#uncomment the following for debug purpose.
+#debug
+#nodetach
+
+#provider name
+name rogers
+
+#device to use
+/dev/ttyS1
+modem
+
+#dialup-on-demand
+demand
+
+#tear down the connection after idle for certain amount of time (s)
+idle 30
+
+#Keep on reopening connection after close
+persist
+
+#call chat script, AT commands and dial
+connect "/usr/sbin/chat -v -f /etc/ppp/chatscripts/rogers"
+
+#Set data unit
+mru 1500
+mtu 1500
+
+#no authentication
+noauth
+#require-pap
+
+#handle default routing
+defaultroute
+
+#set user to empty
+user " "
+
+#obtain DNS from ISP
+usepeerdns
+
+#obtain IP from ISP
+0.0.0.0:0.0.0.0
+
+
+ipcp-accept-local
+ipcp-accept-remote
+lcp-echo-failure 3
+lcp-echo-interval 5
+

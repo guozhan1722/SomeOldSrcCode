@@ -1,0 +1,199 @@
+#!/bin/sh
+. /etc/version
+
+parse_mib() {                                                                          
+awk -F ";" -v "fname=$2" -v "mhdate=$mhdate" -v "BOARD=$PRODUCT" '                                                     
+BEGIN { nc = 0; 
+   printf("Microhard-MIB DEFINITIONS ::= BEGIN\n")>>fname;
+   printf("\n")>>fname;
+   printf("-- Title:	MICROHARD MIB\n")>>fname;
+   printf("-- Date:	%s\n",mhdate)>>fname;
+   printf("-- Disription: Not all parameters are supported in a paticular device,Support of parameters varies\n")>>fname; 
+   printf("-- from version to version\n")>>fname;
+   printf("\n")>>fname;
+   printf("IMPORTS\n")>>fname;
+   printf("        MODULE-IDENTITY,\n")>>fname;
+   printf("        OBJECT-IDENTITY,\n")>>fname;
+   printf("        enterprises,\n")>>fname;
+   printf("        OBJECT-TYPE,\n")>>fname; 
+   printf("        NetworkAddress,\n")>>fname; 
+   printf("        IpAddress,\n")>>fname;
+   printf("        Counter,\n")>>fname; 
+   printf("        Gauge,\n")>>fname; 
+   printf("        TimeTicks\n")>>fname;
+   printf("	FROM RFC1065-SMI\;\n")>>fname;
+   printf("--	DisplayString\n")>>fname;
+   printf("--		FROM RFC1158-MIB\;\n")>>fname;
+   printf("\n")>>fname;
+   printf("Microhard OBJECT IDENTIFIER ::=	{ enterprises 21703 }\n")>>fname;
+   printf("\n")>>fname;
+   printf("--%s\n",BOARD)>>fname;
+}                                                                                       
+   /^(#.*)?$/ {next}                                                                    
+   {   
+      if( ($1+0) != 0){                                                                                 
+         magic[nc] = $1;
+         #here will change the display for some special con file name
+         confile[nc] = $2;
+         if($2 == "lte"){
+            confile[nc] = "carrier";
+         } else if ($2 == "tmpstatus") {
+            confile[nc] = "sysInfo";
+         }
+         split($3, arr, "[");
+         split(arr[1], srr, "@");
+         if(srr[2] != ""){
+            section[nc]=srr[2];
+         }else
+            section[nc]=arr[1];
+         #section[nc]=$3;
+         item[nc]=$4;
+         OID0[nc]=$6;
+         OID1[nc]=$7;
+         OID2[nc]=$8;
+         OID3[nc]=$9;
+	 vartype[nc]=$10;
+	 varaccess[nc]=$11;
+	 varvalidate[nc]=$12;
+	 if((vartype[nc] == "int") && (varvalidate[nc] >0)) {
+	    for(i=0;i<varvalidate[nc];i++){
+	       marg[nc,i]=$(13+i)
+	    }
+         }
+         nc++;
+      }                                                                            
+   }                                                     
+END {
+   printf("	%s				OBJECT IDENTIFIER ::=	{ Microhard %d }\n",BOARD,OID0[0]) >>fname;
+   temp_oid=0;
+
+   for(i=0;i<nc;i++){
+      if (OID1[i] != temp_oid){
+         printf("	%s_Config			OBJECT IDENTIFIER ::=	{ %s %d }\n",confile[i],BOARD,OID1[i]) >>fname;
+         temp_oid = OID1[i];
+      }
+   }
+
+   printf("\n")>>fname;
+   temp_oid1=0;
+   temp_oid2=0;
+   temp_oid3=0;
+   for(i=0;i<nc;i++){
+      if (OID1[i] != temp_oid1){
+         printf("-- %s_Config parameter group\n",confile[i]) >>fname;
+         CONNO =confile[i]"_"section[i]"_Config" 
+         printf("	%s	OBJECT IDENTIFIER ::=	{ %s_Config %d }\n",CONNO,confile[i], OID2[i]) >>fname;
+         printf("	%s_%s_%s		OBJECT-TYPE\n",confile[i],section[i],item[i]) >>fname;
+	 if(vartype[i] == "str"){
+	    printf("		SYNTAX	DisplayString \(SIZE \(0..32\)\)\n") >>fname;
+	 }else if (vartype[i] == "int") {
+	    printf("		SYNTAX	INTEGER \{\n") >>fname;
+	    if(varvalidate[i] >0) {
+	       for(m=0;m<varvalidate[i];m++){
+                  split(marg[i,m], name, "|");
+                  mh_name=name[2]
+                  if(mh_name == ""){
+                     mh_name=name[1];
+                  }
+                  printf("		%s(%d)\,\n",mh_name,m)>>fname;
+	       }
+	       printf("		\}\n") >>fname;
+	    }
+         }
+
+	 if(varaccess[i] == "rw"){
+	    printf("		ACCESS	read-write\n") >>fname;
+	 }else if (varaccess[i] == "ro") {
+            printf("		ACCESS	read-only\n") >>fname;
+         }
+         printf("		STATUS	mandatory\n") >>fname;
+         printf("		DESCRIPTION \"%s %s %s\"\n",confile[i],section[i],item[i]) >>fname;
+         printf("		::= { %s_%s_Config %d}\n",confile[i],section[i],OID3[i]) >>fname;
+				
+         con1=confile[i]
+	 con=confile[i];
+	 sec1=section[i]
+	 temp_oid1 = OID1[i];
+	 temp_oid2 = OID2[i];
+	 firstoid2=OID2[i];
+	 printf("\n")>>fname;
+      } else {
+         if(temp_oid2!=OID2[i]){
+            if(confile[i] == con1 && section[i] == sec1){
+               CONNO =section[i]"_"item[i]"_Config" 
+            }else {
+               CONNO =confile[i]"_"section[i]"_Config" 
+            } 
+            printf("	%s	OBJECT IDENTIFIER ::=	{ %s_Config %d }\n",CONNO,con, OID2[i]) >>fname;
+	    printf("		%s_%s_%s		OBJECT-TYPE\n",confile[i],section[i],item[i]) >>fname;
+	    if(vartype[i] == "str"){
+	       printf("		SYNTAX	DisplayString \(SIZE \(0..32\)\)\n") >>fname;
+	    }else if (vartype[i] == "int") {
+	       printf("		SYNTAX	INTEGER \{\n") >>fname;
+	       if(varvalidate[i] >0) {
+	          for(m=0;m<varvalidate[i];m++){
+                     split(marg[i,m], name, "|");
+                     mh_name=name[2]
+                     if(mh_name == ""){
+                        mh_name=name[1];
+                     }
+                     printf("		%s(%d)\,\n",mh_name,m)>>fname;
+                  }
+	          printf("		\}\n") >>fname;
+               }
+            }
+	    if(varaccess[i] == "rw"){
+               printf("		ACCESS	read-write\n") >>fname;
+	    }else if (varaccess[i] == "ro") {
+	       printf("		ACCESS	read-only\n") >>fname;
+	    }
+	    printf("		STATUS	mandatory\n") >>fname;
+	    printf("		DESCRIPTION \"%s %s %s\"\n",confile[i],section[i],item[i]) >>fname;
+	    printf("		::= { %s %d}\n",CONNO,OID3[i]) >>fname;
+
+	    con1=confile[i]
+	    sec1=section[i]
+	    sameconf="confile[i]_section[i]_Config"
+	    temp_oid2 = OID2[i];
+	    printf("\n")>>fname;
+         } else {
+	    printf("	%s_%s_%s		OBJECT-TYPE\n",confile[i],section[i],item[i]) >>fname;
+	    if(vartype[i] == "str"){
+	       printf("		SYNTAX	DisplayString \(SIZE \(0..32\)\)\n") >>fname;
+	    }else if (vartype[i] == "int") {
+	       printf("		SYNTAX	INTEGER \{\n") >>fname;
+	       if(varvalidate[i] >0) {
+	          for(m=0;m<varvalidate[i];m++){
+                     split(marg[i,m], name, "|");
+                     mh_name=name[2]
+                     if(mh_name == ""){
+                        mh_name=name[1];
+                     }
+                     printf("		%s(%d)\,\n",mh_name,m)>>fname;
+                     #printf("		%s(%d)\,\n",marg[i,m],m)>>fname;
+		  }
+		  printf("		\}\n") >>fname;
+	       }
+            }
+            if(varaccess[i] == "rw"){
+	       printf("		ACCESS	read-write\n") >>fname;
+	    }else if (varaccess[i] == "ro") {
+	       printf("		ACCESS	read-only\n") >>fname;
+	    }
+	    printf("		STATUS	mandatory\n") >>fname;
+	    printf("		DESCRIPTION \"%s %s %s\"\n",confile[i],section[i],item[i]) >>fname;
+	    printf("		::= { %s %d}\n",CONNO,OID3[i]) >>fname;
+	    printf("\n")>>fname;
+         }
+      }
+   }
+   printf("\nEND\n") >>fname;                  
+   }' "$1"                                    
+}                       
+
+ifile=$1
+ofile=$2
+mhdate=$(date)
+rm "$ofile" -rf
+parse_mib "$ifile" "$ofile"
+

@@ -1,0 +1,8 @@
+#!/bin/sh
+jobfile="/tmp/.i2c_chip/jobqueue"
+resultfile="/tmp/.i2c_chip/i2cchipresult"
+local interval="$1"
+[ -z "$interval" ] &&  interval=10
+echo "shutdown.${interval}" >$jobfile
+sleep 1
+cat $resultfile 

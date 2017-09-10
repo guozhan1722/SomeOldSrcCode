@@ -1,0 +1,27 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+
+START=99
+STOP=98
+
+start(){
+        killall -9 trackersms
+        killall -9 trackersmsif
+        killall -9 gpstracker
+
+	config_load "gpsgatetr"
+        config_get TRACKER_EN "gpsgatetr_conf" TRACKER_Status
+    	if [ "${TRACKER_EN}" = "B" ]; then
+            /bin/trackersms &
+	fi
+	echo -n "Starting GPS Tracking Service ..."
+	/bin/gpstracker &
+}
+
+stop(){
+        killall -9 trackersms
+        killall -9 trackersmsif
+        killall -9 gpstracker
+}
+

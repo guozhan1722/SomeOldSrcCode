@@ -1,0 +1,73 @@
+# Copyright (C) 2010 Microhard Systems Inc.
+config port com2
+	option COM2_Port_Status                 A
+	option COM2_Chanel_Mode                 A
+	option COM2_Data_Baud_Rate              N	
+	option COM2_Data_Format	                A
+	option COM2_Flow_Control	        A
+	option COM2_Pre_Data_Delay 	        100
+	option COM2_Post_Data_Delay	        100
+	option COM2_Data_Mode 	                B
+        option COM2_Character_Timeout		20
+        option COM2_Max_Packet_Len		1024
+        option COM2_QoS                          A
+        option COM2_NoConnect_Data_Intake        B
+        option COM2_Modbus_Mode                  A
+        option COM2_Modbus_Protect_Status        A
+        option COM2_Modbus_Protect_Key           1234
+        option COM2_IP_Protocol                  F
+
+        option COM2_T_Client_Server_Addr              0.0.0.0
+        option COM2_T_Client_Server_Port              20002
+        option COM2_T_Client_Timeout             60
+
+        option COM2_T_Server_Listen_Port              20002
+        option COM2_T_Server_Timeout                  300
+
+	option COM2_T_Client_Server_Addr              0.0.0.0
+        option COM2_T_Client_Server_Port              20002
+        option COM2_T_Client_Timeout             60
+        option COM2_T_Server_Listen_Port              20002
+        option COM2_T_Server_Timeout                  300
+
+        option COM2_U_PtoP_Remote_Addr                0.0.0.0
+        option COM2_U_PtoP_Remote_Port                20002
+        option COM2_U_PtoP_Listen_Port                20002
+
+        option COM2_UM_P_Multicast_Addr          224.1.1.2
+        option COM2_UM_P_Multicast_Port          20002
+        option COM2_UM_P_Listen_Port             20012
+        option COM2_UM_P_TTL                     1
+
+
+        option COM2_UM_M_Remote_Addr             0.0.0.0
+        option COM2_UM_M_Remote_Port             20012
+        option COM2_UM_M_Multicast_Addr          224.1.1.2
+        option COM2_UM_M_Multicast_Port          20002
+
+        option COM2_UMtoM_Multicast_Addr         224.1.1.2
+        option COM2_UMtoM_Multicast_Port         20012
+        option COM2_UMtoM_Multicast_TTL          1
+        option COM2_UMtoM_Listen_Multicast_Addr  224.1.1.2
+        option COM2_UMtoM_Listen_Multicast_Port  20012
+
+	option COM2_SMTP_Mail_Subject           COM-Message
+        option COM2_SMTP_Server                 smtp.gmail.com:465
+	option COM2_SMTP_Username               mailer.serial@gmail.com
+	option COM2_SMTP_Password               SerialPort
+        option COM2_SMTP_Recipient              host@
+        option COM2_SMTP_Buffer                 1024
+        option COM2_SMTP_Timeout                10
+        option COM2_SMTP_Transfer_Mode          A
+
+	option COM2_SMS_Message_Max_Size 160
+	option COM2_SMS_Reply_Timeout 10
+	option COM2_SMS_Access_Control A
+	option COM2_SMS_Read_SMS_Control B
+	option COM2_SMS_Phone_Number_1 +15878938644
+	option COM2_SMS_Phone_Number_2 
+	option COM2_SMS_Phone_Number_3 
+	option COM2_SMS_Phone_Number_4 
+	option COM2_SMS_Phone_Number_5 
+               
+

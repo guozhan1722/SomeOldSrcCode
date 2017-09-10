@@ -1,0 +1,133 @@
+diff -Nuar org/sysklogd/syslogd.c microhard/sysklogd/syslogd.c
+--- org/sysklogd/syslogd.c	2013-06-05 13:56:17.167240282 -0600
++++ microhard/sysklogd/syslogd.c	2013-06-05 16:40:53.928276078 -0600
+@@ -58,6 +58,12 @@
+ 	char data[1];   /* data/messages */
+ };
+ 
++/* microhard patch */
++const char *vpnlogPath="/var/log/vpnlog";
++int vpnlogFD=-1;
++unsigned vpncurFileSize;
++smallint vpnisRegular;
++time_t last_vpnlog_time;
+ /* Allows us to have smaller initializer. Ugly. */
+ #define GLOBALS \
+ 	const char *logFilePath;                \
+@@ -290,6 +296,71 @@
+ void log_to_shmem(const char *msg);
+ #endif /* FEATURE_IPC_SYSLOG */
+ 
++/* microhard patch */
++/* Print a message to the vpnlog file. */
++static void vpnlog_locally(time_t now, char *msg)
++{
++
++	int len = strlen(msg);
++
++	if (vpnlogFD >= 0) {
++		/* Reopen log file every second. This allows admin
++		 * to delete the file and not worry about restarting us.
++		 * This costs almost nothing since it happens
++		 * _at most_ once a second.
++		 */
++		if (!now)
++			now = time(NULL);
++		if (last_vpnlog_time != now) {
++			last_vpnlog_time = now;
++			close(vpnlogFD);
++			goto vpnreopen;
++		}
++	} else {
++ vpnreopen:
++		vpnlogFD = open(vpnlogPath, O_WRONLY | O_CREAT
++					| O_NOCTTY | O_APPEND | O_NONBLOCK,
++					0666);
++		if (vpnlogFD < 0) {
++			/* cannot open logfile? - return */
++			return;
++		}
++
++		{
++			struct stat statf;
++			vpnisRegular = (fstat(vpnlogFD, &statf) == 0 && S_ISREG(statf.st_mode));
++			/* bug (mostly harmless): can wrap around if file > 4gb */
++			vpncurFileSize = statf.st_size;
++		}
++
++	}
++
++
++	if (G.logFileSize && vpnisRegular && vpncurFileSize > G.logFileSize) {
++		if (G.logFileRotate) { /* always 0..99 */
++			int i = strlen(vpnlogPath) + 3 + 1;
++			char oldFile[i];
++			char newFile[i];
++			i = G.logFileRotate - 1;
++			/* rename: f.8 -> f.9; f.7 -> f.8; ... */
++			while (1) {
++				sprintf(newFile, "%s.%d", vpnlogPath, i);
++				if (i == 0) break;
++				sprintf(oldFile, "%s.%d", vpnlogPath, --i);
++				/* ignore errors - file might be missing */
++				rename(oldFile, newFile);
++			}
++			/* newFile == "f.0" now */
++			rename(vpnlogPath, newFile);
++
++			close(vpnlogFD);
++			goto vpnreopen;
++		}
++		ftruncate(vpnlogFD, 0);
++	}
++	vpncurFileSize += full_write(vpnlogFD, msg, len);
++
++}
+ 
+ /* Print a message to the log file. */
+ static void log_locally(time_t now, char *msg)
+@@ -436,17 +507,28 @@
+ 		msg += 16;
+ 	}
+ 	timestamp[15] = '\0';
+-
+-	if (option_mask32 & OPT_small)
+-		sprintf(G.printbuf, "%s %s\n", timestamp, msg);
+-	else {
++    int fac_val = (LOG_FAC(pri) << 3);
++	if (option_mask32 & OPT_small) {
++        if (fac_val == LOG_LOCAL0)
++            sprintf(G.printbuf, "%s <  VPNsLog  > %s\n", timestamp, msg);
++        else
++            sprintf(G.printbuf, "%s < SystemLog > %s\n", timestamp, msg);
++    } else {
+ 		char res[20];
+ 		parse_fac_prio_20(pri, res);
+-		sprintf(G.printbuf, "%s %.64s %s %s\n", timestamp, G.hostname, res, msg);
+-	}
+-
++        if (fac_val == LOG_LOCAL0)
++            sprintf(G.printbuf, "%s %.64s %s <  VPNsLog  > %s\n", timestamp, G.hostname, res, msg);
++        else 
++            sprintf(G.printbuf, "%s %.64s %s < SystemLog > %s\n", timestamp, G.hostname, res, msg);
++	}
++#if ENABLE_FEATURE_ROTATE_LOGFILE    
++    if (fac_val == LOG_LOCAL0) {
++        vpnlog_locally(now, G.printbuf);
++    }
++#endif
+ 	/* Log message locally (to file or shared mem) */
+ 	log_locally(now, G.printbuf);
++
+ }
+ 
+ static void timestamp_and_log_internal(const char *msg)
+@@ -579,7 +661,7 @@
+ 		ipcsyslog_init();
+ 	}
+ 
+-	timestamp_and_log_internal("syslogd started: BusyBox v" BB_VER);
++	//timestamp_and_log_internal("syslogd started: BusyBox v" BB_VER);
+ 
+ 	while (!bb_got_signal) {
+ 		ssize_t sz;

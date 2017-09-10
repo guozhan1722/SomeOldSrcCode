@@ -1,0 +1,1 @@
+OPTIONS="-P /var/run/snmpd.pid -c /etc/snmp/snmpd.conf"

@@ -1,0 +1,25 @@
+#!/bin/sh
+
+UPGRADEFILE=nanocpu.bin
+RESULT="FAIL"
+
+if [ $# -ne 1 ]; then
+   echo "Invalid Num of Args"
+   exit
+else
+   UPGRADEFILE=$1
+fi
+
+if [ -s "/tmp/$UPGRADEFILE" ]; then
+
+   ext=${UPGRADEFILE##*.}
+
+   if [ $ext = "bin" ]; then
+      sleep 1
+      sysupgrade /tmp/$1  
+      sleep 1
+   fi
+
+else
+   echo "cannt find upgrade file"
+fi

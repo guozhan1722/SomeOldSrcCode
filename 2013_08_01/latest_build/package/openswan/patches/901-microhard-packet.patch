@@ -1,0 +1,13 @@
+--- a/lib/libpluto/packet.c	2013-03-18 08:55:56.077271098 -0600
++++ b/lib/libpluto/packet.c	2013-03-18 09:00:02.364266966 -0600
+@@ -1703,8 +1703,9 @@
+     passert(left >= NSIZEOF_isakmp_hdr);    /* not even room for isakmp_hdr! */
+     if (left == NSIZEOF_isakmp_hdr) {
+ 	/* no payloads, just the isakmp_hdr: insert np here */
++    /* MICROHARD: if using X.509 CA, ISAKMP_NEXT_SIG */
+ 	passert(pl[NOFFSETOF_isa_np] == ISAKMP_NEXT_NONE ||
+-		pl[NOFFSETOF_isa_np] == ISAKMP_NEXT_HASH);
++		pl[NOFFSETOF_isa_np] == ISAKMP_NEXT_HASH || pl[NOFFSETOF_isa_np] == ISAKMP_NEXT_SIG);
+ 	pl[NOFFSETOF_isa_np] = np;
+     } else {
+ 	pl += NSIZEOF_isakmp_hdr;       /* skip over isakmp_hdr */

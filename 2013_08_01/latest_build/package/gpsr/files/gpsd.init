@@ -1,0 +1,70 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=98
+STOP=99
+
+
+start(){
+	config_load "gpsd"
+        config_get GPS_STATUS "gpsd_conf" status
+    	if [ "${GPS_STATUS}" = "0" ]; then
+        	killall -9 mylocation
+        	killall -9 gpspipe
+                killall -9 gpscarr
+                killall -9 gpscarrstart
+    	        killall -9 gpsd
+		exit 0
+	fi
+
+        GPSDPID=`ps | grep /usr/sbin/gpsd | grep -v grep`
+        if [ "$GPSDPID" ] ; then
+            exit 0
+        fi
+
+       	killall -9 mylocation
+        killall -9 gpspipe
+        killall -9 gpscarr
+        killall -9 gpscarrstart
+
+    	echo -n "Starting GPS service ..."
+        config_get TCP_PORT "gpsd_conf" GPSD_TCP_Port
+        config_get GPS_STD "gpsd_conf" Standalone_GPS_Source
+        config_get GPS_CARR "gpsd_conf" Carrier_GPS_Data
+        config_get GPS_S "gpsd_conf" GPS_Source
+        if [ "$GPS_S" ]; then
+            if [ "$GPS_S" = "$GPS_CARR" ]; then
+                /bin/gpscarr &
+            fi
+            E362_S=`cat /usr/lib/hardware_desc | grep E362`
+            if [ "$E362_S" ]; then
+                /usr/sbin/gpsd -S $TCP_PORT /dev/ttyUSB3
+            else
+        	/usr/sbin/gpsd -S $TCP_PORT "$GPS_S"
+            fi
+        else
+	    /usr/sbin/gpsd -S $TCP_PORT "$GPS_STD"
+        fi
+        
+	config_get MY_LOCATION "gpsd_conf" mylocation
+    	if [ "${MY_LOCATION}" = "1" ]; then
+        	#start-stop-daemon --start --quiet --background --exec "/bin/mylocation"
+    	        killall -9 mylocation
+                sleep 1
+                /bin/mylocation &
+    	fi
+
+}
+
+stop(){
+    	echo -n "Stopping GPS service ... "
+    	killall -9 mylocation
+    	killall -9 gpspipe
+        killall -9 gpscarr
+        killall -9 gpscarrstart
+#    	if [ -e /tmp/run/GPS_position ]; then
+#        	rm /tmp/run/GPS_position
+#    	fi
+    	killall -9 gpsd
+}
+

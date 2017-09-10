@@ -1,0 +1,228 @@
+diff -Nuar linux_old/arch/mips/ar71xx/dev-pb42-pci.c linux_new/arch/mips/ar71xx/dev-pb42-pci.c
+--- linux_old/arch/mips/ar71xx/dev-pb42-pci.c	2010-08-16 11:02:10.000000000 -0600
++++ linux_new/arch/mips/ar71xx/dev-pb42-pci.c	2010-08-16 11:10:11.000000000 -0600
+@@ -22,7 +22,7 @@
+ 	{
+ 		.slot	= 0,
+ 		.pin	= 1,
+-		.irq	= AR71XX_PCI_IRQ_DEV0,
++		.irq	= AR71XX_PCI_IRQ_DEV2,
+ 	}, {
+ 		.slot	= 1,
+ 		.pin	= 1,
+@@ -30,7 +30,8 @@
+ 	}, {
+ 		.slot	= 2,
+ 		.pin	= 1,
+-		.irq	= AR71XX_PCI_IRQ_DEV2,
++		.irq	= AR71XX_PCI_IRQ_DEV0,
++		
+ 	}
+ };
+ 
+diff -Nuar linux_old/arch/mips/ar71xx/mach-pb42.c linux_new/arch/mips/ar71xx/mach-pb42.c
+--- linux_old/arch/mips/ar71xx/mach-pb42.c	2010-08-16 11:02:10.000000000 -0600
++++ linux_new/arch/mips/ar71xx/mach-pb42.c	2010-08-16 11:10:11.000000000 -0600
+@@ -9,6 +9,9 @@
+  *  by the Free Software Foundation.
+  */
+ 
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/partitions.h>
++
+ #include <asm/mach-ar71xx/ar71xx.h>
+ 
+ #include "machtype.h"
+@@ -20,8 +23,7 @@
+ 
+ #define PB42_BUTTONS_POLL_INTERVAL	20
+ 
+-#define PB42_GPIO_BTN_SW4	8
+-#define PB42_GPIO_BTN_SW5	3
++#define PB42_GPIO_BTN_SW4	7
+ 
+ static struct gpio_button pb42_gpio_buttons[] __initdata = {
+ 	{
+@@ -31,25 +33,44 @@
+ 		.threshold	= 3,
+ 		.gpio		= PB42_GPIO_BTN_SW4,
+ 		.active_low	= 1,
+-	} , {
+-		.desc		= "sw5",
+-		.type		= EV_KEY,
+-		.code		= BTN_1,
+-		.threshold	= 3,
+-		.gpio		= PB42_GPIO_BTN_SW5,
+-		.active_low	= 1,
+-	}
++	} 
+ };
+ 
+ #define PB42_WAN_PHYMASK	BIT(20)
+ #define PB42_LAN_PHYMASK	(BIT(16) | BIT(17) | BIT(18) | BIT(19))
+ #define PB42_MDIO_PHYMASK	(PB42_LAN_PHYMASK | PB42_WAN_PHYMASK)
+ 
++static struct mtd_partition pb42_partitions[] = {
++	{
++		.name		= "u-boot",
++		.offset		= 0,
++		.size		= 0x040000,
++		.mask_flags	= MTD_WRITEABLE,
++	} , {
++		.name		= "params",
++		.offset		= 0x040000,
++		.size		= 0x040000,
++	} , {
++		.name		= "kernel",
++		.offset		= 0x080000,
++		.size		= 0x200000,
++	} , {
++		.name		= "rootfs",
++		.offset		= 0x280000,
++		.size		= 0xd80000,
++	} 
++};
++
++static struct flash_platform_data pb42_flash_data = {
++        .parts          = pb42_partitions,
++        .nr_parts       = ARRAY_SIZE(pb42_partitions),
++};
++
+ static void __init pb42_init(void)
+ {
+-	ar71xx_add_device_m25p80(NULL);
++	ar71xx_add_device_m25p80(&pb42_flash_data);
+ 
+-	ar71xx_add_device_mdio(~PB42_MDIO_PHYMASK);
++/*	ar71xx_add_device_mdio(~PB42_MDIO_PHYMASK);
+ 
+ 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+ 	ar71xx_eth0_data.phy_mask = PB42_WAN_PHYMASK;
+@@ -61,12 +82,25 @@
+ 
+ 	ar71xx_add_device_eth(0);
+ 	ar71xx_add_device_eth(1);
++*/
++
++	ar71xx_add_device_mdio(0xfffffffe);
++
++        ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
++		ar71xx_eth0_data.phy_mask = 0x00000001;
++
++//        ar71xx_eth0_data.phy_mask = 0x00000000;
++//        ar71xx_eth0_data.speed = SPEED_100;
++//        ar71xx_eth0_data.duplex = DUPLEX_FULL;
++
++	ar71xx_add_device_eth(0);
++	ar71xx_add_device_usb();
++	pb42_pci_init();
+ 
+ 	ar71xx_add_device_gpio_buttons(-1, PB42_BUTTONS_POLL_INTERVAL,
+ 				       ARRAY_SIZE(pb42_gpio_buttons),
+ 				       pb42_gpio_buttons);
+ 
+-	pb42_pci_init();
+ }
+ 
+ MIPS_MACHINE(AR71XX_MACH_PB42, "PB42", "Atheros PB42", pb42_init);
+diff -Nuar linux_old/drivers/net/phy/phy.c linux_new/drivers/net/phy/phy.c
+--- linux_old/drivers/net/phy/phy.c	2010-08-16 11:05:22.000000000 -0600
++++ linux_new/drivers/net/phy/phy.c	2010-08-16 11:13:39.000000000 -0600
+@@ -360,14 +360,17 @@
+ 
+ 	switch (cmd) {
+ 	case SIOCGMIIPHY:
++	case SIOCDEVPRIVATE:
+ 		mii_data->phy_id = phydev->addr;
+ 		/* fall through */
+ 
+ 	case SIOCGMIIREG:
++	case SIOCDEVPRIVATE+1:
+ 		mii_data->val_out = phy_read(phydev, mii_data->reg_num);
+ 		break;
+ 
+ 	case SIOCSMIIREG:
++	case SIOCDEVPRIVATE+2:
+ 		if (mii_data->phy_id == phydev->addr) {
+ 			switch(mii_data->reg_num) {
+ 			case MII_BMCR:
+diff -Nuar linux_old/drivers/usb/serial/ftdi_sio.c linux_new/drivers/usb/serial/ftdi_sio.c
+--- linux_old/drivers/usb/serial/ftdi_sio.c	2010-08-16 11:04:28.000000000 -0600
++++ linux_new/drivers/usb/serial/ftdi_sio.c	2010-08-16 11:12:50.000000000 -0600
+@@ -1370,6 +1370,9 @@
+ 		}
+ 	}
+ 
++	//LL
++	ep_desc->wMaxPacketSize = cpu_to_le16(0x40);
++
+ 	/* set max packet size based on descriptor */
+ 	priv->max_packet_size = ep_desc->wMaxPacketSize;
+ 
+@@ -2023,7 +2026,7 @@
+ 	char flag;
+ 	char *ch;
+ 
+-	dbg("%s - port %d", __func__, port->number);
++	//dbg("%s - port %d", __func__, port->number);
+ 
+ 	if (len < 2) {
+ 		dbg("malformed packet");
+@@ -2034,7 +2037,10 @@
+ 	   N.B. packet may be processed more than once, but differences
+ 	   are only processed once.  */
+ 	status = packet[0] & FTDI_STATUS_B0_MASK;
++
+ 	if (status != priv->prev_status) {
++		dbg("my_debug: status ! = prev_status, will wakeup\n");
++
+ 		priv->diff_status |= status ^ priv->prev_status;
+ 		wake_up_interruptible(&priv->delta_msr_wait);
+ 		priv->prev_status = status;
+@@ -2094,8 +2100,12 @@
+ 	if (!tty)
+ 		return;
+ 
+-	for (i = 0; i < urb->actual_length; i += priv->max_packet_size) {
+-		len = min_t(int, urb->actual_length - i, priv->max_packet_size);
++	for (i = 0; i < urb->actual_length; i += (priv->max_packet_size)) {
++
++		len = min_t(int, urb->actual_length - i, (priv->max_packet_size));
++		if( urb->actual_length > 2 ) {
++			dbg("len= %d actual=%d max_packet=%d",len,urb->actual_length,priv->max_packet_size);
++		}
+ 		count += ftdi_process_packet(tty, port, priv, &data[i], len);
+ 	}
+ 
+@@ -2109,7 +2119,7 @@
+ 	struct usb_serial_port *port = urb->context;
+ 	unsigned long flags;
+ 
+-	dbg("%s - port %d", __func__, port->number);
++	//dbg("%s - port %d", __func__, port->number);
+ 
+ 	if (urb->status) {
+ 		dbg("%s - nonzero read bulk status received: %d",
+@@ -2117,8 +2127,10 @@
+ 		return;
+ 	}
+ 
+-	usb_serial_debug_data(debug, &port->dev, __func__,
+-				urb->actual_length, urb->transfer_buffer);
++	if (urb->actual_length > 2 ) {
++		usb_serial_debug_data(debug, &port->dev, __func__,
++					urb->actual_length, urb->transfer_buffer);
++	}
+ 	ftdi_process_read(port);
+ 
+ 	spin_lock_irqsave(&port->lock, flags);
+@@ -2420,6 +2432,9 @@
+ 		while (priv != NULL) {
+ 			interruptible_sleep_on(&priv->delta_msr_wait);
+ 			/* see if a signal did it */
++
++			dbg("%s cmd 0x%04x have waked up", __func__, cmd);
++
+ 			if (signal_pending(current))
+ 				return -ERESTARTSYS;
+ 			else {

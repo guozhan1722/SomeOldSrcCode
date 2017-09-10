@@ -1,0 +1,15 @@
+Source-Makefile: package/sdpClient/Makefile
+Package: sdpClient
+Version: 1
+Depends: +libuci +libpthread
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Microhard sdpClient utility
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  This package contains the microhard home grown sdpClient utility.
+@@
+
+

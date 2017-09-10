@@ -1,0 +1,6 @@
+/001-if_init_conf_removal.patch/1.1/Thu Apr  1 22:13:25 2010/-kkv/Tar71xx_4g
+/002-tx_queue_stats_removal.patch/1.1/Thu Apr  1 22:13:25 2010/-kkv/Tar71xx_4g
+/003-build_as_modules.patch/1.1/Thu Apr  1 22:13:25 2010/-kkv/Tar71xx_4g
+/004-vlynq_fixes.patch/1.1/Thu Apr  1 22:13:25 2010/-kkv/Tar71xx_4g
+/005-do_not_override_pci.patch/1.1/Thu Apr  1 22:13:25 2010/-kkv/Tar71xx_4g
+D

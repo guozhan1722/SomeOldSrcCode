@@ -1,0 +1,99 @@
+;-------------------------------------------------------------------------------
+;DESCRIPTION OF FORMAT:
+;-------------------------------------------------------------------------------
+;EEPROM has 256 locations with 16 bits per location
+;
+;for CONFIGURATION...
+;double byte per line for now
+;bytes are in 'readable' order
+;the parser will swap the bytes for programming into the EEPROM (little-endian)
+;
+;for TUPLES ...
+;single byte per line - single byte easier to read, & mk notes
+;bytes are in the same order as one would expect to see tuples in
+;the parser swaps the bytes for burning into the EEPROM
+;the 'above' byte goes into bits 7-0 and the 'below' byte goes into bits 15-8
+;so a
+;13
+;03
+;would go into the EEPROM as 0313
+;ascii-text version of the hex numbers w/o 0x before or h after
+;the 0 or F fill lines after tuples (if tpl don't use space) are dbl byte/line
+;
+;for VENDOR SPECIFIC DATA
+;double byte per line for now
+;bytes are in 'readable' order
+;the parser will swap the bytes for programming into the EEPROM (little-endian)
+;
+;PCI configuration data first in 00-3F locations (64 WORDS)
+;CIS information next in 40-BE locations (112 WORDS)
+;VENDOR OEM information next in B0-BE locations (15 WORDS)
+;Device specific information next in BF-FF locations (65 WORDS)
+;ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+;PCI CONFIGURATION LOCATIONS 00-3F
+;ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+0000	;00;    NOT Used
+168C	;01;    Vendor_ID
+0200	;02;    Class Code (24 b) 23:8 of code -> 15:0 of word
+0001	;03;    Class Code         7:0 of code -> 15:8 of word, Revision ID -> 7:0
+0000	;04;    
+5001	;05;    CIS_PTR (total of 32 bits) [15:0] (the lower 16 bits here)
+0000	;06;    CIS_PTR                    [31:16](the upper 16 bits here)
+0000	;07;    SSYS_ID (Subsystem ID)
+168C	;08;    SSYS_VEND_ID (Subsystem Vendor ID)
+1C0A	;09;    MAX_LAT [15:8], MIN_GNT [7:0]
+0100	;0a;    INT_PIN [15:8], 0'S [7:0]
+0000	;0b;    Reserved
+0002	;0c;    PM_CAP (Power Management Capabilities)
+0002	;0d;    0'S [15:2], PM_DATA_SCALE [1:0] 
+C606	;0e;    PM_DATA_D0 [15:8], PM_DATA_D3 [7:0]:C606 = 1.98W in D0, .06W in D3
+0001	;0f;    CLKRUN_ENABLE[0], (Enable = 1, Disable = 0), RFSILENT_POLARITY[1], RFSILENT_GPIO_SEL[4:2]
+0000	;10;    RESERVED 
+0000	;11;    RESERVED 
+0000	;12;    RESERVED 
+0000	;13;    RESERVED 
+0000	;14;    RESERVED 
+0000	;15;    RESERVED 
+0000	;16;    RESERVED 
+0000	;17;    RESERVED 
+0000	;18;    RESERVED 
+0000	;19;    RESERVED 
+0000	;1a;    RESERVED 
+0000	;1b;    RESERVED 
+0000	;1c;    RESERVED 
+0000	;1d;    MAC Address LSW (15:0) 
+0000	;1e;    MAC Address (31:16) 
+0000	;1f;    MAC Address MSW (47:32)
+0000	;20;    RESERVED
+0000	;21;    RESERVED
+0000	;22;    RESERVED
+0000	;23;    RESERVED
+0000	;24;    RESERVED
+0000	;25;    RESERVED
+0000	;26;    RESERVED
+0000	;27;    RESERVED
+0000	;28;    RESERVED 
+0000	;29;    RESERVED 
+0000	;2a;    RESERVED 
+0000	;2b;    RESERVED 
+0000	;2c;    RESERVED 
+0000	;2d;    RESERVED 
+0000	;2e;    RESERVED 
+0000	;2f;    RESERVED 
+0000	;30;    RESERVED 
+0000	;31;    RESERVED 
+0000	;32;    RESERVED 
+0000	;33;    RESERVED 
+0000	;34;    RESERVED 
+0000	;35;    RESERVED 
+0000	;36;    RESERVED 
+0000	;37;    RESERVED 
+0000	;38;    RESERVED 
+0000	;39;    RESERVED 
+0000	;3a;    RESERVED 
+0000	;3b;    RESERVED 
+0000	;3c;    RESERVED 
+0000	;3d;    RESERVED 
+0000	;3e;    RESERVED
+0000	;3f;    RESERVED
+

@@ -1,0 +1,15 @@
+Source-Makefile: package/unpackfw/Makefile
+Package: unpackfw
+Version: 1
+Depends: 
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Unpack Firmware utility
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  This package contains the utility to unpack microhard firmware
+@@
+
+

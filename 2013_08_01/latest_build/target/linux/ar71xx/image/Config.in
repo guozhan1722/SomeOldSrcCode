@@ -1,0 +1,38 @@
+config NANOPCI_UBOOT
+	bool "Build U-Boot bootloader"
+	depends TARGET_ar71xx
+	default y
+
+config UBOOT_TARGET
+	string "U-Boot target board"
+	depends TARGET_ar71xx
+	depends NANOPCI_UBOOT
+	default "pb42"
+	help
+	  For all supported boards there are ready-to-use default
+		configurations available; just type "<board_name>".
+
+config FACTORY_SERIAL_NUM
+	string "factory setting unit serial #"
+	depends TARGET_ar71xx
+	depends NANOPCI_UBOOT
+	default "1012000"
+	help
+	  This serial # is set up by the factory and can not changed by the user. This determines the mac address of the unit.
+
+config UBOOT_IPADDR
+	string "IP Address for U-Boot"
+	depends TARGET_ar71xx
+	depends NANOPCI_UBOOT
+	default "192.168.1.39"
+	help
+	  IP address of device to be used in U-Boot
+
+config UBOOT_SERVERIP
+	string "IP Address of TFTP server"
+	depends TARGET_ar71xx
+	depends NANOPCI_UBOOT
+	default "192.168.1.1"
+	help
+	  IP address of TFTP server for U-Boot
+

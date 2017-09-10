@@ -1,0 +1,75 @@
+/ChangeLog/1.1/Mon Mar 19 16:03:56 2012/-kkv/Tar71xx_4g
+/Makefile/1.1/Mon Mar 19 16:03:56 2012/-kkv/Tar71xx_4g
+/README/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/README-P2P/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/README-WPS/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/README-Windows.txt/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/ap.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/ap.h/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/bgscan.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/bgscan.h/1.1/Mon Mar 19 16:03:56 2012/-kkv/Tar71xx_4g
+/bgscan_learn.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/bgscan_simple.c/1.1/Mon Mar 19 16:03:56 2012/-kkv/Tar71xx_4g
+/blacklist.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/blacklist.h/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/bss.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/bss.h/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/config.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/config.h/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/config_file.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/config_none.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/config_ssid.h/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/config_winreg.c/1.1/Mon Mar 19 16:03:56 2012/-kkv/Tar71xx_4g
+/ctrl_iface.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/ctrl_iface.h/1.1/Mon Mar 19 16:03:56 2012/-kkv/Tar71xx_4g
+/ctrl_iface_named_pipe.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/ctrl_iface_udp.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/ctrl_iface_unix.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/defconfig/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/driver_i.h/1.1/Mon Mar 19 16:03:56 2012/-kkv/Tar71xx_4g
+/eap_register.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/eap_testing.txt/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/eapol_test.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/events.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/ibss_rsn.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/ibss_rsn.h/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/main.c/1.1/Mon Mar 19 16:03:56 2012/-kkv/Tar71xx_4g
+/main_none.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/main_symbian.cpp/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/main_winmain.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/main_winsvc.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/mlme.c/1.1/Mon Mar 19 16:03:56 2012/-kkv/Tar71xx_4g
+/mlme.h/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/nmake.mak/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/notify.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/notify.h/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/p2p_supplicant.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/p2p_supplicant.h/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/preauth_test.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/scan.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/scan.h/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/sme.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/sme.h/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/todo.txt/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/win_example.reg/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/win_if_list.c/1.1/Mon Mar 19 16:03:56 2012/-kkv/Tar71xx_4g
+/wpa_cli.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/wpa_passphrase.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/wpa_priv.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/wpa_supplicant.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/wpa_supplicant.conf/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/wpa_supplicant.nsi/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/wpa_supplicant_i.h/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/wpas_glue.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/wpas_glue.h/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/wps_supplicant.c/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+/wps_supplicant.h/1.1/Mon Mar 19 16:03:57 2012/-kkv/Tar71xx_4g
+D/dbus////
+D/doc////
+D/examples////
+D/symbian////
+D/tests////
+D/vs2005////
+D/wpa_gui////
+D/wpa_gui-qt4////
+D/xcode////

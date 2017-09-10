@@ -1,0 +1,8 @@
+config AT_LEGACY_ART_AR6000_COMM
+	depends on PACKAGE_kmod-at-legacy-art
+	bool "AR6000 ART interoperability"
+	default n
+	help
+	  Enable this if you plan on using an AR6000 Linux ART as the other end.
+	  Otherwise (for Windows PCI), disbable this.
+

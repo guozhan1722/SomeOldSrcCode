@@ -1,0 +1,101 @@
+
+#
+# $Id: Makefile.global.in,v 1.61 2007/11/08 21:57:03 dforsi Exp $
+#
+# Global Makefiles configuration for the GNOKII.
+#
+# Copyright (C) 1999 Hugh Blemings & Pavel Janík ml.
+#               2000 Karel Zak
+#
+
+VERSION        = 
+
+SHELL          = /bin/sh
+
+PACKAGE        = gnokii
+
+top_builddir   = $(TOPDIR)
+srcdir         = .
+prefix         = /usr
+exec_prefix    = /usr
+
+bindir         = /usr/bin
+sbindir        = /usr/sbin
+xbindir        = /bin/
+libdir         = ${exec_prefix}/lib
+xgnokii_libdir = /share/xgnokii
+includedir     = ${prefix}/include
+mandir         = /usr/man
+man1dir        = ${mandir}/man1/
+man8dir        = ${mandir}/man8/
+xmandir        = /man/man1/
+datarootdir    = ${prefix}/share
+docdir         = ${datarootdir}/doc/${PACKAGE}
+datadir        = /usr/share
+locdir         = ${datarootdir}/locale
+
+BIN_MODE       = 0755
+TEXT_MODE      = 0444
+
+INSTALL        = /usr/bin/install -c
+INSTALL_DATA   = ${INSTALL} -m 644
+RM             = /bin/rm -f
+FIND           = /usr/bin/find
+XGETTEXT       = /usr/bin/xgettext
+MSGFMT         = /usr/bin/msgfmt
+
+LIBS           =  
+LEX            = flex
+AR             = arm-openwrt-linux-uclibc-ar
+RANLIB         = arm-openwrt-linux-uclibc-ranlib
+LIBTOOL        = $(SHELL) $(top_builddir)/libtool
+
+GTK_CFLAGS     = 
+GTK_LIBS       = 
+PTHREAD_CFLAGS = -pthread
+PTHREAD_LIBS   =  -pthread
+XPM_LIBS       = 
+XPM_CFLAGS     = 
+OWN_GETOPT     = 
+INTL_LIBS      = 
+ICONV_LIBS     = 
+NEED_LCHARSET  = 
+POSUB          = 
+
+LIBPCSCLITE_CFLAGS = 
+LIBPCSCLITE_LIBS   = 
+
+HAVE_XGNOKII   = no
+WIN32          = 
+WIN32_CROSS    = 
+
+DESTDIR        =
+
+ifeq (no, yes)
+	INTL_DIR = $(TOPDIR)/intl
+	CFLAGS += -I$(INTL_DIR)
+endif
+
+#
+# Global include directory
+#	($TOPDIR is defined in Makefile)
+#
+GNOKII_INCLUDE = $(TOPDIR)/include
+
+#
+# Win32 option
+#
+ifdef WIN32
+	WIN32 += -I$(TOPDIR)/win32
+endif
+
+
+CFLAGS += -I$(GNOKII_INCLUDE) $(XPM_CFLAGS)
+LDLIBS = $(LIBS) $(ICONV_LIBS) $(INTL_LIBS) $(XPM_LIBS)
+
+%.lo: %.c
+	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
+
+%.a %.la:
+	$(MAKE) -C $(@D) $(@F)
+

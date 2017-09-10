@@ -1,0 +1,15 @@
+Source-Makefile: package/mpci-utils/Makefile
+Package: mpci-utils
+Version: 1
+Depends: +kmod-mpci-bsp +i2c-tools
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Microhard mpci-utils utility
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  This package contains the microhard home grown mpci-utils utility.
+@@
+
+

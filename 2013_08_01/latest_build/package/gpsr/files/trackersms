@@ -1,0 +1,15 @@
+#!/bin/ash
+
+. /etc/version
+
+while true
+do
+	config_load "gpsgatetr"
+        config_get TRACKER_EN "gpsgatetr_conf" TRACKER_Status
+    	if [ "${TRACKER_EN}" = "B" ]; then
+            /bin/trackersmsif
+	else
+	    exit 0
+	fi
+done
+

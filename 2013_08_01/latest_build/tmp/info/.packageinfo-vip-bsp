@@ -1,0 +1,16 @@
+Source-Makefile: package/vip-bsp/Makefile
+Package: kmod-vip-bsp
+Submenu: Other modules
+Version: <LINUX_VERSION>-1
+Depends: 
+Provides: 
+Section: kernel
+Category: Kernel modules
+Title: VIP2.0 BSP support
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  Kernel module to support BSP for VIP2.0.
+@@
+
+

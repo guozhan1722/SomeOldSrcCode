@@ -1,0 +1,21 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=99
+STOP=99
+
+start(){
+         echo "Starting eurd..."
+         /bin/eurd_report0 &
+         /bin/eurd_report1 &
+         /bin/eurd_report2 &
+         /bin/eurd_report3 &
+         echo "eurd start."
+}
+stop(){
+       killall -9 eurd_report0
+       killall -9 eurd_report1
+       killall -9 eurd_report2
+       killall -9 eurd_report3
+}
+

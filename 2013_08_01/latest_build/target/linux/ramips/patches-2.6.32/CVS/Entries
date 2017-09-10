@@ -1,0 +1,9 @@
+/001-mips-add-cp0-compare-irq-function.patch/1.1/Thu Apr  1 22:11:34 2010/-kkv/Tar71xx_4g
+/002-mips-clocksource-init-war.patch/1.1/Thu Apr  1 22:11:34 2010/-kkv/Tar71xx_4g
+/010-mtd_fix_cfi_cmdset_0002_erase_status_check.patch/1.1/Thu Apr  1 22:11:34 2010/-kkv/Tar71xx_4g
+/100-mips-ralink-core.patch/1.1/Thu Apr  1 22:11:34 2010/-kkv/Tar71xx_4g
+/101-rt288x_serial_driver_hack.patch/1.1/Thu Apr  1 22:11:34 2010/-kkv/Tar71xx_4g
+/102-rt288x-pci-driver-hook.patch/1.1/Thu Apr  1 22:11:34 2010/-kkv/Tar71xx_4g
+/103-ethernet.patch/1.1/Thu Apr  1 22:11:34 2010/-kkv/Tar71xx_4g
+/400-mips-multi-machine-update.patch/1.1/Thu Apr  1 22:11:34 2010/-kkv/Tar71xx_4g
+D

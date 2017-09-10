@@ -1,0 +1,16 @@
+Source-Makefile: package/grub/Makefile
+Package: grub
+Version: 0.97-2
+Depends: @TARGET_x86
+Provides: 
+Section: boot
+Category: Boot Loaders
+Title: GRand Unified Bootloader
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: grub-0.97.tar.gz
+Type: bin
+Description: GRand Unified Bootloader
+http://www.gnu.org/software/grub/
+@@
+
+

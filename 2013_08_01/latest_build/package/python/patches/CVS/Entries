@@ -1,0 +1,11 @@
+/000-cross-compile.patch/1.1/Fri Jan 21 22:43:26 2011/-kkv/Tar71xx_4g
+/010-cannot-run-test-programm.patch/1.1/Fri Jan 21 22:43:26 2011/-kkv/Tar71xx_4g
+/020-dont-compile-python-files.patch/1.1/Fri Jan 21 22:43:26 2011/-kkv/Tar71xx_4g
+/030-fixup-include-dirs.patch/1.1/Fri Jan 21 22:43:26 2011/-kkv/Tar71xx_4g
+/040-dont-import-cross-compiled-modules.patch/1.1/Fri Jan 21 22:43:26 2011/-kkv/Tar71xx_4g
+/070-dont-clean-ipkg-install.patch/1.1/Fri Jan 21 22:43:26 2011/-kkv/Tar71xx_4g
+/080-distutils-dont_adjust_files.patch/1.1/Fri Jan 21 22:43:26 2011/-kkv/Tar71xx_4g
+/090-fix-ctypes.patch/1.1/Fri Jan 21 22:43:26 2011/-kkv/Tar71xx_4g
+/110-enable-zlib.patch/1.1/Fri Jan 21 22:43:26 2011/-kkv/Tar71xx_4g
+/120-force-internal-modules-for-hashlib.patch/1.1/Fri Jan 21 22:43:26 2011/-kkv/Tar71xx_4g
+D

@@ -1,0 +1,23 @@
+Source-Makefile: package/ifxmips-dsl-control/Makefile
+Package: ifxmips-dsl-control
+Version: 3.24.4.4
+Depends: +kmod-ifxmips-dsl-api +libpthread
+Provides: 
+Section: net
+Category: Network
+Title: DSL CPE control application
+Maintainer: Infineon Technologies AG / Lantiq / blogic@openwrt.org
+Source: dsl_cpe_control_danube-3.24.4.4.tar.gz
+Type: ipkg
+Description: 	Infineon DSL CPE API for Amazon SE, Danube and Vinax.
+	This package contains the DSL CPE control application for Amazon SE & Danube.
+	
+	Supported Devices:
+		- Amazon SE
+		- Danube 
+
+	This package was kindly contributed to openwrt by Infineon/Lantiq
+http://www.infineon.com/
+@@
+
+

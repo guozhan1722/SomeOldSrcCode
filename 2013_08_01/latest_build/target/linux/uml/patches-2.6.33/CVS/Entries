@@ -1,0 +1,5 @@
+/001-gcc4_unit_at_a_time_i386_fix.patch/1.1/Thu Apr  1 22:14:46 2010/-kkv/Tar71xx_4g
+/002-gcc4_unfortify_source.patch/1.1/Thu Apr  1 22:14:46 2010/-kkv/Tar71xx_4g
+/003-fix_text_section.patch/1.1/Thu Apr  1 22:14:45 2010/-kkv/Tar71xx_4g
+/901-lib_zlib_deflate_visible.patch/1.1/Thu Apr  1 22:14:46 2010/-kkv/Tar71xx_4g
+D

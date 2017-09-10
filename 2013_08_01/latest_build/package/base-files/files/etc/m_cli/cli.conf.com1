@@ -1,0 +1,154 @@
+##com1 status
+cmd status:Display the system status:com1:Show com1 port status:status-comport.sh:
+
+##com1 COM1_Flow_Control
+cmd comport:Set or Get comport config:com1:com1 port:flowControl:data flow control of com1 port:set:setting the value for com1 port:none:set com1 flow control to none:set-comport-com1-COM1_Flow_Control-A:
+cmd comport:Set or Get comport config:com1:com1 port:flowControl:data flow control of com1 port:set:setting the value for com1 port:hardware:set com1 flow control to hardware:set-comport-com1-COM1_Flow_Control-B:
+cmd comport:Set or Get comport config:com1:com1 port:flowControl:data flow control of com1 port:set:setting the value for com1 port:CTS_Framing:set com1 flow control to CTS Framing:set-comport-com1-COM1_Flow_Control-C:
+cmd comport:Set or Get comport config:com1:com1 port:flowControl:data flow control of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_Flow_Control:
+
+##com1 COM1_Pre_Data_Delay
+cmd comport:Set or Get comport config:com1:com1 port:preDataDelay:Pre Data Delay of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_Pre_Data_Delay:
+cmd comport:Set or Get comport config:com1:com1 port:preDataDelay:Pre Data Delay of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_Pre_Data_Delay:
+
+##com1 COM1_Post_Data_Delay
+cmd comport:Set or Get comport config:com1:com1 port:postDataDelay:Post Data Delay of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_Post_Data_Delay:
+cmd comport:Set or Get comport config:com1:com1 port:postDataDelay:Post Data Delay of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_Post_Data_Delay:
+                                               
+##com1 COM1_Data_Mode  A - Seamless B - Transparent
+cmd comport:Set or Get comport config:com1:com1 port:dataMode:Data Mode of com1 port:set:setting the value for com1 port:Seamless:set com1 data mode to seamless:set-comport-com1-COM1_Data_Mode-A:
+cmd comport:Set or Get comport config:com1:com1 port:dataMode:Data Mode of com1 port:set:setting the value for com1 port:Transparent:set com1 data mode to transparent:set-comport-com1-COM1_Data_Mode-B:
+cmd comport:Set or Get comport config:com1:com1 port:dataMode:Data Mode of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_Data_Mode:
+
+##com1 COM1_Character_Timeout
+cmd comport:Set or Get comport config:com1:com1 port:charTimeout:Character Timeout of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_Character_Timeout:
+cmd comport:Set or Get comport config:com1:com1 port:charTimeout:Character Timeout of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_Character_Timeout:
+
+##com1 COM1_Max_Packet_Len
+cmd comport:Set or Get comport config:com1:com1 port:maxPacketLen:Max packet length of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_Max_Packet_Len:
+cmd comport:Set or Get comport config:com1:com1 port:maxPacketLen:Max packet length of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_Max_Packet_Len:
+
+##com1 COM1_QoS   Priority: A - Normal B - Medium C - High
+cmd comport:Set or Get comport config:com1:com1 port:Priority:Priority of com1 port:set:setting the value for com1 port:normal:set com1 priority to normal:set-comport-com1-COM1_QoS-A:
+cmd comport:Set or Get comport config:com1:com1 port:Priority:Priority of com1 port:set:setting the value for com1 port:medium:set com1 priority to Medium:set-comport-com1-COM1_QoS-B:
+cmd comport:Set or Get comport config:com1:com1 port:Priority:Priority of com1 port:set:setting the value for com1 port:high:set com1 priority to high:set-comport-com1-COM1_QoS-C:
+cmd comport:Set or Get comport config:com1:com1 port:Priority:Priority of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_QoS:
+
+##com1 COM1_NoConnect_Data_Intake No-Connection Data Intake: A - Disable B - Enable
+cmd comport:Set or Get comport config:com1:com1 port:noConnectDataIntake:No Connection Data Intake of com1 port:set:setting the value for com1 port:disable:set No connection data intake to disable:set-comport-com1-COM1_NoConnect_Data_Intake-A:
+cmd comport:Set or Get comport config:com1:com1 port:noConnectDataIntake:No Connection Data Intake of com1 port:set:setting the value for com1 port:enable:set No connection data intake to enable:set-comport-com1-COM1_NoConnect_Data_Intake-B:
+cmd comport:Set or Get comport config:com1:com1 port:noConnectDataIntake:No Connection Data Intake of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_NoConnect_Data_Intake:
+
+##com1 COM1_MODBUS_Mode Modbus TCP Status: A - Disable B - Enable
+cmd comport:Set or Get comport config:com1:com1 port:modbusStatus:Modbus TCP Status of com1 port:set:setting the value for com1 port:disable:set Modbus TCP status to disable:set-comport-com1-COM1_MODBUS_Mode-A:
+cmd comport:Set or Get comport config:com1:com1 port:modbusStatus:Modbus TCP Status of com1 port:set:setting the value for com1 port:enable:set Modbus TCP status to enable:set-comport-com1-COM1_MODBUS_Mode-B:
+cmd comport:Set or Get comport config:com1:com1 port:modbusStatus:Modbus TCP Status of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_MODBUS_Mode:
+
+##com1 COM1_Modbus_Protect_Status    Modbus TCP Protection Status: A - Disable B - Enable
+cmd comport:Set or Get comport config:com1:com1 port:modbusProtect:Modbus TCP Protection Status of com1 port:set:setting the value for com1 port:disable:set Modbus TCP Protection status to disable:set-comport-com1-COM1_Modbus_Protect_Status-A:
+cmd comport:Set or Get comport config:com1:com1 port:modbusProtect:Modbus TCP Protection Status of com1 port:set:setting the value for com1 port:enable:set Modbus TCP Protection status to enable:set-comport-com1-COM1_Modbus_Protect_Status-B:
+cmd comport:Set or Get comport config:com1:com1 port:modbusProtect:Modbus TCP Protection Status of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_Modbus_Protect_Status:
+
+##com1 COM1_Modbus_Protect_Key Modbus TCP Protection Key
+cmd comport:Set or Get comport config:com1:com1 port:modbusProtectKey:Modbus TCP Protection key of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_Modbus_Protect_Key:
+cmd comport:Set or Get comport config:com1:com1 port:modbusProtectKey:Modbus TCP Protection key of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_Modbus_Protect_Key:
+
+##com1 COM1_IP_Protocol
+#IP Protocol Config A - TCP Client B - TCP Server C - TCP Client/Server
+#   D - UDP Point to Point E - UDP Point to Multipoint(P)
+#   F - UDP Point to Multipoint(MP) G - UDP Multipoint to Multipoint
+#   H - SMTP Client I - C12.22
+cmd comport:Set or Get comport config:com1:com1 port:ipProtocol:IP Protocol Config of com1 port:set:setting the value for com1 port:TCPClient:set IP Protocol to TCP Client mode:set-comport-com1-COM1_IP_Protocol-A:
+cmd comport:Set or Get comport config:com1:com1 port:ipProtocol:IP Protocol Config of com1 port:set:setting the value for com1 port:TCPServer:set IP Protocol to TCP Server mode:set-comport-com1-COM1_IP_Protocol-B:
+cmd comport:Set or Get comport config:com1:com1 port:ipProtocol:IP Protocol Config of com1 port:set:setting the value for com1 port:TCPClientServer:set IP Protocol to TCP Client_Server mode:set-comport-com1-COM1_IP_Protocol-C:
+cmd comport:Set or Get comport config:com1:com1 port:ipProtocol:IP Protocol Config of com1 port:set:setting the value for com1 port:UDPPointtoPoint:set IP Protocol to UDP Point to Point:set-comport-com1-COM1_IP_Protocol-D:
+cmd comport:Set or Get comport config:com1:com1 port:ipProtocol:IP Protocol Config of com1 port:set:setting the value for com1 port:UDPPointtoMultipoint(P):set IP Protocol to UDP Point to Multipoint(P) mode:set-comport-com1-COM1_IP_Protocol-E:
+cmd comport:Set or Get comport config:com1:com1 port:ipProtocol:IP Protocol Config of com1 port:set:setting the value for com1 port:UDPPointtoMultipoint(MP):set IP Protocol to UDP Point to Multipoint(MP) mode:set-comport-com1-COM1_IP_Protocol-F:
+cmd comport:Set or Get comport config:com1:com1 port:ipProtocol:IP Protocol Config of com1 port:set:setting the value for com1 port:UDPMultipointtoMultipoint:set IP Protocol to UDP Multipoint to Multipoint mode:set-comport-com1-COM1_IP_Protocol-G:
+cmd comport:Set or Get comport config:com1:com1 port:ipProtocol:IP Protocol Config of com1 port:set:setting the value for com1 port:SMTPClient:set IP Protocol to SMTP Client mode:set-comport-com1-COM1_IP_Protocol-H:
+cmd comport:Set or Get comport config:com1:com1 port:ipProtocol:IP Protocol Config of com1 port:set:setting the value for com1 port:C1222:set IP Protocol to C12.22 mode:set-comport-com1-COM1_IP_Protocol-I:
+cmd comport:Set or Get comport config:com1:com1 port:ipProtocol:IP Protocol Config of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_IP_Protocol:
+
+##com1 COM1_T_Client_Server_Addr
+cmd comport:Set or Get comport config:com1:com1 port:TCPRemoteServerIP:TCP Remote Server IP Address of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_T_Client_Server_Addr:
+cmd comport:Set or Get comport config:com1:com1 port:TCPRemoteServerIP:TCP Remote Server IP Address of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_T_Client_Server_Addr:
+
+##com1 COM1_T_Client_Server_Port
+cmd comport:Set or Get comport config:com1:com1 port:TCPRemoteServerPort:TCP Remote Server Port of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_T_Client_Server_Port:
+cmd comport:Set or Get comport config:com1:com1 port:TCPRemoteServerPort:TCP Remote Server Port of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_T_Client_Server_Port:
+
+##com1 COM1_T_Client_Timeout
+cmd comport:Set or Get comport config:com1:com1 port:OutgoingConnectTimeout:TCP Outgoing Connection Timeout of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_T_Client_Timeout:
+cmd comport:Set or Get comport config:com1:com1 port:OutgoingConnectTimeout:TCP Outgoing Connection Timeout of com1 port:get:setting the value for com1 port:get-comport-com1-COM1_T_Client_Timeout:
+
+##com1 COM1_T_Server_Listen_Port
+cmd comport:Set or Get comport config:com1:com1 port:LocalListenport:TCP Local Listening port of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_T_Server_Listen_Port:
+cmd comport:Set or Get comport config:com1:com1 port:LocalListenport:TCP Local Listening port of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_T_Server_Listen_Port:
+
+##com1 COM1_T_Server_Timeout
+cmd comport:Set or Get comport config:com1:com1 port:IncomingConnectTimeout:TCP Incoming Connection Timeout of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_T_Server_Timeout:
+cmd comport:Set or Get comport config:com1:com1 port:IncomingConnectTimeout:TCP Incoming Connection Timeout of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_T_Server_Timeout:
+
+##com1 COM1_U_PtoP_Remote_Addr
+cmd comport:Set or Get comport config:com1:com1 port:UPtoPRemoteIPAddr:UDP Point to Point Remote IP Address of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_U_PtoP_Remote_Addr:
+cmd comport:Set or Get comport config:com1:com1 port:UPtoPRemoteIPAddr:UDP Point to Point Remote IP Address of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_U_PtoP_Remote_Addr:
+
+##com1 COM1_U_PtoP_Remote_Port
+cmd comport:Set or Get comport config:com1:com1 port:UPtoPRemoteport:UDP Point to Point Remote port of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_U_PtoP_Remote_Port:
+cmd comport:Set or Get comport config:com1:com1 port:UPtoPRemoteport:UDP Point to Point Remote port of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_U_PtoP_Remote_Port:
+
+##com1 COM1_U_PtoP_Listen_Port
+cmd comport:Set or Get comport config:com1:com1 port:UPtoPListenport:UDP Point to Point Listening port of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_U_PtoP_Listen_Port:
+cmd comport:Set or Get comport config:com1:com1 port:UPtoPListenport:UDP Point to Point Listening port of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_U_PtoP_Listen_Port:
+
+##com1 COM1_UM_P_Multicast_Addr
+cmd comport:Set or Get comport config:com1:com1 port:UPtoMMulticastIPAddr_P:UDP Point to Multipoint Multicast (P) IP Address of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_UM_P_Multicast_Addr:
+cmd comport:Set or Get comport config:com1:com1 port:UPtoMMulticastIPAddr_P:UDP Point to Multipoint Multicast (P) IP Address of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_UM_P_Multicast_Addr:
+
+##com1 COM1_UM_P_Multicast_Port
+cmd comport:Set or Get comport config:com1:com1 port:UPtoMMulticastport_P:UDP Point to Multipoint (P) Multicast port of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_UM_P_Multicast_Port:
+cmd comport:Set or Get comport config:com1:com1 port:UPtoMMulticastport_P:UDP Point to Multipoint (P) Multicast port of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_UM_P_Multicast_Port:
+
+##com1 COM1_UM_P_Listen_Port
+cmd comport:Set or Get comport config:com1:com1 port:UPtoMListenport_P:UDP Point to Multipoint (P) Listening port of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_UM_P_Listen_Port:
+cmd comport:Set or Get comport config:com1:com1 port:UPtoMListenport_P:UDP Point to Multipoint (P) Listening port of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_UM_P_Listen_Port:
+
+##com1 COM1_UM_P_TTL
+cmd comport:Set or Get comport config:com1:com1 port:UPtoMTTL_P:UDP Point to Multipoint (P)Time To Live of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_UM_P_TTL:
+cmd comport:Set or Get comport config:com1:com1 port:UPtoMTTL_P:UDP Point to Multipoint (P) Time To Live of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_UM_P_TTL:
+
+##com1 COM1_UM_M_Remote_Addr
+cmd comport:Set or Get comport config:com1:com1 port:UPtoMRemoteIPAddr_MP:UDP Point to Multipoint (MP) Remote IP Address of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_UM_M_Remote_Addr:
+cmd comport:Set or Get comport config:com1:com1 port:UPtoMRemoteIPAddr_MP:UDP Point to Multipoint (MP) Remote IP Address of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_UM_M_Remote_Addr:
+
+##com1 COM1_UM_M_Remote_Port
+cmd comport:Set or Get comport config:com1:com1 port:UPtoMRemotport_MP:UDP Point to Multipoint (MP) Remote port of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_UM_M_Remote_Port:
+cmd comport:Set or Get comport config:com1:com1 port:UPtoMRemotport_MP:UDP Point to Multipoint (MP) Remote port of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_UM_M_Remote_Port:
+
+##com1 COM1_UM_M_Multicast_Addr
+cmd comport:Set or Get comport config:com1:com1 port:UPtoMMulticastIPAddr_MP:UDP Point to Multipoint (MP) Multicast IP Address of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_UM_M_Multicast_Addr:
+cmd comport:Set or Get comport config:com1:com1 port:UPtoMMulticastIPAddr_MP:UDP Point to Multipoint (MP) Multicast IP Address of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_UM_M_Multicast_Addr:
+
+##com1 COM1_UM_M_Multicast_Port
+cmd comport:Set or Get comport config:com1:com1 port:UPtoMMulticastPort_MP:UDP Point to Multipoint (MP) Multicast Port of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_UM_M_Multicast_Port:
+cmd comport:Set or Get comport config:com1:com1 port:UPtoMMulticastPort_MP:UDP Point to Multipoint (MP) Multicast Port of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_UM_M_Multicast_Port:
+
+##com1 COM1_UMTOM_Multicast_Addr
+cmd comport:Set or Get comport config:com1:com1 port:UMtoMMulticastIPAddr:UDP Multipoint to Multipoint Multicast IP Address of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_UMTOM_Multicast_Addr:
+cmd comport:Set or Get comport config:com1:com1 port:UMtoMMulticastIPAddr:UDP Multipoint to Multipoint Multicast IP Address of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_UMTOM_Multicast_Addr:
+
+##com1 COM1_UMTOM_Multicast_Port
+cmd comport:Set or Get comport config:com1:com1 port:UMtoMMulticastport:UDP Multipoint to Multipoint Multicast port of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_UMTOM_Multicast_Port:
+cmd comport:Set or Get comport config:com1:com1 port:UMtoMMulticastport:UDP Multipoint to Multipoint Multicast port of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_UMTOM_Multicast_Port:
+
+##com1 COM1_UMTOM_Multicast_TTL
+cmd comport:Set or Get comport config:com1:com1 port:UMtoMTTL:UDP Multipoint to Multipoint Time To Live of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_UMTOM_Multicast_TTL:
+cmd comport:Set or Get comport config:com1:com1 port:UMtoMTTL:UDP Multipoint to Multipoint Time To Live of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_UMTOM_Multicast_TTL:
+
+##com1 COM1_UMTOM_Listen_Multicast_Addr
+cmd comport:Set or Get comport config:com1:com1 port:UMtoMListenMulticastIPAddr:UDP Multipoint to Multipoint Listen Multicast IP Address of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_UMTOM_Listen_Multicast_Addr:
+cmd comport:Set or Get comport config:com1:com1 port:UMtoMListenMulticastIPAddr:UDP Multipoint to Multipoint Listen Multicast IP Address of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_UMTOM_Listen_Multicast_Addr:
+
+##com1 COM1_UMTOM_Listen_Multicast_Port
+cmd comport:Set or Get comport config:com1:com1 port:UMtoMListenMulticastPort:UDP Multipoint to Multipoint Listen Multicast port of com1 port:set:setting the value for com1 port:set-comport-com1-COM1_UMTOM_Listen_Multicast_Port:
+cmd comport:Set or Get comport config:com1:com1 port:UMtoMListenMulticastPort:UDP Multipoint to Multipoint Listen Multicast port of com1 port:get:getting the value for com1 port:get-comport-com1-COM1_UMTOM_Listen_Multicast_Port:

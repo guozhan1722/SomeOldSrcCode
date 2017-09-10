@@ -1,0 +1,104 @@
+# This file is interpreted as shell script.
+# Put your custom iptables rules here, they will
+# be executed with each firewall (re-)start.
+
+IPTABLES="echo iptables"
+IPTABLES=iptables
+
+[ -f /var/run/tunlfl ] && {
+	DVMRPS=$(cat /var/run/tunlfl)
+	for d in $DVMRPS; do
+		[ "$IPTABLES" = "echo iptables" ] && echo DVMRP = $d
+		[ -n "$d" ] && {
+			$IPTABLES -N zone_"$d"
+			$IPTABLES -I input -i $d -j zone_"$d"
+			$IPTABLES -I output -o $d -j zone_"$d"
+			$IPTABLES -I zone_"$d" -j ACCEPT
+			$IPTABLES -N zone_"$d"_forward
+			$IPTABLES -I forward -i $d -j zone_"$d"_forward
+			$IPTABLES -I zone_"$d"_forward -j ACCEPT
+			$IPTABLES -N zone_lan_"$d"
+			$IPTABLES -N zone_wan_"$d"
+			$IPTABLES -I zone_lan_forward -o $d -j zone_lan_"$d"
+			$IPTABLES -I zone_wan_forward -o $d -j zone_wan_"$d"
+			$IPTABLES -I zone_lan_"$d" -j ACCEPT
+			$IPTABLES -I zone_wan_"$d" -j ACCEPT	
+		}
+	done
+	[ "$IPTABLES" = "echo iptables" ] && echo end of firewall.user
+}
+
+# Anti-spoof rule
+anti_spoof=$(uci get firewall.normal.anti_spoof)
+lan_ip=$(uci get network.lan.ipaddr)
+lan_mask=$(uci get network.lan.netmask)
+
+[ "$anti_spoof" = "1" ] && {
+			$IPTABLES -N ANTI_SPOOF_RULE_WAN
+			$IPTABLES -I INPUT  -i br-wan   -s $lan_ip/$lan_mask   -j ANTI_SPOOF_RULE_WAN 
+			$IPTABLES -I FORWARD  -i br-wan   -s $lan_ip/$lan_mask   -j ANTI_SPOOF_RULE_WAN 
+			$IPTABLES -A ANTI_SPOOF_RULE_WAN  -j DROP 
+
+			$IPTABLES -N ANTI_SPOOF_RULE_WAN2
+			$IPTABLES -I INPUT  -i br-wan2   -s $lan_ip/$lan_mask   -j ANTI_SPOOF_RULE_WAN2 
+			$IPTABLES -I FORWARD  -i br-wan2   -s $lan_ip/$lan_mask   -j ANTI_SPOOF_RULE_WAN2 
+			$IPTABLES -A ANTI_SPOOF_RULE_WAN2  -j DROP 
+} || {
+			logger "Anti-spoof is disabled"
+}
+
+# Packet normalization rule
+packet_norm=$(uci get firewall.normal.packet_norm)
+
+[ "$packet_norm" = "1" ] && {
+			$IPTABLES -N PACKET_NORM_RULE
+			# IP rules
+			$IPTABLES -A INPUT -s 255.255.255.255 -j PACKET_NORM_RULE
+			$IPTABLES -A INPUT -d 255.255.255.255 -j PACKET_NORM_RULE
+			# TCP rules
+			$IPTABLES -A INPUT -p tcp --tcp-flags SYN,ACK SYN,ACK -m state --state NEW -j PACKET_NORM_RULE
+			$IPTABLES -A INPUT -p tcp --tcp-flags ! SYN,ACK,RST SYN,ACK,RST -m state --state NEW -j PACKET_NORM_RULE
+			$IPTABLES -A INPUT -p tcp --tcp-flags FIN,ACK FIN -m state --state NEW -j PACKET_NORM_RULE
+			$IPTABLES -A INPUT -p tcp --tcp-flags PSH,ACK PSH -m state --state NEW -j PACKET_NORM_RULE
+			$IPTABLES -A INPUT -p tcp --tcp-flags URG,ACK URG -m state --state NEW -j PACKET_NORM_RULE
+			# ICMP rules
+			$IPTABLES -A INPUT -p icmp -d 224.0.0.0/4 --icmp-type echo-request -j PACKET_NORM_RULE
+
+			$IPTABLES -A PACKET_NORM_RULE  -j DROP
+} || {
+			logger "Packet normalization is disabled"
+}
+
+# Transparent content filter rule
+enabled_contentfilter=$(uci get tinyproxy.@tinyproxy[0].enabled)
+
+[ "$enabled_contentfilter" = "1" ] && {
+			$IPTABLES -t nat -A PREROUTING -m tcp -p tcp --dport 80 -j REDIRECT --to-port 8080
+} || {
+			logger "Content filter firewall rule is off"
+}
+
+######## SNMPD rule ###########################################
+
+. /etc/version
+
+SNMPD_EN=$(uci get snmpd.snmpd.NetWork_SNMP_MODE)
+SNMPD_PROTO=$(uci get snmpd.snmpd.NetWork_SNMP_Listen_Protocol)
+
+if [ "$SNMPD_PROTO" = "UDP" ];then
+        PROTO="udp"
+elif [ "$SNMPD_PROTO" = "TCP" ];then
+        PROTO="tcp"
+fi
+PORT=$(uci get snmpd.snmpd.NetWork_SNMP_Listen_Port)
+
+[ "$SNMPD_EN" = "B" ] && {
+        logger "SNMPD is enabled and adding firewall rules Get MODE:$SNMPD_EN PORT:$PORT PROTO: $PROTO "
+        if [ "$PRODUCT" = "VIP4G" ];then
+                $IPTABLES -I zone_wan2 -p $PROTO -m $PROTO --dport $PORT -j ACCEPT                                 
+        fi
+        $IPTABLES -I zone_wan -p $PROTO -m $PROTO --dport $PORT -j ACCEPT                                 
+} || {
+        logger "SNMPD is disabled"
+}
+

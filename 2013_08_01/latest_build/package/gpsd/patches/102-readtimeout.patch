@@ -1,0 +1,20 @@
+--- a/gpspipe.c
++++ b/gpspipe.c
+@@ -212,6 +212,7 @@
+     if (isatty(STDERR_FILENO) == 0)
+ 	vflag = 0;
+ 
++    int timeout_n=0;
+     for(;;) {
+ 	int i = 0;
+ 	int j = 0;
+@@ -274,6 +275,9 @@
+ 			    strerror(errno), errno);
+ 	    exit(1);
+ 	}
++    timeout_n++;
++    if(timeout_n>10)exit(0);
++    sleep(1);
+     }
+ 
+ #ifdef __UNUSED__

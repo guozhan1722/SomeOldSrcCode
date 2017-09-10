@@ -1,0 +1,9 @@
+/100-build_clean.patch/1.1/Thu Apr  1 22:12:21 2010/-kkv/Tar71xx_4g
+/110-buildpackage.patch/1.1/Thu Apr  1 22:12:21 2010/-kkv/Tar71xx_4g
+/111-buildpackage_conffiles.patch/1.1/Thu Apr  1 22:12:21 2010/-kkv/Tar71xx_4g
+/120-build_tar.patch/1.1/Thu Apr  1 22:12:21 2010/-kkv/Tar71xx_4g
+/130-tar_wildcards.patch/1.1/Thu Apr  1 22:12:21 2010/-kkv/Tar71xx_4g
+/140-portability.patch/1.4/Thu Apr  1 23:01:50 2010/-kb/Tar71xx_4g
+/150-uppercase_letters.patch/1.1/Thu Apr  1 22:12:21 2010/-kkv/Tar71xx_4g
+/160-find.patch/1.1/Thu Apr  1 22:12:21 2010/-kkv/Tar71xx_4g
+D

@@ -1,0 +1,96 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+. /etc/functions.sh
+. /etc/version
+
+flash_timeout=5
+flash_stop=0     
+
+# stop led scan
+
+/etc/init.d/ledcon stop
+
+if [ "$HARDWARE" = "5.0.0" ]; then
+        phys="phy0 phy1 phy2 phy3"
+        for phy in $phys; do
+           echo "none" > /sys/class/leds/${phy}_rssi1/trigger
+           echo "none" > /sys/class/leds/${phy}_rssi2/trigger
+           echo "none" > /sys/class/leds/${phy}_rssi3/trigger
+        done
+elif [ "$HARDWARE" = "3.0.0" ]; then
+           echo "none" > /sys/class/leds/phy0_rssi1/trigger
+           echo "none" > /sys/class/leds/phy0_rssi2/trigger
+           echo "none" > /sys/class/leds/phy0_rssi3/trigger
+elif [ "$HARDWARE" = "v1.0.0" ]; then
+        killall mpci-led
+else
+           echo "none" > /sys/class/leds/phy0_rssi1/trigger
+           echo "none" > /sys/class/leds/phy0_rssi2/trigger
+           echo "none" > /sys/class/leds/phy0_rssi3/trigger
+           echo "none" > /sys/class/leds/phy0_rssi4/trigger
+           echo "none" > /sys/class/leds/phy0_rssi5/trigger
+           echo "none" > /sys/class/leds/phy0_rssi6/trigger
+fi
+
+while [ "$flash_stop" -lt "$flash_timeout" ]  ; do        
+    if [ "$HARDWARE" = "5.0.0" -o "$HARDWARE" = "3.0.0" ]; then 
+            echo "heartbeat" > /sys/class/leds/phy0_rssi1/trigger
+            echo "heartbeat" > /sys/class/leds/phy0_rssi2/trigger
+            echo "heartbeat" > /sys/class/leds/phy0_rssi3/trigger
+
+            if [ "$flash_stop" -ge "4" ];then
+                phys="phy0 phy1 phy2 phy3"
+                for phy in $phys; do
+                   echo "heartbeat" > /sys/class/leds/${phy}_rssi1/trigger
+                   echo "heartbeat" > /sys/class/leds/${phy}_rssi2/trigger
+                   echo "heartbeat" > /sys/class/leds/${phy}_rssi3/trigger
+                done
+            else
+                echo "heartbeat" > /sys/class/leds/phy${flash_stop}_rssi1/trigger
+                echo "heartbeat" > /sys/class/leds/phy${flash_stop}_rssi2/trigger
+                echo "heartbeat" > /sys/class/leds/phy${flash_stop}_rssi3/trigger
+            fi
+    elif [ "$HARDWARE" = "v1.0.0" ]; then
+               echo "0" > /sys/class/leds/ledrx/brightness
+               echo "0" > /sys/class/leds/ledtx/brightness
+               mpci-led -s 4 -t 400 &
+    else
+            echo "heartbeat" > /sys/class/leds/phy0_rssi1/trigger
+            echo "heartbeat" > /sys/class/leds/phy0_rssi2/trigger
+            echo "heartbeat" > /sys/class/leds/phy0_rssi3/trigger
+            echo "heartbeat" > /sys/class/leds/phy0_rssi4/trigger
+            echo "heartbeat" > /sys/class/leds/phy0_rssi5/trigger
+            echo "heartbeat" > /sys/class/leds/phy0_rssi6/trigger
+    fi
+    sleep 1
+    flash_stop=`expr $flash_stop + 1`
+done
+
+if [ "$HARDWARE" = "5.0.0" ]; then
+        phys="phy0 phy1 phy2 phy3"
+        for phy in $phys; do
+           echo "none" > /sys/class/leds/${phy}_rssi1/trigger
+           echo "none" > /sys/class/leds/${phy}_rssi2/trigger
+           echo "none" > /sys/class/leds/${phy}_rssi3/trigger
+        done
+elif [ "$HARDWARE" = "3.0.0" ]; then
+           echo "none" > /sys/class/leds/phy0_rssi1/trigger
+           echo "none" > /sys/class/leds/phy0_rssi2/trigger
+           echo "none" > /sys/class/leds/phy0_rssi3/trigger
+elif [ "$HARDWARE" = "v1.0.0" ]; then
+        killall mpci-led
+else
+           echo "none" > /sys/class/leds/phy0_rssi1/trigger
+           echo "none" > /sys/class/leds/phy0_rssi2/trigger
+           echo "none" > /sys/class/leds/phy0_rssi3/trigger
+           echo "none" > /sys/class/leds/phy0_rssi4/trigger
+           echo "none" > /sys/class/leds/phy0_rssi5/trigger
+           echo "none" > /sys/class/leds/phy0_rssi6/trigger
+fi
+
+# resume the led scan
+/etc/init.d/ledcon start
+
+
+

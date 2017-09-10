@@ -1,0 +1,101 @@
+#!/bin/sh
+# Copyright (C) 2012 Microhard Syetems Inc.
+
+#DEBUG="debug"
+WorkFolder="/tmp"
+Result="/tmp/RestoreResult"        
+
+. /etc/version
+
+COPY_FILES="/etc/firewall.config
+/etc/firewall.user
+/etc/httpd.conf
+/etc/hosts
+/etc/ethers
+/etc/passwd"
+
+COPY_DIRS="/etc/config
+/etc/openvpn
+/etc/crontabs
+/etc/ssl
+/etc/dropbear"
+
+board_info="${VENDOR}:${PRODUCTNAME}-${PRODUCT}:${HARDWARE}"
+echo "Creating Configuration File, please wait ... "
+FORM_name="$(hostname)"
+
+tmp=$WorkFolder/config.$$
+tgz=$WorkFolder/${FORM_name}.config
+rm -rf $tmp 2>/dev/null
+mkdir -p $tmp 2>/dev/null
+date > $tmp/config.date
+echo "$FORM_name" > $tmp/config.name
+echo "$board_info" >$tmp/config.boardinfo
+        
+echo $(dmesg | grep "CPU revision is:" | sed -e s/'CPU revision is: '//g) > $tmp/config.boardtype
+        
+rm -rf /tmp/config.* 2>/dev/null
+tmp=/tmp/config.$$
+mkdir $tmp
+Bin_txt -t $1
+[ -z "$DEBUG" ] && {
+    rm $1
+}
+mv $1.bin wsRestore.tar.gz
+(cd $tmp; tar xzf $WorkFolder/wsRestore.tar.gz)
+[ -z "$DEBUG" ] && {
+    rm $WorkFolder/wsRestore.tar.gz 2>/dev/null
+}
+
+if [ ! -e "$tmp/config.name" ] || [ ! -e "$tmp/config.boardtype" ]; then
+    echo "wsRestore fail, Invalid File"  > $Result
+else
+    nm=$(cat $tmp/config.name)
+    bd=$(cat $tmp/config.boardtype)
+    dt=$(cat $tmp/config.date)
+    bi=$(cat $tmp/config.boardinfo)    
+    echo "product is $PRODUCT file product is $(echo $bi |awk -F ":" '{print $2}')"
+    if [ "$VENDOR" != "$(echo $bi |awk -F ":" '{print $1}')" ]; then
+        echo "wsRestore fail, different Vendor ID"  > $Result
+    elif [ "${PRODUCTNAME}-${PRODUCT}" != "$(echo $bi |awk -F ":" '{print $2}')" ]; then
+        echo "wsRestore fail, different Product"  > $Result
+    elif [ "$HARDWARE" != "$(echo $bi |awk -F ":" '{print $3}')" ]; then
+        echo "wsRestore fail, different Hardware Type"  > $Result
+    elif [ "$bd" != "$(dmesg | grep "CPU revision is:" | sed -e s/'CPU revision is: '//g)" ]; then
+        echo "wsRestore fail, different board type"  > $Result
+    else
+        echo "The configuration looks good"
+    fi
+fi
+
+dir=$tmp
+if [ -n "$dir" ] && [ -d "$dir" ] && [ -e "$dir/config.name" ] && [ -e "$dir/config.boardtype" ] && [ -e "$dir/config.boardinfo" ]; then
+    echo "Restoring configuration"
+    cd $dir
+    for file in $(find etc); do
+        if [ -d $file ]; then
+            [ -d /$file ] || mkdir /$file
+        else
+            [ -e /$file ] && rm /$file
+            cp -af $file /$file
+        fi
+    done    
+    #replace mac address in wireless config file
+    for phy in $(ls /sys/class/ieee80211 2>/dev/null); do
+        localmac=$(cat /sys/class/ieee80211/${phy}/macaddress)
+        devidx=$(echo $phy|cut -c 4) 
+        echo "local_macaddr is $localmac devidx is $devidx" >/tmp/aaa
+        uci set wireless.radio${devidx}.macaddr=$localmac 
+    done
+    sleep 1
+    uci commit wireless
+    echo "wsRestore Done" > $Result
+else
+    echo "wsRestore fail, bad dir"  > $Result
+fi
+
+[ -z "$DEBUG" ] && {
+    cd ..
+    rm -r $tmp
+}
+   

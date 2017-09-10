@@ -1,0 +1,15 @@
+Source-Makefile: package/stm8/Makefile
+Package: stm8
+Version: 0.0.1-1
+Depends: +kmod-mpci-bsp +i2c-tools +libuci +libpthread
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Microhard STM8 I2C utility
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description: An agent script that makes STM8 simple,easy and manageable.
+@@
+
+

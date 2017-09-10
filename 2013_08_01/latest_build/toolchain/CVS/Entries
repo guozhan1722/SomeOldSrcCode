@@ -1,0 +1,13 @@
+/Config.in/1.1/Thu Apr  1 22:16:07 2010/-kkv/Tar71xx_4g
+/Makefile/1.1/Thu Apr  1 22:16:07 2010/-kkv/Tar71xx_4g
+/info.mk/1.1/Thu Apr  1 22:16:07 2010/-kkv/Tar71xx_4g
+D/binutils////
+D/eglibc////
+D/gcc////
+D/gdb////
+D/glibc////
+D/glibc-ports////
+D/insight////
+D/kernel-headers////
+D/llvm////
+D/uClibc////

@@ -1,0 +1,14 @@
+diff -Nuar busybox_old/miscutils/crond.c busybox_new/miscutils/crond.c
+--- busybox_old/miscutils/crond.c	2013-04-16 11:16:16.000000000 -0600
++++ busybox_new/miscutils/crond.c	2013-04-16 11:16:10.000000000 -0600
+@@ -693,8 +693,8 @@
+ 				continue;
+ 
+ 			RunJob(file->cf_User, line);
+-			crondlog(LVL8 "USER %s pid %3d cmd %s",
+-				file->cf_User, (int)line->cl_Pid, line->cl_Shell);
++			//crondlog(LVL5 "USER %s pid %3d cmd %s",
++			//	file->cf_User, (int)line->cl_Pid, line->cl_Shell);
+ 			if (line->cl_Pid < 0) {
+ 				file->cf_Ready = 1;
+ 			} else if (line->cl_Pid > 0) {

@@ -1,0 +1,7 @@
+*.ncb
+*.plg
+/.makefile
+
+/art/src/.makefile
+/art/src/dk/mdk/devlib/Linux_cust
+/art/src/dk/mdk/art/Linux_cust

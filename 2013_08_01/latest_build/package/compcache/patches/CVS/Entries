@@ -1,0 +1,5 @@
+/000-provide_lzo_kmod.patch/1.1/Thu Apr  1 22:12:16 2010/-kkv/Tar71xx_4g
+/001-lzo-speed.patch/1.1/Thu Apr  1 22:12:16 2010/-kkv/Tar71xx_4g
+/100-use_register_width.patch/1.1/Thu Apr  1 22:12:16 2010/-kkv/Tar71xx_4g
+/200-av_compress_ratio.patch/1.1/Thu Apr  1 22:12:16 2010/-kkv/Tar71xx_4g
+D

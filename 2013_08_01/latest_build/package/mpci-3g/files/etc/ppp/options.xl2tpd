@@ -1,0 +1,12 @@
+#debug
+lock
+auth
+dump
+logfd 2
+logfile /var/log/xl2tpd.log
+novj
+novjccomp
+nopcomp
+noaccomp
+proxyarp
+

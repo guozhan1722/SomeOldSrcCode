@@ -1,0 +1,218 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=45
+DESC_FILE="/usr/lib/hardware_desc"
+
+detect_wifi()
+{
+    devidx=0
+    for dev in $(ls /sys/class/ieee80211); do
+        devidx=$((devidx + 1))
+    done
+    logger -t "MH_prodect detect WIFI" "Detected wifi number is $devidx"
+}
+
+set_wifi_hw_desc()
+{
+    if [ ! -f $DESC_FILE ]; then
+        logger -t "MHX Product" "No hardware descriptor file be found, will create new one for wificard"
+        detect_wifi
+        echo "wificard=\"${devidx}\"" > $DESC_FILE
+    else
+        logger -t "MHX Product" "Get hardware descriptor file"
+        . $DESC_FILE
+        if [ ! -n "$wificard" ]; then
+            logger -t "MHX Product" "Get hardware descriptor file, but can not find wificard number. Add it into desc file"
+            detect_wifi
+            echo "wificard=\"${devidx}\"" >> $DESC_FILE
+        fi
+    fi
+    . $DESC_FILE
+}
+
+config_cb() {
+	local cfg_type="$1"
+	local cfg_name="$2"
+
+	case "$cfg_type" in
+		system)
+			append system_cfgs "$cfg_name" "$N"
+                ;;
+                zone)
+                	append gzones "$cfg_name" "$N"
+		;;
+	        interface)
+			if [ "wan" = "$cfg_name" ]; then
+			   wan_cfg="$cfg_name" 
+		        fi
+		;;
+	esac
+}
+
+gen_productname() {
+
+    UB_CONFIG=$(grep params /proc/mtd | cut -d: -f1)
+
+    rd_sku=$(grep "MHX_SKU" /dev/$UB_CONFIG | cut -d= -f2)
+    product=$(grep "MHX_PRODUCT=" /dev/$UB_CONFIG | cut -d= -f2)
+    pname=$(grep "MHX_PRODUCTNAME=" /dev/$UB_CONFIG | cut -d= -f2)
+    exp=$(grep "MHX_EXPORT" /dev/$UB_CONFIG | cut -d= -f2)
+    hdware=$(grep "MHX_HARDWARE" /dev/$UB_CONFIG | cut -d= -f2)
+    CONSOLE_QUIET=$(grep "CONSOLE_QUIET" /dev/$UB_CONFIG | cut -d= -f2)
+
+    if [ "$CONSOLE_QUIET" = "0" ];then
+        echo "8 8 8 8" >/proc/sys/kernel/printk
+    fi        
+
+    if [ -z $product ];then
+        product=$pname
+        hdware="v1.0.0"
+
+        case "$rd_sku" in
+            "MHS165000")
+                pname="nVIP2400"
+                exp="0"
+            ;;
+            "MHS165100")
+                pname="nVIP2400EXP"
+                exp="1"
+            ;;
+            *)
+              #  pname="NeedSKU"
+                pname="nVIP2400"
+                exp="0"
+            ;;
+        esac
+    fi
+
+    if [ "$product" = "IPnDDL" ];then
+        pname="IPnDDL"
+        exp="0"
+    fi
+
+}
+
+boot() {
+
+    gen_productname
+
+    productname=$(cat /etc/version | grep "PRODUCTNAME=")
+    productSKU=$(cat /etc/version | grep "PRODUCTSKU=")
+
+    if [ "$productname" = "" ]; then
+        echo "PRODUCTNAME=$pname" >> /etc/version
+    else
+        sed -i 's/'"`grep PRODUCTNAME= /etc/version`"'/'"PRODUCTNAME=`echo $pname`"'/g' /etc/version 
+    fi
+
+    if [ -z $productSKU ]; then
+        echo "PRODUCTSKU=$rd_sku" >>/etc/version
+    else
+        sed -i 's/'"`grep PRODUCTSKU= /etc/version`"'/'"PRODUCTSKU=`echo $rd_sku`"'/g' /etc/version
+    fi
+
+    . /etc/version
+
+    rm /www/cgi-bin/webif/wireless*
+
+
+    if [ "$PRODUCT" = "IPnVT" -o "$PRODUCT" = "IPnVTEXP" ]; then
+        if [ -f /www/cgi-bin/webif/.categories ]; then 
+            rm /www/cgi-bin/webif/.categories -rf
+        fi
+        ln -s /etc/webpages/.categories_IPnDDL /www/cgi-bin/webif/.categories
+        ln -s /etc/wlan-pages/wireless-wlan0.sh /www/cgi-bin/webif/wireless-wlan0.sh            
+
+    elif [ "$PRODUCT" = "VIP4G" -o "$PRODUCT" = "VIP4GEXP" ]; then
+        set_wifi_hw_desc
+        wifimenu=$(cat /www/cgi-bin/webif/categories_VIP4G |grep Wireless )
+        rm /www/cgi-bin/webif/.categories -rf
+        
+        [ -f /etc/webpages/system-info.sh_VIP4G ] && {
+            rm /www/cgi-bin/webif/system-info.sh -rf
+            mv /etc/webpages/system-info.sh_VIP4G /www/cgi-bin/webif/system-info.sh
+            logger -t "MH_Product" "First time boot and replace system info file for VIP4G"
+        }
+
+        if [ "$PRODUCTSKU" = "MHS116705" ];then
+            #this if the board for VIP4G-Verizon LTE 4G + WiFi Cellular Gateway
+            #set default config apn to Verizon
+            [ ! -f /jffs/etc/config/lte ] && {
+                  logger -t "MH_Product" "First time boot and replace regular config file with Verizon config file"
+                  sed -i 's/'"`grep PRODUCTSKU= /etc/version`"'/'"PRODUCTSKU=`echo $rd_sku`"'/g' /etc/version
+                  cp /rom/etc/config/lte362 /etc/config/lte
+            }
+
+            logger -t "MH_product VIP4G " "LTE 4G + WiFi Cellular Gateway. SKU : $PRODUCTSKU "
+            if [ "$wificard" = "0" ];then
+                logger -t "WARNNING !!!! MHX Product" "Can not Detect WIFI card. SKU: $PRODUCTSKU should have wifi card!!!!"
+            else
+               if [ -z "$wifimenu" ]; then
+                 cp -f /rom/www/cgi-bin/webif/categories_VIP4G /www/cgi-bin/webif/categories_VIP4G 
+               fi
+
+                iw phy |grep -q "MCS rate"
+                if [ "$?" = "0" ]; then
+                    #link to 11n supported webpage if identify as N card
+                    ln -s /etc/wlan-pages/wireless-n-wlan0.sh /www/cgi-bin/webif/wireless-wlan0.sh
+                else
+                    UB_CONFIG=$(grep params /proc/mtd | cut -d: -f1)
+                    Testlab=$(grep "TESTLAB" /dev/$UB_CONFIG | cut -d= -f2)
+    
+                    rm /www/cgi-bin/webif/radio-test.sh -rf
+    
+                    if [ "$Testlab" = "1" ]; then 
+                        ln -s /etc/wlan-pages/wireless-testlab-wlan0.sh /www/cgi-bin/webif/wireless-wlan0.sh
+                        ln -s /etc/webpages/radio-test.sh /www/cgi-bin/webif/radio-test.sh
+                    else
+                        ln -s /etc/wlan-pages/wireless-wlan0.sh /www/cgi-bin/webif/wireless-wlan0.sh
+                    fi            
+                fi            
+            fi
+
+        else
+        # auto detect wifi part
+            if [ "$wificard" = "0" ];then
+                logger -t "MH_prodect" "Can not detect wifi card on board"
+                if [ ! -z "$wifimenu" ]; then
+                    logger -t "MH_Product" "wifi menu still in Main menu, need remove it"
+                    sed -i '/'"`grep Wireless /www/cgi-bin/webif/categories_VIP4G`"'/d' /www/cgi-bin/webif/categories_VIP4G
+                fi
+            else
+                iw phy |grep -q "MCS rate"
+                if [ "$?" = "0" ]; then
+                    #link to 11n supported webpage if identify as N card
+                    ln -s /etc/wlan-pages/wireless-n-wlan0.sh /www/cgi-bin/webif/wireless-wlan0.sh
+                else
+                    UB_CONFIG=$(grep params /proc/mtd | cut -d: -f1)
+                    Testlab=$(grep "TESTLAB" /dev/$UB_CONFIG | cut -d= -f2)
+
+                    rm /www/cgi-bin/webif/radio-test.sh -rf
+
+                    if [ "$Testlab" = "1" ]; then 
+                        ln -s /etc/wlan-pages/wireless-testlab-wlan0.sh /www/cgi-bin/webif/wireless-wlan0.sh
+                        ln -s /etc/webpages/radio-test.sh /www/cgi-bin/webif/radio-test.sh
+                    else
+                        ln -s /etc/wlan-pages/wireless-wlan0.sh /www/cgi-bin/webif/wireless-wlan0.sh
+                    fi            
+                fi            
+            fi
+        fi
+        ln -s /www/cgi-bin/webif/categories_VIP4G /www/cgi-bin/webif/.categories
+    else
+        devidx=0
+        for dev in $(ls /sys/class/ieee80211); do
+            devidx=$(echo $dev|cut -c 4)
+            #ln -s /etc/wlan-pages/wireless-wlan${devidx}.sh /www/cgi-bin/webif/wireless-wlan${devidx}.sh            
+            iw phy |grep -q "MCS rate"
+            if [ "$?" = "0" ]; then
+		#link to 11n supported webpage if identify as N card
+                ln -s /etc/wlan-pages/wireless-n-wlan${devidx}.sh /www/cgi-bin/webif/wireless-wlan${devidx}.sh
+            else
+            	ln -s /etc/wlan-pages/wireless-wlan${devidx}.sh /www/cgi-bin/webif/wireless-wlan${devidx}.sh            
+            fi            
+        done
+    fi
+
+}

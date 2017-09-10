@@ -1,0 +1,15 @@
+Source-Makefile: package/gre-tunnel-mast/Makefile
+Package: gre-tunnel-mast
+Version: 1
+Depends: +libuci
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Microhard Gre Tunnel Utility
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  Microhard gre tunnel utility
+@@
+
+

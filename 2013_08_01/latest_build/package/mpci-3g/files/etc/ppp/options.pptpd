@@ -1,0 +1,15 @@
+#debug
+lock
+auth
+dump
+logfd 2
+logfile /var/log/pptpd.log
+name PPTP
+mtu 1490
+mru 1490
+novj
+novjccomp
+nopcomp
+noaccomp
+proxyarp
+

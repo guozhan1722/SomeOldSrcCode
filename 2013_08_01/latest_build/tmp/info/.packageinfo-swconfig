@@ -1,0 +1,15 @@
+Source-Makefile: package/swconfig/Makefile
+Package: swconfig
+Version: 5
+Depends: @LINUX_2_6 +libuci +libnl-tiny
+Provides: 
+Section: base
+Category: Base system
+Title: Switch configuration utility
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description: Switch configuration utility
+@@
+
+

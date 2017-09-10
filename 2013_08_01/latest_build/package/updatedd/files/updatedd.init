@@ -1,0 +1,41 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2011 OpenWrt.org
+. /lib/functions/service.sh
+
+START=50
+
+start_instance () {
+	local section="$1"
+        local abusive="0"
+
+	config_get service  "$section" 'service'
+	config_get username "$section" 'username'
+	config_get password "$section" 'password'
+	config_get host     "$section" 'host'
+	config_get update   "$section" 'update'
+
+	[ "$update" = 1 ] && {
+                current_ip="$(ifconfig br-wan2 | grep inet | grep -v inet6 | awk -F'[: ]+' '{print $4}')"
+                old_ip=`nslookup "$host" |grep "$host" -A 1 |grep Address |cut -d' ' -f3`
+                [ -z "$current_ip" ] && current_ip="$old_ip"
+                logger -t "updatedd: " "old_ip=$old_ip,current_ip=$current_ip"
+                if [ "$current_ip" = "$old_ip" ]; then
+                        echo "Preventing abusive update"
+                        abusive=1
+                fi
+
+		if [ "$abusive" != "1" ]; then
+                        logger -t "updatedd: " "updatedd report to $current_ip to $service."
+			service_start /usr/bin/updatedd -Y $service -- --ipv4 $current_ip $username:$password $host
+		fi
+	}
+}
+
+start() {
+	config_load 'updatedd'
+	config_foreach start_instance 'updatedd'
+}
+
+stop() {
+	service_stop /usr/bin/updatedd
+}

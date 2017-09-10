@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "art_rel", "art_rel.vcproj", "{7904339C-1619-413C-BFFA-464966819723}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D50F723F-3398-48EE-8A6D-4E2349DD4C82} = {D50F723F-3398-48EE-8A6D-4E2349DD4C82}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "devlib", "..\devlib\devlib_rel.vcproj", "{D50F723F-3398-48EE-8A6D-4E2349DD4C82}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		customerRelease|Win32 = customerRelease|Win32
+		Debug|Win32 = Debug|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7904339C-1619-413C-BFFA-464966819723}.customerRelease|Win32.ActiveCfg = customerRelease|Win32
+		{7904339C-1619-413C-BFFA-464966819723}.customerRelease|Win32.Build.0 = customerRelease|Win32
+		{7904339C-1619-413C-BFFA-464966819723}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7904339C-1619-413C-BFFA-464966819723}.Debug|Win32.Build.0 = Debug|Win32
+		{D50F723F-3398-48EE-8A6D-4E2349DD4C82}.customerRelease|Win32.ActiveCfg = customerRelease|Win32
+		{D50F723F-3398-48EE-8A6D-4E2349DD4C82}.customerRelease|Win32.Build.0 = customerRelease|Win32
+		{D50F723F-3398-48EE-8A6D-4E2349DD4C82}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D50F723F-3398-48EE-8A6D-4E2349DD4C82}.Debug|Win32.Build.0 = Debug|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

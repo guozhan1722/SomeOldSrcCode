@@ -1,0 +1,60 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+. /etc/version
+
+#START=50
+STOP=90
+
+start() {
+	if [ "$HARDWARE" = "v1.0.0" ]; then
+            /bin/mpci-led -s 5 -t 300 2>/dev/null &
+            echo "phy0rx" > /sys/class/leds/ledrx/trigger
+            echo "phy0tx" > /sys/class/leds/ledtx/trigger
+        elif [ "$HARDWARE" = "v2.0.0" ]; then
+            logger "<ledcon>: VIP4G /etc/init.d/ledcon start"	    
+            echo "default-on" > /sys/class/leds/cpustatus/trigger
+            #/bin/mpci-led -s 5 -t 300 2>/dev/null &
+	elif [ "$HARDWARE" = "5.0.0" ]; then
+            config_load wireless
+
+	    phys=`ls /sys/class/ieee80211`
+
+	    for phy in $phys; do	
+
+                devidx=$(echo $phy|cut -c 4)
+               	config_get disabled radio${devidx} disabled
+		[ 1 == "$disabled" ] || {
+         	       /etc/ledcon.sh $phy 2>/dev/null &
+         	       usleep 200000
+               }
+	    done
+	elif [ "$HARDWARE" = "3.0.0" ]; then
+            config_load wireless
+            config_get disabled radio0 disabled
+   	    [ 1 == "$disabled" ] || {
+               /etc/ledcon.sh phy0 2>/dev/null &
+               usleep 200000
+            }
+
+        else
+            config_load wireless
+            config_get disabled radio0 disabled
+   	    [ 1 == "$disabled" ] || {
+               /etc/ledcon.sh phy0 2>/dev/null &
+               usleep 200000
+            }
+	fi
+}
+
+stop() {
+	if [ "$HARDWARE" = "v1.0.0" ]; then
+	  killall -9  mpci-led
+        elif [ "$HARDWARE" = "v2.0.0" ]; then
+	  killall -9  mpci-led 
+          killall -9 ledcon.sh
+	elif [ "$HARDWARE" = "5.0.0" -o "$HARDWARE" = "3.0.0" ]; then
+	  killall ledcon.sh
+        else
+	  killall ledcon.sh
+	fi
+}

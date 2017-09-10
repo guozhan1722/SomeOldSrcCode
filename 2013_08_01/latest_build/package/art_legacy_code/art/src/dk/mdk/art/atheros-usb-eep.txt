@@ -1,0 +1,484 @@
+;Atheros Reference Card EEPROM contents
+;Version 2.1 7/29/2002
+;-------------------------------------------------------------------------------
+;REVISION HISTORY
+;-------------------------------------------------------------------------------
+;Ver  Revision History							            Date
+;
+;1.00 Initial Relase of Tuples                                      	10/12/00
+;1.01 Small fixes to tuples. Inusre 1MB for F2 Proto's using 1MB.       10/16/00
+;1.02 Changed name of file, updated CISTPL_BAR to reflect 64KB for D2+.	12/12/00
+;1.03 Changed CISTPL_VERS1 from Card Access information to Atheos info.	12/22/00
+;1.04 Updated CISTPL_VERS1 with Atheros PN info: AR5BCB-01-01           01/15/01
+;1.05 Reformatted the VENDOR SPECIFIC comment banner to work            01/29/01
+;	with eepnumfix.pl. Fixed PN to AR5BCB-01-01.
+;1.06 Fix the Link Tuple on CISTPL_VERS1 to take into account the added	02/05/01
+;	-01-01.
+;1.07 Above edit only fixed the comment.  Fixed the LINK Tuple data.    02/07/01
+;1.08 Changed the PMData_D0 and PMData_D3 to C606 = D0=1.98W, D3=.06W.	03/09/01
+;1.09 Added write protect at 0x3f.                                      03/22/01
+;1.10 Fixed write protect value: 0x0005 = Write Only /No Read,          04/04/01
+;	0x000A = Read Only / No Write.
+;1.11 Added 'EERPOM_MAGIC' value to 0x3D, Added comments for            04/11/01
+;	MAC words 0-2.
+;1.12 Added Static and Avg current to CISTPL_CFTABLE_CB.                04/16/01
+;1.13 Added reserved area for Atheros initialization info E0-FF         05/08/01
+;1.14 Zeroed protect bits and added MIN_GNT/MAX_LAT                     05/30/01
+;1.15 Added offset 0x0F Clkrunen (1 = Enable, 0=disabled) in Sleep Mode 06/01/01
+;1.16 Updated Atheros PN and PCMCIA Revision to 7.1.                    07/09/01
+;	Added Subsys ID's 168c and 0007
+;1.17 Documented last 128B with the new EEPROM setup information        07/30/01
+;1.18 Set location 0x3E to 0001 to protect key cache from SW read       08/10/01
+;1.19 Added Vendor Data area in EEPROM in locations B0-BE               08/16/01
+;1.20 Changed comments to reflect data sheet names                      08/21/01
+;1.21 Rechanged version back to 01-01 for PCMCIA compatibility          08/28/01
+;2.0  Added description to 0xf for RF_SILIENT				07/18/02
+;2.1  DeviceID = 0x0012, SSID=0x0000, fixed the 6th tuple, DeviceID
+;     reflected correctly in 2nd tuple.					07/29/02
+;
+;-------------------------------------------------------------------------------
+;DESCRIPTION OF FORMAT:
+;-------------------------------------------------------------------------------
+;EEPROM has 256 locations with 16 bits per location
+;
+;for CONFIGURATION...
+;double byte per line for now
+;bytes are in 'readable' order
+;the parser will swap the bytes for programming into the EEPROM (little-endian)
+;
+;for TUPLES ...
+;single byte per line - single byte easier to read, & mk notes
+;bytes are in the same order as one would expect to see tuples in
+;the parser swaps the bytes for burning into the EEPROM
+;the 'above' byte goes into bits 7-0 and the 'below' byte goes into bits 15-8
+;so a
+;13
+;03
+;would go into the EEPROM as 0313
+;ascii-text version of the hex numbers w/o 0x before or h after
+;the 0 or F fill lines after tuples (if tpl don't use space) are dbl byte/line
+;
+;for VENDOR SPECIFIC DATA
+;double byte per line for now
+;bytes are in 'readable' order
+;the parser will swap the bytes for programming into the EEPROM (little-endian)
+;
+;PCI configuration data first in 00-3F locations (64 WORDS)
+;CIS information next in 40-BE locations (112 WORDS)
+;VENDOR OEM information next in B0-BE locations (15 WORDS)
+;Device specific information next in BF-FF locations (65 WORDS)
+;ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+;PCI CONFIGURATION LOCATIONS 00-3F
+;ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+00b0	;00;    Device_ID
+0CF3	;01;    Vendor_ID
+0200	;02;    Class Code (24 b) 23:8 of code -> 15:0 of word
+0001	;03;    Class Code         7:0 of code -> 15:8 of word, Revision ID -> 7:0
+0000	;04;    
+5001	;05;    CIS_PTR (total of 32 bits) [15:0] (the lower 16 bits here)
+0000	;06;    CIS_PTR                    [31:16](the upper 16 bits here)
+b051	;07;    SSYS_ID (Subsystem ID)
+168C	;08;    SSYS_VEND_ID (Subsystem Vendor ID)
+1C0A	;09;    MAX_LAT [15:8], MIN_GNT [7:0]
+0100	;0a;    INT_PIN [15:8], 0'S [7:0]
+0000	;0b;    Reserved
+0002	;0c;    PM_CAP (Power Management Capabilities)
+0002	;0d;    0'S [15:2], PM_DATA_SCALE [1:0] 
+C606	;0e;    PM_DATA_D0 [15:8], PM_DATA_D3 [7:0]:C606 = 1.98W in D0, .06W in D3
+0001	;0f;    CLKRUN_ENABLE[0], (Enable = 1, Disable = 0), RFSILENT_POLARITY[1], RFSILENT_GPIO_SEL[4:2]
+0000	;10;    RESERVED 
+0000	;11;    RESERVED 
+0000	;12;    RESERVED 
+0000	;13;    RESERVED 
+0000	;14;    RESERVED 
+0000	;15;    RESERVED 
+0000	;16;    RESERVED 
+0000	;17;    RESERVED 
+0000	;18;    RESERVED 
+0000	;19;    RESERVED 
+0000	;1a;    RESERVED 
+0000	;1b;    RESERVED 
+0000	;1c;    RESERVED 
+0000	;1d;    MAC Address LSW (15:0) 
+0000	;1e;    MAC Address (31:16) 
+0000	;1f;    MAC Address MSW (47:32)
+0000	;20;    RESERVED
+0000	;21;    RESERVED
+0000	;22;    RESERVED
+0000	;23;    RESERVED
+0000	;24;    RESERVED
+0000	;25;    RESERVED
+0000	;26;    RESERVED
+0000	;27;    RESERVED
+0000	;28;    RESERVED 
+0000	;29;    RESERVED 
+0000	;2a;    RESERVED 
+0000	;2b;    RESERVED 
+0000	;2c;    RESERVED 
+0000	;2d;    RESERVED 
+0000	;2e;    RESERVED 
+0000	;2f;    RESERVED 
+0000	;30;    RESERVED 
+0000	;31;    RESERVED 
+0000	;32;    RESERVED 
+0000	;33;    RESERVED 
+0000	;34;    RESERVED 
+0000	;35;    RESERVED 
+0000	;36;    RESERVED 
+0000	;37;    RESERVED 
+0000	;38;    RESERVED 
+0000	;39;    RESERVED 
+0000	;3a;    RESERVED 
+0000	;3b;    RESERVED 
+0000	;3c;    RESERVED 
+5AA5	;3d;    EEPROM_MAGIC Word 
+0000	;3e;    KEY_TABLE_RD_PROTECT [0]
+0000	;3f;    EEPROM Protection [15:0]. 0x0A write protects location 0 - 0x3F.
+
+;ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+;CIS LOCATIONS 40-AF
+;ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+;32-bit memory with even word in lower 16 bits and odd word in upper 16 bits
+;this space does not correspond to the PCI configuration space
+;
+01  ; 40; 1
+00  ; 40; Product ID - 2B
+01	;41;    
+00	;41;  Device release number  - 2B
+09	;42;    
+04	;42;  Language ID  - 2B
+34	;43;    
+00	;43;  USB Mfg String length  - 2B
+00   ;44;  <null>
+41   ;44;   A
+00   ;45;  <null>
+74   ;45;   t
+00   ;46;  <null>
+68   ;46;   h
+00   ;47;  <null>
+65   ;47;   e
+00   ;48;  <null>
+72   ;48;   r
+00   ;49;  <null>
+6f   ;49;   o
+00   ;4a;  <null>
+73   ;4a;   s
+00   ;4b;  <null>
+20   ;4b;   <space>
+00   ;4c;  <null>
+43   ;4c;   C
+00   ;4d;  <null>
+6f   ;4d;   o
+00   ;4e;  <null>
+6d   ;4e;   m
+00   ;4f;  <null>
+6d   ;4f;   m
+00   ;50;  <null>
+75   ;50;   u
+00   ;51;  <null>
+6e   ;51;   n
+00   ;52;  <null>
+69   ;52;   i
+00   ;53;  <null>
+63   ;53;   c
+00   ;54;  <null>
+61   ;54;   a
+00   ;55;  <null>
+74   ;55;   t
+00   ;56;  <null>
+69   ;56;   i
+00   ;57;  <null>
+6f   ;57;   o
+00   ;58;  <null>
+6e   ;58;   n
+00   ;59;  <null>
+73   ;59;   s
+00   ;5a;  <null>
+20   ;5a;   <space>
+00   ;5b;  <null>
+49   ;5b;   I
+00   ;5c;  <null>
+6e   ;5c;   n
+00   ;5d;  <null>
+63   ;5d;   c
+00   ;5e;  <null>
+00   ;5e;  <null>
+00   ;5f;  <null>
+00   ;5f;  <null>
+00   ;60;  <null>
+00   ;60;  <null>
+00   ;61;  <null>
+00   ;61;  <null>
+00   ;62;  <null>
+00   ;62;  <null>
+00   ;63;  <null>
+00   ;63;  <null>
+0c   ;64;   
+00   ;64;   Str Product length 2B
+00   ;65;  <null>
+41   ;65;   A
+00   ;66;  <null>
+52   ;66;   R
+00   ;67;  <null>
+35   ;67;   5
+00   ;68;  <null>
+35   ;68;   5
+00   ;69;  <null>
+32   ;69;   2
+00   ;6a;  <null>
+33   ;6a;   3
+00   ;6b;  <null>
+00   ;6b;  <null>
+00   ;6c;  <null>
+00   ;6c;  <null>
+00   ;6d;  <null>
+00   ;6d;  <null>
+00   ;6e;  <null>
+00   ;6e;  <null>
+00   ;6f;  <null>
+00   ;6f;  <null>
+00   ;70;  <null>
+00   ;70;  <null>
+00   ;71;  <null>
+00  ;71;  <null>
+00  ;72;    <null>
+00  ;72;   <null>
+00  ;73;    <null>
+00  ;73;   <null>
+00  ;74;    <null>
+00  ;74;   <null>
+06  ;75;  6
+00  ;75;  Serial Num Str Length 2B 
+00  ;76;   <null>
+31  ;76;  1
+00  ;77;   <null>
+2e  ;77;   . 
+00  ;78;   <null> 
+30  ;78;   0 
+00  ;79;    <null> 
+00  ;79;   <null> 
+00  ;7a;    <null> 
+00  ;7a;   <null> 
+00  ;7b;    <null> 
+00  ;7b;   <null> 
+00  ;7c;    <null> 
+00  ;7c;   <null> 
+00  ;7d;    <null> 
+00  ;7d;   <null> Serial Num String 16B
+00  ;7e;    
+00  ;7e;   
+00	;7f;    Place MAC Address on even boudnary
+21	;7f;    21=CISTPL_FUNCID - describes the cards function [3.2.7]
+02	;80;    02=Link to next Tuple
+06	;80;    06=function Network Adapter
+01	;81;    01=POST routines may attempt to config card during system init
+
+;8th tuple
+22	;81;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+05	;82;    05=Link to next Tuple
+02	;82;    Lan Speed information follows - raw bit rate
+80	;83;    32 bit integer value for the raw speed
+8D	;83;    format is 808D5B00 is read as 00 5B 8D 80
+5B	;84;   
+00	;84;    005B 8D80 = 6,000,000 bits per second
+
+;9th tuple
+22	;85;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+05	;85;    05=Link to next Tuple
+02	;86;    Lan Speed information follows - raw bit rate
+40	;86;   
+54	;87;   
+89	;87;   
+00	;88;    0089 5440 = 9,000,000 bits per second
+
+;10th tuple
+22	;88;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+05	;89;    05=Link to next Tuple
+02	;89;    Lan Speed information follows - raw bit rate
+00	;8a;   
+1B	;8a;   
+B7	;8b;   
+00	;8b;    00B7 1B00 = 12,000,000 bits per second
+
+;11th tuple
+22	;8c;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+05	;8c;    05=Link to next Tuple
+02	;8d;    Lan Speed information follows - raw bit rate
+80	;8d;   
+A8	;8e;   
+12	;8e;   
+01	;8f;    0112 A880 = 18,000,000 bits per second
+
+;12th tuple
+22	;8f;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+05	;90;    05=Link to next Tuple
+02	;90;    Lan Speed information follows - raw bit rate
+00	;91;   
+36	;91;   
+6E	;92;   
+01	;92;    016E 3600 = 24,000,000 bits per second
+
+;13th tuple
+22	;93;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+05	;93;    05=Link to next Tuple
+02	;94;    Lan Speed information follows - raw bit rate
+00	;94;   
+51	;95;   
+25	;95;   
+02	;96;    0225 5100 = 36,000,000 bits per second
+
+;14th tuple
+22	;96;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+05	;97;    05=Link to next Tuple
+02	;97;    Lan Speed information follows - raw bit rate
+00	;98;   
+6C	;98;   
+DC	;99;   
+02	;99;    02DC 6C00 = 48,000,000 bits per second
+
+;15th tuple
+22	;9a;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+05	;9a;    05=Link to next Tuple
+02	;9b;    Lan Speed information follows - raw bit rate
+80	;9b;   
+F9	;9c;   
+37	;9c;   
+03	;9d;    0337 F980 = 54,000,000 bits per second
+
+;16th tuple
+22	;9d;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+05	;9e;   ; 05=Link to next Tuple
+02	;9e;    Lan Speed information follows - raw bit rate
+00	;9f;   
+A2	;9f;   
+4A	;a0;   
+04	;a0;    044A A200 = 72,000,000 bits per second
+
+;17th tuple
+22	;a1;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+02	;a1;    02=Link to next Tuple
+03	;a2;    LAN technology tuple
+08	;a2;    Spread spectrum radio 5.4 GHz
+;we are actually OFDM, not spread spectrum
+
+;18th tuple
+22	;a3;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+08	;a3;    08=Link to next Tuple
+04	;a4;    LAN network ID
+06	;a4;    06=6 bytes in the network ID
+00	;a5;   
+03	;a5;   
+7F	;a6;    00 03 7F XX XX XX 
+00	;a6;   
+00	;a7;   
+00	;a7;   
+
+;19th tuple
+22	;a8;    22=CISTPL_FUNCE for function extension tuple [3.2.6]
+02	;a8;    02=Link to next Tuple
+05	;a9;    LAN connection type
+01	;a9;    Closed connector standard
+
+;20th tuple
+FF	;aa;    End of tuples 
+	
+;Tuple extra area - blank - double word zeros.
+00	;aa;   Extra byte to start on even word boundary.
+0000	;ab;   
+0000	;ac;   
+0000	;ad;   
+0000	;ae;   
+0000	;af;
+;ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+;VENDOR DEFINED LOCATIONS B0-BE
+;ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+0000	;b0;   
+0000	;b1;   
+0000	;b2;   
+0000	;b3;   
+0000	;b4;   
+0000	;b5;   
+0000	;b6;   
+0000	;b7;   
+0000	;b8;   
+0000	;b9;   
+0000	;ba;   
+0000	;bb;   
+0000	;bc;   
+0000	;bd;   
+0000	;be;   
+; THE FOLLOWING VALUES ARE COMMENTED OUT AS THEY SHOULD BE WRITTEN 
+; BY THE CALIBRATION SCRIPT
+;ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+;ATHEROS DEFINED LOCATIONS BF-FF
+;ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+; 0000	;bf;  Regulatory Domain Code Information 
+; 0000	;c0;  Checksum for locations C0-FF 
+; 0000	;c1;  Version Field  
+; 0000	;c2;  Antenna Settings 
+; 0000	;c3;  Transmit Power Bias Currents 
+; 0000	;c4;  Threshold 62 and external LNA Timing Settings 
+; 0000	;c5;  External Amplifier Timing Settings 
+; 0000	;c6;  Reserved 
+; 0000	;c7;  Regulatory Domain 1
+; 0000	;c8;  Regulatory Domain 2
+; Channel 5.17 to 5.19 Transmit Power Calibration
+; 0000	;c9;  Transmit Power Calibration 
+; 0000	;ca;  Transmit Power Calibration 
+; 0000	;cb;  Transmit Power Calibration 
+; 0000	;cc;  Transmit Power Calibration 
+; 0000	;cd;  Transmit Power Calibration 
+; 0000	;ce;  Transmit Power Calibration 
+; 0000	;cf;  Transmit Power Calibration 
+; 0000	;d0;  Transmit Power Calibration 
+; 0000	;d1;  Regulatory Domain Code Limit  
+; 0000	;d2;  Regulatory Domain Code Limit  
+; 0000	;d3;  Regulatory Domain Code Limit  
+; Channel 5.20 to 5.22 Transmit Power Calibration
+; 0000	;d4;  Transmit Power Calibration 
+; 0000	;d5;  Transmit Power Calibration 
+; 0000	;d6;  Transmit Power Calibration 
+; 0000	;d7;  Transmit Power Calibration 
+; 0000	;d8;  Transmit Power Calibration 
+; 0000	;d9;  Transmit Power Calibration 
+; 0000	;da;  Transmit Power Calibration 
+; 0000	;db;  Transmit Power Calibration 
+; 0000	;dc;  Regulatory Domain Code Limit 
+; 0000	;dd;  Regulatory Domain Code Limit 
+; 0000	;de;  Regulatory Domain Code Limit 
+; Channel 5.23 to 5.25 Transmit Power Calibration
+; 0000	;df;  Transmit Power Calibration
+; 0000	;e0;  Transmit Power Calibration
+; 0000	;e1;  Transmit Power Calibration
+; 0000	;e2;  Transmit Power Calibration
+; 0000	;e3;  Transmit Power Calibration
+; 0000	;e4;  Transmit Power Calibration
+; 0000	;e5;  Transmit Power Calibration
+; 0000	;e6;  Transmit Power Calibration
+; 0000	;e7;  Regulatory Domain Code Limit
+; 0000	;e8;  Regulatory Domain Code Limit
+; 0000	;e9;  Regulatory Domain Code Limit
+; Channel 5.26 to 5.29 Transmit Power Calibration
+; 0000	;ea;  Transmit Power Calibration
+; 0000	;eb;  Transmit Power Calibration
+; 0000	;ec;  Transmit Power Calibration
+; 0000	;ed;  Transmit Power Calibration
+; 0000	;ee;  Transmit Power Calibration
+; 0000	;ef;  Transmit Power Calibration
+; 0000	;f0;  Transmit Power Calibration
+; 0000	;f1;  Transmit Power Calibration
+; 0000	;f2;  Regulatory Domain Code Limit
+; 0000	;f3;  Regulatory Domain Code Limit
+; 0000	;f4;  Regulatory Domain Code Limit
+; Channel 5.30 to 5.32 Transmit Power Calibration
+; 0000	;f5;  Transmit Power Calibration
+; 0000	;f6;  Transmit Power Calibration
+; 0000	;f7;  Transmit Power Calibration
+; 0000	;f8;  Transmit Power Calibration
+; 0000	;f9;  Transmit Power Calibration
+; 0000	;fa;  Transmit Power Calibration
+; 0000	;fb;  Transmit Power Calibration
+; 0000	;fc;  Transmit Power Calibration
+; 0000	;fd;  Regulatory Domain Code Limit
+; 0000	;fe;  Regulatory Domain Code Limit
+; 0000	;ff;  Regulatory Domain Code Limit

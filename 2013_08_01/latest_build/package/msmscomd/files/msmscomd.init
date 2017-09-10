@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common
+
+START=99 
+STOP=99
+
+start(){
+  killall -9 msmscomrun
+  killall -9 msmscom
+  /bin/msmscomrun >/dev/null 2>&1 &
+}
+
+stop(){
+  killall -9 msmscomrun
+  killall -9 msmscom
+}
+
+

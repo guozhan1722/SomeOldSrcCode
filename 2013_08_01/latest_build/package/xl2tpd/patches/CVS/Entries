@@ -1,0 +1,7 @@
+/100-makefile_opt_flags.patch/1.1.2.1/Wed Jul 11 19:40:22 2012/-ko/Tar71xx_4g
+/110-makefile_dont_build_pfc.patch/1.1.2.1/Wed Jul 11 19:40:22 2012/-ko/Tar71xx_4g
+/120-kernel-mode-l2tp.patch/1.1.2.1/Wed Jul 11 19:40:22 2012/-ko/Tar71xx_4g
+/130-no-kill-ipparam.patch/1.1.2.1/Wed Jul 11 19:40:22 2012/-ko/Tar71xx_4g
+/801-microhard-log.patch/1.1.4.1/Thu Jun  6 19:25:11 2013/-ko/Tar71xx_4g
+/800-microhard-doscript.patch/1.1.2.2/Mon Jun 17 20:33:43 2013/-ko/Tar71xx_4g
+D

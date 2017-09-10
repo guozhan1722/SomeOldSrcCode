@@ -1,0 +1,16 @@
+Source-Makefile: package/pptp/Makefile
+Package: pptp
+Version: 1.6.0-6
+Depends: +ppp +kmod-gre
+Provides: 
+Section: net
+Category: Network
+Title: PPTP client
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: pptp-1.6.0.tar.gz
+Type: ipkg
+Description: PPTP client
+http://pptpclient.sourceforge.net/
+@@
+
+

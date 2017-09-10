@@ -1,0 +1,14 @@
+/001-get_c0_compare_int_fix.patch/1.1/Thu Apr  1 22:10:44 2010/-kkv/Tar71xx_4g
+/002-mips_clocksource_init_war.patch/1.1/Thu Apr  1 22:10:44 2010/-kkv/Tar71xx_4g
+/100-board.patch/1.1/Thu Apr  1 22:10:44 2010/-kkv/Tar71xx_4g
+/101-early-printk-support.patch/1.1/Thu Apr  1 22:10:44 2010/-kkv/Tar71xx_4g
+/105-ar2315_pci.patch/1.1/Thu Apr  1 22:10:44 2010/-kkv/Tar71xx_4g
+/110-ar2313_ethernet.patch/1.1/Thu Apr  1 22:10:44 2010/-kkv/Tar71xx_4g
+/120-spiflash.patch/1.1/Thu Apr  1 22:10:44 2010/-kkv/Tar71xx_4g
+/130-watchdog.patch/1.1/Thu Apr  1 22:10:44 2010/-kkv/Tar71xx_4g
+/140-redboot_partition_scan.patch/1.1/Thu Apr  1 22:10:44 2010/-kkv/Tar71xx_4g
+/141-redboot_various_erase_size_fix.patch/1.1/Thu Apr  1 22:10:44 2010/-kkv/Tar71xx_4g
+/200-ar2313_enable_mvswitch.patch/1.1/Thu Apr  1 22:10:44 2010/-kkv/Tar71xx_4g
+/210-reset_button.patch/1.1/Thu Apr  1 22:10:44 2010/-kkv/Tar71xx_4g
+/220-enet_micrel_workaround.patch/1.1/Thu Apr  1 22:10:44 2010/-kkv/Tar71xx_4g
+D

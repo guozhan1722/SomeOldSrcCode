@@ -1,0 +1,18 @@
+Source-Makefile: target/linux/coldfire/Makefile
+Target: coldfire
+Target-Board: coldfire
+Target-Kernel: 2.6
+Target-Name: Freescale Coldfire v4e
+Target-Path: /home/zguo/project/2013_08_01/latest_build
+Target-Arch: m68k
+Target-Features: broken squashfs
+Target-Depends: 
+Target-Optimization: -Os -pipe -mcfv4e -funit-at-a-time
+Linux-Version: 2.6.25.20
+Linux-Release: 1
+Linux-Kernel-Arch: m68k
+Target-Description:
+	Build firmware images for ColdFire v4e boards
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall
+

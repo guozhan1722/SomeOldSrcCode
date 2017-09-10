@@ -1,0 +1,245 @@
+Source-Makefile: target/linux/ixp4xx/Makefile
+Target: ixp4xx
+Target-Board: ixp4xx
+Target-Kernel: 2.6
+Target-Name: Intel IXP4xx
+Target-Path: /home/zguo/project/2013_08_01/latest_build
+Target-Arch: armeb
+Target-Features: gpio squashfs usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -march=armv5te -mtune=xscale -funit-at-a-time
+Linux-Version: 2.6.30.10
+Linux-Release: 1
+Linux-Kernel-Arch: arm
+Target-Description:
+
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall ixp4xx-microcode fconfig
+Target: ixp4xx/generic
+Target-Board: ixp4xx
+Target-Kernel: 2.6
+Target-Name: Generic
+Target-Path: target/linux/ixp4xx
+Target-Arch: armeb
+Target-Features: gpio squashfs usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -march=armv5te -mtune=xscale -funit-at-a-time
+Linux-Version: 2.6.30.10
+Linux-Release: 1
+Linux-Kernel-Arch: arm
+Target-Description:
+	Build firmware images for ixp4xx based boards that boot from internal flash
+	(e.g : Linksys NSLU2, ...)
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall wpad-mini ixp4xx-microcode fconfig
+Target-Profile: Default
+Target-Profile-Name: Default Profile
+Target-Profile-Packages: kmod-madwifi
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Default IXP4xx Profile
+@@
+
+Target-Profile: Atheros-ath5k
+Target-Profile-Name: Atheros WiFi (atk5k)
+Target-Profile-Packages: kmod-ath5k
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Package set compatible with hardware using Atheros WiFi cards
+@@
+
+Target-Profile: VIP421
+Target-Profile-Name: VIP421
+Target-Profile-Packages: kmod-madwifi
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Microhard IXP4xx based standard board with madwifi driver Profile
+@@
+
+Target-Profile: VIP421EXP
+Target-Profile-Name: VIP421EXP
+Target-Profile-Packages: kmod-madwifi
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Microhard IXP4xx based standard board with madwifi driver Profile
+@@
+
+Target-Profile: VIP421ANT
+Target-Profile-Name: VIP421ANT
+Target-Profile-Packages: kmod-madwifi
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Microhard IXP4xx based standard board with madwifi driver Profile
+@@
+
+Target-Profile: VIP421ANTEXP
+Target-Profile-Name: VIP421ANTEXP
+Target-Profile-Packages: kmod-madwifi
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Microhard IXP4xx based standard board with madwifi driver Profile
+@@
+
+Target-Profile: VIP421ANT18dBiEXP
+Target-Profile-Name: VIP421ANT18dBiEXP
+Target-Profile-Packages: kmod-madwifi
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Microhard IXP4xx based standard board with madwifi driver Profile
+@@
+
+Target-Profile: VIP421EXPBR
+Target-Profile-Name: VIP421EXPBR
+Target-Profile-Packages: kmod-madwifi
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Microhard IXP4xx based standard board with madwifi driver Profile
+@@
+
+Target-Profile: VIP421900
+Target-Profile-Name: VIP421900
+Target-Profile-Packages: kmod-madwifi
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Microhard IXP4xx based standard board with madwifi driver Profile
+@@
+
+Target-Profile: VIP421900EXP
+Target-Profile-Name: VIP421900EXP
+Target-Profile-Packages: kmod-madwifi
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Microhard IXP4xx based standard board with madwifi driver Profile
+@@
+
+Target-Profile: VIP421900ENCOM
+Target-Profile-Name: VIP421900ENCOM
+Target-Profile-Packages: kmod-madwifi
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Microhard IXP4xx based standard board with madwifi driver Profile
+@@
+
+Target-Profile: VIP421EXP49G
+Target-Profile-Name: VIP421EXP49G
+Target-Profile-Packages: kmod-madwifi
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Microhard IXP4xx based standard board with madwifi driver Profile
+@@
+
+Target-Profile: VIP4214900
+Target-Profile-Name: VIP4214900
+Target-Profile-Packages: kmod-madwifi
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Microhard IXP4xx based standard board with madwifi driver Profile
+@@
+
+Target-Profile: VIP4214900EXP
+Target-Profile-Name: VIP4214900EXP
+Target-Profile-Packages: kmod-madwifi
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Microhard IXP4xx based standard board with madwifi driver Profile
+@@
+
+Target-Profile: VIP421ENCOM
+Target-Profile-Name: VIP421ENCOM
+Target-Profile-Packages: kmod-madwifi
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Microhard IXP4xx based standard board with madwifi driver Profile
+@@
+
+Target-Profile: VIP4212400X
+Target-Profile-Name: VIP4212400X
+Target-Profile-Packages: kmod-madwifi
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Microhard IXP4xx based standard board with madwifi driver Profile
+@@
+
+Target-Profile: VIP4212400XEXP
+Target-Profile-Name: VIP4212400XEXP
+Target-Profile-Packages: kmod-madwifi
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Microhard IXP4xx based standard board with madwifi driver Profile
+@@
+
+Target-Profile: VIP4215800X
+Target-Profile-Name: VIP4215800X
+Target-Profile-Packages: kmod-madwifi
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Microhard IXP4xx based standard board with madwifi driver Profile
+@@
+
+Target-Profile: VIP4215800XEXP
+Target-Profile-Name: VIP4215800XEXP
+Target-Profile-Packages: kmod-madwifi
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Microhard IXP4xx based standard board with madwifi driver Profile
+@@
+
+Target-Profile: VIP4214900X
+Target-Profile-Name: VIP4214900X
+Target-Profile-Packages: kmod-madwifi
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Microhard IXP4xx based standard board with madwifi driver Profile
+@@
+
+Target-Profile: VIP4214900XEXP
+Target-Profile-Name: VIP4214900XEXP
+Target-Profile-Packages: kmod-madwifi
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Microhard IXP4xx based standard board with madwifi driver Profile
+@@
+
+

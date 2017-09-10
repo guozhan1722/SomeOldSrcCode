@@ -1,0 +1,9 @@
+/100-board_support.patch/1.1/Thu Apr  1 22:13:55 2010/-kkv/Tar71xx_4g
+/110-flash.patch/1.1/Thu Apr  1 22:13:55 2010/-kkv/Tar71xx_4g
+/120-gpio_chrdev.patch/1.1/Thu Apr  1 22:13:55 2010/-kkv/Tar71xx_4g
+/500-serial_kludge.patch/1.1/Thu Apr  1 22:13:55 2010/-kkv/Tar71xx_4g
+/930-titan-platform.patch/1.1/Thu Apr  1 22:13:55 2010/-kkv/Tar71xx_4g
+/940-cpmac-titan.patch/1.1/Thu Apr  1 22:13:55 2010/-kkv/Tar71xx_4g
+/950-cpmac_fallback_switch.patch/1.1/Thu Apr  1 22:13:55 2010/-kkv/Tar71xx_4g
+/960-cpmac_allow_vlan.patch/1.1/Thu Apr  1 22:13:55 2010/-kkv/Tar71xx_4g
+D

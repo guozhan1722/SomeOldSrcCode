@@ -1,0 +1,35 @@
+diff -Nuar org/programs/pluto/dpd.c microhard/programs/pluto/dpd.c
+--- org/programs/pluto/dpd.c	2013-06-11 13:39:09.860525239 -0600
++++ microhard/programs/pluto/dpd.c	2013-06-11 16:14:25.489275182 -0600
+@@ -626,7 +626,10 @@
+     case DPD_ACTION_RESTART_BY_PEER:
+ 	/* dpdaction=restart_by_peer - immediately renegotiate connections to the same peer. */
+ 	openswan_log("DPD: Restarting all connections that share this peer");
+-	restart_connections_by_peer(c);
++	/*restart_connections_by_peer(c);*/
++    if(!do_command(st->st_connection, &st->st_connection->spd, "dpdbackup", st)) {
++                openswan_log("DPD: do_command fail");
++    }
+ 	break;
+ 
+     default:
+diff -Nuar org/programs/pluto/ikev1_main.c microhard/programs/pluto/ikev1_main.c
+--- org/programs/pluto/ikev1_main.c	2013-06-12 16:33:09.989278032 -0600
++++ microhard/programs/pluto/ikev1_main.c	2013-06-12 16:37:06.734275134 -0600
+@@ -151,10 +151,14 @@
+     st->sec_ctx = NULL;
+ #endif
+ 
+-    if (predecessor == NULL)
++    if (predecessor == NULL) {
+ 	openswan_log("initiating Main Mode");
+-    else
++    if(!do_command(c, &c->spd, "vtbit", st)) {
++                openswan_log("VTBIT: do_command fail");
++    }
++    } else {
+ 	openswan_log("initiating Main Mode to replace #%lu", predecessor->st_serialno);
++    }
+ 
+     /* set up reply */
+     zero(reply_buffer);

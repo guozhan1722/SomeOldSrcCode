@@ -1,0 +1,7 @@
+/002-layer7_2.17.patch/1.1/Thu Apr  1 22:16:50 2010/-kkv/Tar71xx_4g
+/005-imq.patch/1.1/Thu Apr  1 22:16:50 2010/-kkv/Tar71xx_4g
+/008-netfilter_include_linux_type_h.patch/1.1/Thu Apr  1 22:16:49 2010/-kkv/Tar71xx_4g
+/009-table-alignment.patch/1.1/Thu Apr  1 22:16:49 2010/-kkv/Tar71xx_4g
+/010-multiport-linux-2.4-compat.patch/1.1/Thu Apr  1 22:16:49 2010/-kkv/Tar71xx_4g
+/020-iptables-disable-modprobe.patch/1.1/Thu Apr  1 22:16:50 2010/-kkv/Tar71xx_4g
+D

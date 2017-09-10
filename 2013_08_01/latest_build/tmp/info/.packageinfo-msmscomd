@@ -1,0 +1,15 @@
+Source-Makefile: package/msmscomd/Makefile
+Package: msmscomd
+Version: 1
+Depends: +libuci +libpthread +libmserial
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Microhard msmscomd/sms
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  This package contains the microhard home grown serial/net daemon
+@@
+
+

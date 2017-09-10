@@ -1,0 +1,14 @@
+/000-mips-bad-intctl.patch/1.1/Thu Apr  1 22:11:43 2010/-kkv/Tar71xx_4g
+/010-mips_clocksource_init_war.patch/1.1/Thu Apr  1 22:11:43 2010/-kkv/Tar71xx_4g
+/100-board.patch/1.1/Thu Apr  1 22:11:43 2010/-kkv/Tar71xx_4g
+/110-pci.patch/1.1/Thu Apr  1 22:11:43 2010/-kkv/Tar71xx_4g
+/120-serial.patch/1.1/Thu Apr  1 22:11:43 2010/-kkv/Tar71xx_4g
+/130-ethernet.patch/1.1/Thu Apr  1 22:11:43 2010/-kkv/Tar71xx_4g
+/140-mtd.patch/1.1/Thu Apr  1 22:11:43 2010/-kkv/Tar71xx_4g
+/150-wdt.patch/1.1/Thu Apr  1 22:11:43 2010/-kkv/Tar71xx_4g
+/160-led.patch/1.1/Thu Apr  1 22:11:43 2010/-kkv/Tar71xx_4g
+/200-genirq_fix.patch/1.1/Thu Apr  1 22:11:43 2010/-kkv/Tar71xx_4g
+/300-cfi0001-swap.patch/1.1/Thu Apr  1 22:11:43 2010/-kkv/Tar71xx_4g
+/310-cfi0002-swap.patch/1.1/Thu Apr  1 22:11:43 2010/-kkv/Tar71xx_4g
+/400-atm_hack.patch/1.1/Thu Apr  1 22:11:43 2010/-kkv/Tar71xx_4g
+D

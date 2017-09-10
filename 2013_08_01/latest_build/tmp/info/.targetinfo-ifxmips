@@ -1,0 +1,48 @@
+Source-Makefile: target/linux/ifxmips/Makefile
+Target: ifxmips
+Target-Board: ifxmips
+Target-Kernel: 2.6
+Target-Name: Infineon Mips
+Target-Path: /home/zguo/project/2013_08_01/latest_build
+Target-Arch: mips
+Target-Features: atm gpio jffs2 pci squashfs usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time
+Linux-Version: 2.6.30.10
+Linux-Release: 1
+Linux-Kernel-Arch: mips
+Target-Description:
+	Build firmware images for Infineon Mips Controllers
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall kmod-pppoa ppp-mod-pppoa linux-atm atm-tools br2684ctl ifxmips-dsl-api ifxmips-dsl-control
+Target-Profile: None
+Target-Profile-Name: Generic, No WiFi
+Target-Profile-Packages: -wpad-mini
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Package set without WiFi support
+@@
+
+Target-Profile: Atheros
+Target-Profile-Name: Atheros WiFi (default)
+Target-Profile-Packages: kmod-madwifi
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Package set compatible with hardware using Atheros WiFi cards
+@@
+
+Target-Profile: Ralink
+Target-Profile-Name: Ralink RT61 Wifi (ARV452)
+Target-Profile-Packages: kmod-rt61-pci
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Package set compatible with hardware using Ralink WiFi cards
+@@
+
+

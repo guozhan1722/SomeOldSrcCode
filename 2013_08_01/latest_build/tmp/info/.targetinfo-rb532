@@ -1,0 +1,18 @@
+Source-Makefile: target/linux/rb532/Makefile
+Target: rb532
+Target-Board: rb532
+Target-Kernel: 2.6
+Target-Name: Mikrotik RouterBoard 532
+Target-Path: /home/zguo/project/2013_08_01/latest_build
+Target-Arch: mipsel
+Target-Features: gpio jffs2 pci tgz
+Target-Depends: 
+Target-Optimization: -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time
+Linux-Version: 2.6.33.1
+Linux-Release: 1
+Linux-Kernel-Arch: mips
+Target-Description:
+
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall wpad-mini kmod-madwifi kmod-input-rb532
+

@@ -1,0 +1,16 @@
+Source-Makefile: package/mpci-bsp/Makefile
+Package: kmod-mpci-bsp
+Submenu: Other modules
+Version: <LINUX_VERSION>-1
+Depends: 
+Provides: 
+Section: kernel
+Category: Kernel modules
+Title: MPCI BSP support
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  Kernel module to support BSP for MPCI BOARD.
+@@
+
+

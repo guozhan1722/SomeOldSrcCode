@@ -1,0 +1,2 @@
+#export NO_GPIB=1
+export CFLAGS=-Wall -Werror

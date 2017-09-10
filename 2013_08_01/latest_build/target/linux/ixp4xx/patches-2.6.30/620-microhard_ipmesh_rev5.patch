@@ -1,0 +1,158 @@
+diff -Nuar linux-2.6.30.10.bak/arch/arm/mach-ixp4xx/vip-pci.c linux-2.6.30.10/arch/arm/mach-ixp4xx/vip-pci.c
+--- linux-2.6.30.10.bak/arch/arm/mach-ixp4xx/vip-pci.c	2011-02-14 09:51:29.000000000 -0700
++++ linux-2.6.30.10/arch/arm/mach-ixp4xx/vip-pci.c	2011-02-14 09:54:11.000000000 -0700
+@@ -47,7 +47,8 @@
+ 
+     printk("vip map irq revision = %d\n",revision);
+ 
+-    if(revision == 4 ) {
++    // ip mesh has 4 pci ports
++    if( (revision == 4) || (revision == 5) ) {
+         if (slot == 12) 
+             return IRQ_IXP4XX_GPIO7;
+     
+diff -Nuar linux-2.6.30.10.bak/arch/arm/mach-ixp4xx/vip-setup.c linux-2.6.30.10/arch/arm/mach-ixp4xx/vip-setup.c
+--- linux-2.6.30.10.bak/arch/arm/mach-ixp4xx/vip-setup.c	2011-02-14 09:51:29.000000000 -0700
++++ linux-2.6.30.10/arch/arm/mach-ixp4xx/vip-setup.c	2011-02-14 09:54:02.000000000 -0700
+@@ -327,6 +327,73 @@
+ 	}
+ };
+ 
++static struct latch_led vip_latch_leds_rev5[] = {
++	{
++		.name	= "dcd", /* DCD0_i control signal */
++		.bit	= 0,
++	},
++	{
++		.name	= "dsr",  /* DSR0_i control signal */
++		.bit	= 1,
++	},
++	{
++		.name	= "re_485",  /* RE_485 control signal */
++		.bit	= 2,
++	},
++	{
++		.name	= "de_485",  /* DE_485 control signal */
++		.bit	= 3,
++	},
++	{
++		.name	= "phy0_rssi1",  /* card 1 rssi */
++		.bit	= 4,
++	},
++	{
++		.name	= "phy0_rssi2",  
++		.bit	= 5,
++	},
++	{
++		.name	= "phy0_rssi3",  
++		.bit	= 6,
++	},
++	{
++		.name	= "phy1_rssi1",  /* card 2 rssi */
++		.bit	= 7,
++	},
++	{
++		.name	= "phy1_rssi2",  
++		.bit	= 8,
++	},
++	{
++		.name	= "phy1_rssi3", 
++		.bit	= 9,
++	},
++	{
++		.name	= "phy2_rssi1",  /* card 3 rssi */
++		.bit	= 10,
++	},
++	{
++		.name	= "phy2_rssi2", 
++		.bit	= 11,
++	},
++	{
++		.name	= "phy2_rssi3", 
++		.bit	= 12,
++	},
++	{
++		.name	= "phy3_rssi1",  /* card 4 rssi */
++		.bit	= 13,
++	},
++	{
++		.name	= "phy3_rssi2", 
++		.bit	= 14,
++	},
++	{
++		.name	= "phy3_rssi3", 
++		.bit	= 15,
++	}
++};
++
+ static struct latch_led_platform_data vip_latch_leds_data = {
+ 	.num_leds	= 8,
+ 	.leds		= vip_latch_leds,
+@@ -344,9 +411,45 @@
+ 	&vip_uart,
+ };
+ 
++static uint16_t latch_value = 0x0000; /* default to all off */
++static uint16_t __iomem *iobase;
++#define IPMESH_REV5_LATCH_MASK              0x04
++
++static void ipmesh_rev5_latch_set_led(u8 bit, enum led_brightness value)
++{
++
++
++	if (((IPMESH_REV5_LATCH_MASK >> bit) & 1) ^ (value == LED_OFF))
++		latch_value &= ~(0x1 << bit);
++	else
++		latch_value |= (0x1 << bit);
++
++	__raw_writew(latch_value, iobase);
++
++}
++
++static void __init ipmesh_rev5_init(void)
++{
++
++	*IXP4XX_EXP_CS2 = 0xbfff0002; /* initialize CS2 to default timings, Intel style, 16-bit bus */
++
++	vip_latch_leds_data.num_leds = 16;
++	vip_latch_leds_data.leds = vip_latch_leds_rev5;
++	vip_latch_leds_data.set_led = ipmesh_rev5_latch_set_led;
++	
++
++	/* Initialize LEDs and enables PCI bus.
++	 */
++	iobase = ioremap_nocache(IXP4XX_EXP_BUS_BASE(2), 0x1000);
++	__raw_writew(latch_value, iobase);
++
++
++}
++
+ static void __init vip_board_ipmesh_setup(void)
+ {
+ 	unsigned char *mem;
++	int revision = (*IXP4XX_EXP_CFG0 >> 17) & 0xf;
+ 
+ 	*IXP4XX_EXP_CS1 = 0xbfff3c03; 
+ 
+@@ -391,7 +494,12 @@
+ 	platform_device_register(&vip_npeb_device);
+ 	platform_device_register(&vip_npec_device);
+ 
++	/* initialize the led */
+ 	*IXP4XX_EXP_CS2 = 0xbfff0003; 
++	if(revision == 5)
++	{
++		ipmesh_rev5_init();
++	}
+ 	platform_device_register(&vip_latch_leds_device);
+ 
+ 	vip_gpio_buttons_data.buttons[0].gpio = 13;
+@@ -484,7 +592,7 @@
+ 	if (!machine_is_vip())
+ 		return 0;
+ 
+-	if(revision == 4) {
++	if((revision == 4) || (revision == 5)){
+ 		t_model="ipmesh_board";
+ 	}
+ 	else if((revision == 2) ||(revision == 3)) {

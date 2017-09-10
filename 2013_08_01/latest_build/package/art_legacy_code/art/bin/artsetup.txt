@@ -1,0 +1,80 @@
+#initial configuration options
+5_CHANNEL_MHZ = 5220    #The initial channel for tests
+2_4_CHANNEL_MHZ = 2412    #The initial channel for tests
+#ALL_2G_CHANNELS = 1
+
+#eeprom configuration
+EEPROM_LOAD_OVERRIDE = 0   #set to 1 to override loading of eeprom calibration info
+TURBO = 0	  #set to 1 to enable turbo mode
+MODE = 0
+
+#register configuration files, comment out line to use defaults
+#LOG_FILE = artout.log
+LOGGING = 0
+LOAD_EAR = 0
+
+RATE_MASK = 0x7fff
+
+#EEP_FILE_DIR = ..\..\config
+
+#BLANK_EEP_ID = 0x1031   #which subsytem ID to use for lookup if blank eeprom
+
+DUT_CARD_SSID = 0x1031
+
+APPLY_CTL = 0		#set to 1 to enable power limiting by specified CTL
+CTL_VALUE = 0x10	#specify which CTL to apply when APPLY_CTL is set
+DEBUG_INFO = 0		#set to see additional debug info (used for engineering debug
+
+#		subsystemID, filename		
+CFG_TABLE =     0x1031  ar5002x_cb32ag.eep
+CFG_TABLE =     0x2031  ar5002x_mb32ag.eep
+CFG_TABLE =     0x1030  ar5002g_cb31g.eep
+CFG_TABLE =     0x2030  ar5002g_mb31g.eep
+CFG_TABLE =     0xa032  ar5002ap_ap30ag.eep
+CFG_TABLE =     0xa033  ar5002ap_ap31g.eep
+CFG_TABLE =     0xa034  ar5002ap_ap30ag_040.eep
+CFG_TABLE =     0xa035  ar5002ap_ap38ag.eep
+CFG_TABLE =     0xa036  ar5002ap_ap39g.eep
+CFG_TABLE =     0xa037  ar5002ap_ap33g.eep
+CFG_TABLE =     0xa038  ar5002ap_ap36ag.eep
+CFG_TABLE =     0xa043  ar5004ap_ap43g.eep
+CFG_TABLE =     0xa048  ar5004ap_ap48ag.eep
+CFG_TABLE =     0xa041  ar5004ap_ap41g.eep
+CFG_TABLE =     0x1042  ar5004x_cb42ag.eep
+CFG_TABLE =     0x1041  ar5004g_cb41g.eep
+CFG_TABLE =     0x1043  ar5004g_cb43g.eep
+CFG_TABLE =     0x2042  ar5004x_mb42ag.eep
+CFG_TABLE =     0x2041  ar5004g_mb41g.eep
+CFG_TABLE =     0x2044  ar5004x_mb44ag.eep
+CFG_TABLE =     0x2043  ar5004g_mb43g.eep
+
+CFG_TABLE =     0x1052  ar5005g_cb51g.eep
+CFG_TABLE =     0x2052  ar5005g_mb51g.eep
+CFG_TABLE =     0x1054  ar5005g_cb53g.eep
+CFG_TABLE =     0x2054  ar5005g_mb53g.eep
+CFG_TABLE =     0x1051  ar5005gs_cb51g.eep
+CFG_TABLE =     0x2051  ar5005gs_mb51g.eep
+CFG_TABLE =     0x1053  ar5005gs_cb53g.eep
+CFG_TABLE =     0x2053  ar5005gs_mb53g.eep
+CFG_TABLE =     0xb051  ar5005ug_ub51g.eep
+CFG_TABLE =     0xb052  ar5005ux_ub52ag.eep
+CFG_TABLE =     0x2062  ar5006xs_mb62ag.eep
+CFG_TABLE =     0x1062  ar5006xs_cb62ag.eep
+CFG_TABLE =     0x2063  ar5006x_mb62ag.eep
+CFG_TABLE =     0x1063  ar5006x_cb62ag.eep
+CFG_TABLE =     0x2061  ar5006gs_mb61g.eep
+CFG_TABLE =     0x1061  ar5006gs_cb61g.eep
+CFG_TABLE =     0x2065  ar5006g_mb61g.eep
+CFG_TABLE =     0x1065  ar5006g_cb61g.eep
+CFG_TABLE =     0xa051  ar5006apgs_ap51g.eep  
+CFG_TABLE =     0xa052  ar5006apg_ap51g.eep  
+CFG_TABLE =     0x3062  ar5006exs_xb62ag.eep  
+CFG_TABLE =     0x3063  ar5006ex_xb62ag.eep  
+CFG_TABLE =     0x3061  ar5006egs_xb61g.eep  
+CFG_TABLE =     0x3065  ar5006eg_xb61g.eep
+CFG_TABLE =     0x3067  ar5007eg_xb63g.eep    
+CFG_TABLE =     0x3064  ar5007eg_hb63g.eep    
+CFG_TABLE =     0x1055  ar5007g_cb55g.eep
+CFG_TABLE =     0x2055  ar5007g_mb55g.eep
+
+

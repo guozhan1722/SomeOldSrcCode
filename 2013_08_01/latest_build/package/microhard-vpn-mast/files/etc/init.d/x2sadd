@@ -1,0 +1,59 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2009 NexAira Inc.
+# Copyright (C) 2010 Adam Porter <porter.adam@gmail.com>
+
+START=10
+
+start() {
+     need_add=$(uci show ipsec | grep -c 'ipsec.M2xl2tpserver=x2stunnel')
+     if [ $need_add -eq 0 ]; then
+          inf=$(uci get ipsec.Mxl2tpserver.interface)
+          logger -t "x2sadd" "Mxl2tpserver interface=$inf"
+          case "$inf" in
+          br-wan2)
+             uci rename ipsec.Mxl2tpserver=M2xl2tpserver
+             uci set ipsec.Mxl2tpserver=x2stunnel
+             uci set ipsec.Mxl2tpserver.interface=br-wan
+             uci set ipsec.Mxl2tpserver.enabled=0
+             uci set ipsec.Mxl2tpserver.ike_auth=md5                                                                                                                                                                                                             
+             uci set ipsec.Mxl2tpserver.ike_dh=modp1024                                                                                                                                                                                                          
+             uci set ipsec.Mxl2tpserver.ikelifetime=28800                                                                                                                                                                                                        
+             uci set ipsec.Mxl2tpserver.esp_alg=3des                                                                                                                                                                                                             
+             uci set ipsec.Mxl2tpserver.esp_auth=md5                                                                                                                                                                                                             
+             uci set ipsec.Mxl2tpserver.esp_dh=modp1024                                                                                                                                                                                                          
+             uci set ipsec.Mxl2tpserver.keylife=3600                                                                                                                                                                                                             
+             uci set ipsec.Mxl2tpserver.dpddelay=32                                                                                                                                                                                                              
+             uci set ipsec.Mxl2tpserver.dpdtimeout=122                                                                                                                                                                                                           
+             uci set ipsec.Mxl2tpserver.dpdaction=clear                                                                                                                                                                                                          
+             uci set ipsec.Mxl2tpserver.advanced=no                                                                                                                                                                                                              
+             uci set ipsec.Mxl2tpserver.lefttype=ip-only 
+             uci set ipsec.Mxl2tpserver.pfs=no
+             uci set ipsec.Mxl2tpserver.keyingtries=3
+             uci set ipsec.Mxl2tpserver.authby=secret
+             uci commit ipsec
+             ;;
+          br-wan)
+             uci set ipsec.M2xl2tpserver=x2stunnel
+             uci set ipsec.M2xl2tpserver.enabled=0
+             uci set ipsec.M2xl2tpserver.interface=br-wan2
+             uci set ipsec.M2xl2tpserver.ike_auth=md5                                                                                                                                                                                                             
+             uci set ipsec.M2xl2tpserver.ike_dh=modp1024                                                                                                                                                                                                          
+             uci set ipsec.M2xl2tpserver.ikelifetime=28800                                                                                                                                                                                                        
+             uci set ipsec.M2xl2tpserver.esp_alg=3des                                                                                                                                                                                                             
+             uci set ipsec.M2xl2tpserver.esp_auth=md5                                                                                                                                                                                                             
+             uci set ipsec.M2xl2tpserver.esp_dh=modp1024                                                                                                                                                                                                          
+             uci set ipsec.M2xl2tpserver.keylife=3600                                                                                                                                                                                                             
+             uci set ipsec.M2xl2tpserver.dpddelay=32                                                                                                                                                                                                              
+             uci set ipsec.M2xl2tpserver.dpdtimeout=122                                                                                                                                                                                                           
+             uci set ipsec.M2xl2tpserver.dpdaction=clear                                                                                                                                                                                                          
+             uci set ipsec.M2xl2tpserver.advanced=no                                                                                                                                                                                                              
+             uci set ipsec.M2xl2tpserver.lefttype=ip-only 
+             uci set ipsec.M2xl2tpserver.pfs=no
+             uci set ipsec.M2xl2tpserver.keyingtries=3
+             uci set ipsec.M2xl2tpserver.authby=secret
+             uci commit ipsec
+             ;;
+         esac
+    fi
+}
+

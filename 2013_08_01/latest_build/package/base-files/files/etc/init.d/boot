@@ -1,0 +1,182 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+. /etc/version
+
+START=10
+STOP=98
+
+echo "0 0 0 0" > /proc/sys/kernel/printk
+
+export_i2c_gpio()
+{
+        COUNTER=24
+        while [ "$COUNTER" -lt 33 ]; do
+            echo $COUNTER > /sys/class/gpio/export
+            echo "out" > /sys/class/gpio/gpio$COUNTER/direction
+            #echo 1 > /sys/class/gpio/gpio11/value
+            COUNTER=$(($COUNTER+1))
+        done
+}
+
+vip4g_booting_led()
+{
+        echo 11 > /sys/class/gpio/export
+        echo "out" > /sys/class/gpio/gpio11/direction
+        COUNTER=1
+        while [ "$COUNTER" -lt 8 ]; do
+        #while [ 1 ]; do
+            #echo "THIS is VIP4G board"                  
+            sleep 1
+            echo 0 > /sys/class/gpio/gpio11/value
+            sleep 1
+            echo 1 > /sys/class/gpio/gpio11/value
+            COUNTER=$(($COUNTER+1))
+        done
+}
+
+system_datetime() {
+	local cfg="$1"
+	local sdate stime
+        local time1 time2 time3
+	config_get sdate "$cfg" date '2012.12.22'
+	config_get stime "$cfg" time '12:00:00'
+        time1=$(echo $stime | cut -c-6)
+        time2=$(echo $stime | cut -c7-8)
+        time3=`expr $time2 + 35`
+        stime="$time1$time3"
+        sysdatetime=$(date -s "${sdate}-${stime}")
+}
+
+system_save_datetime() {
+        local cfg="datetime"
+        local sdate stime
+        sdate=$(date +%Y.%m.%d)
+        stime=$(date +%T)
+        uci_set "system" "$cfg" date $sdate
+        uci_set "system" "$cfg" time $stime
+        uci commit
+}
+
+system_config() {
+	local cfg="$1"
+
+	local hostname conloglevel timezone
+
+	config_get hostname "$cfg" hostname 'OpenWrt'
+	echo "$hostname" > /proc/sys/kernel/hostname
+
+	config_get conloglevel "$cfg" conloglevel
+	config_get buffersize "$cfg" buffersize
+	[ -z "$conloglevel" -a -z "$buffersize" ] || dmesg ${conloglevel:+-n $conloglevel} ${buffersize:+-s $buffersize}
+	
+	config_get timezone "$cfg" timezone 'UTC'
+	echo "$timezone" > /tmp/TZ
+
+	if [ -x /sbin/syslogd ]; then
+		local log_ip log_size log_port log_type log_file
+		config_get log_ip "$cfg" log_ip 
+		config_get log_size "$cfg" log_size 32
+		config_get log_port "$cfg" log_port 514
+		config_get log_type "$cfg" log_type circular
+		config_get log_file "$cfg" log_file "/var/log/messages"
+		if [ "$log_type" = "file" ]; then
+			syslogd -s $log_size -O $log_file ${log_ip:+-L -R ${log_ip}:${log_port}} -b 2 -S
+		else
+			syslogd -C${log_size} ${log_ip:+-L -R ${log_ip}:${log_port}}
+		fi
+	fi
+
+	#klogd has a weird behavior of showing logs while booting up
+	#config_get klogconloglevel "$cfg" klogconloglevel
+	#[ -x /sbin/klogd ] && klogd ${klogconloglevel:+-c $klogconloglevel}
+}
+
+apply_uci_config() {
+	sh -c '. /etc/functions.sh; include /lib/config; uci_apply_defaults'
+}
+
+start() {
+	[ -f /proc/mounts ] || /sbin/mount_root
+	[ -f /proc/jffs2_bbc ] && echo "S" > /proc/jffs2_bbc
+	[ -f /proc/net/vlan/config ] && vconfig set_name_type DEV_PLUS_VID_NO_PAD
+
+	if [ "$HARDWARE" = "5.0.0" -o "$HARDWARE" = "3.0.0" ]; then 
+        	echo "heartbeat" > /sys/class/leds/phy0_rssi1/trigger
+       		echo "heartbeat" > /sys/class/leds/phy0_rssi2/trigger
+       		echo "heartbeat" > /sys/class/leds/phy0_rssi3/trigger
+	elif [ "$HARDWARE" = "v1.0.0" ]; then
+           	echo "heartbeat" > /sys/class/leds/ledrx/trigger
+           	echo "heartbeat" > /sys/class/leds/ledtx/trigger
+                mpci-led -s 4 &
+        elif [ "$HARDWARE" = "v2.0.0" ]; then
+                echo "</etc/rc.d/boot> THIS is VIP4G board"
+                logger "</etc/rc.d/boot> flashing the cpu status when sysytem booting"                
+                ## cpustatus led flashing when booting   
+                echo "heartbeat" > /sys/class/leds/cpustatus/trigger                
+        else
+		echo "heartbeat" > /sys/class/leds/phy0_rssi1/trigger
+	  	echo "heartbeat" > /sys/class/leds/phy0_rssi2/trigger
+	  	echo "heartbeat" > /sys/class/leds/phy0_rssi3/trigger
+	 	echo "heartbeat" > /sys/class/leds/phy0_rssi4/trigger
+	  	echo "heartbeat" > /sys/class/leds/phy0_rssi5/trigger
+	 	echo "heartbeat" > /sys/class/leds/phy0_rssi6/trigger
+	fi
+	
+	mkdir -p /var/run
+	mkdir -p /var/log
+	mkdir -p /var/lock
+	mkdir -p /var/state
+
+	apply_uci_config
+	config_load system
+	config_foreach system_config system
+	
+	config_foreach system_datetime user
+
+	mkdir -p /tmp/.uci
+	chmod 0700 /tmp/.uci
+	touch /var/log/wtmp
+	touch /var/log/lastlog
+	touch /tmp/resolv.conf.auto
+	ln -sf /tmp/resolv.conf.auto /tmp/resolv.conf
+	grep -q debugfs /proc/filesystems && mount -t debugfs debugfs /sys/kernel/debug
+	[ "$FAILSAFE" = "true" ] && touch /tmp/.failsafe
+
+	killall -q hotplug2
+	[ -x /sbin/hotplug2 ] && /sbin/hotplug2 --override --persistent \
+			--set-worker /lib/hotplug2/worker_fork.so \
+			--set-rules-file /etc/hotplug2.rules \
+			--max-children 1 >/dev/null 2>&1 &
+
+	# the coldplugging of network interfaces needs to happen later, so we do it manually here
+	for iface in $(awk -F: '/:/ {print $1}' /proc/net/dev); do
+		/usr/bin/env -i ACTION=add INTERFACE="$iface" /sbin/hotplug-call net
+	done
+
+	# create /dev/root if it doesn't exist
+	[ -e /dev/root ] || {
+		rootdev=$(awk 'BEGIN { RS=" "; FS="="; } $1 == "root" { print $2 }' < /proc/cmdline)
+		[ -n "$rootdev" ] && ln -s "$rootdev" /dev/root
+	}
+
+	load_modules /etc/modules.d/*
+	logger "Power up LTE USB device" 
+    mpci -gpio set 8 1
+	sh /etc/m_cli/mklink.sh
+
+        #check ippassthrough backup file  
+        if [ -f "/etc/dhcp_ippbackup" ] ;then
+            mv /etc/dhcp_ippbackup /etc/config/dhcp
+            logger -t "ippassthrough" "restore dhcp config file to normal"
+        fi
+}
+
+stop() {
+	logger "Shut down power of LTE USB module"
+	mpci -gpio set 8 0
+        killall -9 syslogd 2> /dev/null
+
+        system_save_datetime
+}
+

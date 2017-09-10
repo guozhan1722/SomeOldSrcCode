@@ -1,0 +1,307 @@
+Differences from ART 5.4 Build 6 to ART 5.4 build 7
+-----------------------------------------------------
+- spur reduction for AR2417 designs only
+
+Differences from ART 5.4 Build 5 to ART 5.4 build 6
+-----------------------------------------------------
+- updated pcie configuration block introducing SERDES_PROGAMMING = 2 option to support D3HOT systems
+
+- additional checking of successful status update of the tx descriptors is made before letting transmit tests pass.  Additional dummy words were added to the descriptor.
+
+
+Differences from ART 5.4 Build 4 to ART 5.4 build 5
+-----------------------------------------------------
+- Update to the data integrity test to also check addresses contained within the 802.11 headers
+
+- reduced receive all completion timeouts by a factor of 10 to speedup some timeouts.
+
+- addition register reading integrity check added.
+
+
+Differences from ART 5.4 Build 1 to ART 5.4 build 4
+-----------------------------------------------------
+- Continuity test now has control for which gpio is for output and which is for input.  Flags are set in calsetup.txt
+
+CONTINUITY_OUTPUT_GPIO        = 3;   #xb63 = 3, xb62 = 1
+CONTINUITY_INPUT_GPIO        = 0;    #xb63/xb62 = 0
+
+- Updated register test for greater pattern coverage
+
+- Added new flag to calsetup.txt that can be set to zero out the attenuators for power and spectral mask measurement.  This is so these versions of ART can be run on the 11n setups that have the attenuator between the dut and pm and spa.  Note that a legacy golden (ie AP30) is still needed at this version of ART does not support 11n goldens. New flag is:
+
+ZERO_ATTENUATOR               = 0;
+
+set to 1 for attenuators to be zeroed.
+
+
+
+Differences from ART 5.3 Build 4a to ART 5.4 build 1
+-----------------------------------------------------
+- Added a new menu item in the utility menu for generic testing of gpios.  The new menu command allows specification of the gpio to test, then the option of selecting test type:
+
+0 - drive GPIO low (configured for output)
+1 - drive GPIO high (configured for output)
+3 - read GPIO value (configured for input)
+
+- eeprom update to set bit 0 of eeprom location 0x0b to 1 when using hb63 reference design such that alternative configuration can be applied.  This results in rev'ing eeprom to 5.4 and as a result rev'ing ART version to 5.4
+
+
+
+Differences from ART 5.3 Build 49 to ART 5.3 build 4a
+-----------------------------------------------------
+- addition of continuity test for AR2425 which checks the integrity of the LED and wlan_disable mechanism.  A special hw modification to the pcie extender board is needed to run this test.  It is enable in calsetup.txt by the flag:
+
+TEST_CONTINUITY               = 1;
+
+it is off by default since the test will fail without the modified pcie extender board
+
+An addition was made to the storage of ART build number in eeprom, to allow for larger and hexidecimal build numbers
+
+
+Differences from ART 5.3 Build 46 to ART 5.3 build 49
+-----------------------------------------------------
+- Improvememts to 0dbm power control test for single chip based designs.
+- Improvement to calibration accuracy.
+- 11g CCK target power and CTL eeprom display when no 11B only mode
+- Added ASPM_SUPPORT programming for PCIe reference designs:
+	ASPM_SUPPORT = 0  => L0 is supported
+	ASPM_SUPPORT = 1  => L0s is supported
+	ASPM_SUPPORT = 2  => L1 is supported
+	ASPM_SUPPORT = 3  => L0s/L1 is supported
+- Added HB63 reference design support
+- xb62 Japan CTL updates
+- Automatic PCIe eeprom config mapping fix.
+- Added device type for PCI express devices to support
+	1=>Cardbus
+      2=>PCI
+      3=>miniPCI
+      4=>AP
+      5=>pcie_mini
+      6=>pcie_express
+      7=>pcie_desktop
+  Note: Will leave default of minicard XB61/XB62/XB63 as minipci. However, for pcie_express(Expresscard), and  pcie_desktop(desktop pcie)
+        must follow above for devicetype
+
+Differences from ART 5.3 Build 41 to ART 5.3 build 46
+-----------------------------------------------------
+- changed AR5112 0dbm test to use FIXED_HIGHGAIN settings from calsetup.txt to maintain consistency with conttx menu
+- removed pre-fetch threshold workaround added for older/slower pci buses.  Having a high pre-fetch threshold was causing throughput dips in newer pci buses.
+- added ability to offset 0dbm power test in 0.5dbm steps
+- removed calibration adjustment factor for ar2425 - it is not needed
+- added code to allow ar2417, ar2315, ar2317 and ar2425 to lock to higher (2.5 - 2.7GHz) channels.
+
+
+Differences from ART 5.3 Build 39 to ART 5.3 build 41
+-----------------------------------------------------
+-Added flag "SERDES_PROGRAMMING" to increase TX power on PCI express transmitter for noisy systems and long trace routes from HOST to WLAN. This is for AR2425.
+-Added flag "ASPM_LATENCY". This was programmed by default before to allow HOST/BIOS to check latency timer and allow ASPM to turn on or not. This was added in ART5.3B21.. Now, added flexibility to disable or enable with a flag.
+-Added flag "ENABLE_WA". This is to enabled for AR2425 by default from ART5.3Build37. But now allow flexibility to disable enable with a flag.
+-Fixed AR2425 might load internal default ID instead of using EEPROM programmed ID when no driver is loaded.
+
+Differences from ART 5.3 Build 38 to ART 5.3 build 39
+-----------------------------------------------------
+- made changes to manufacturing throughput and data integrity test to help catch test escapes on ar2425.
+
+- added new calsetup.txt parameter:
+TARGET_POWER_ZERO_DELAY = 100;
+
+provides the ability to add more delay for 0dbm test before power meter makes reading.  Units are in milliseconds, default (original test delay) is 100.
+
+
+Differences from ART 5.3 Build 37 to ART 5.3 build 38
+-----------------------------------------------------
+-  For AR2425, the PM_CAP will be written 0xffc2
+- fix for 0 dbm where pdadc table changes were affecting the higher powers.  No longer change the pdadc table for low gain/high power, only the high gain for 0dbm is changed
+- fix for AR5004 power control to allow lower fixed gain to be selected for high gain.  The following new flags are needed in calsetup.txt to be able to do this:
+
+CAL_FIXED_HIGHGAIN	     	  = 0;
+11g_CAL_FIXED_HIGHGAIN	          = 0;
+11b_CAL_FIXED_HIGHGAIN	          = 0;
+
+Differences from ART 5.3 Build 36 to ART 5.3 build 37
+-----------------------------------------------------
+- pci config updates for AR2425.  Addition wow register needs written + wa change
+- added 54mbps bit flag for 0dbm testing
+- added flags for changing 0dbm test limits:
+
+TARGET_POWER_ZERO_TOLERANCE_UPPER = 5;	# Tolerance in dB to allow for target power control for zero dbm (double)
+TARGET_POWER_ZERO_TOLERANCE_LOWER = 5;  # Tolerance in dB to allow for target power control for zero dbm (double)
+
+
+Differences from ART 5.3 Build 35 to ART 5.3 build 36
+-----------------------------------------------------
+code tree sync.
+Differences from ART 5.3 Build 35 to ART 5.3 build 36
+-----------------------------------------------------
+- change bb_heavy_clip_enable = 1
+Differences from ART 5.3 Build 34 to ART 5.3 build 35
+-----------------------------------------------------
+- changes to swan WOW programming
+- added eeprom improvement (power to pdadc change) to better support 0dbm 
+in single chip designs(AR2413/AR2414/AR5413/AR5414/AR5423/AR5424/AR2423/AR2424/AR2425/AR2417).  
+Also added 0dbm target power test.  New fields are required in calsetup.txt 
+in order to get the 0dbm fix and also to enable the test:
+
+FIX_ZERO_POWER = 1;     #add this to enable the 0dbm eeprom fix
+
+To enable 0dbm test, update the additional flag to end of channel test matrix (currently it is 0)
+Note that currently the test has a hardcoded update and lower test limit of +/- 5dbm
+
+Differences from ART 5.3 Build 33 to ART 5.3 build 34
+-----------------------------------------------------
+- The initial version to support the AR2417.
+- For MB55 id=0x2055, and CB55 id=0x1055
+
+Differences from ART 5.3 Build 31 to ART 5.3 build 33
+-----------------------------------------------------
+-A slight change to the programming of PM_CAP for AR2425.
+
+Differences from ART 5.3 Build 30 to ART 5.3 build 31
+-----------------------------------------------------
+- For AR2425, the PM_CAP will be written 0xc1c2, to solve a WoW bug with build 28
+- Fixed a problem with the noise floor table display of the high 11g channel.
+
+Differences from ART 5.3 Build 29 to ART 5.3 build 30
+-----------------------------------------------------
+- Enabling 11g CCK tests (ie 11b).  Note that the flag:
+
+DO_CCK_IN_11G                 = 1;
+
+must to added to calsetup.txt to enable this feature - it is not on by default.
+
+- changed pm cap register to 0xc1c2 for AR2425 as required by software driver 
+
+Differences from ART 5.3 Build 28 to ART 5.3 build 29
+-----------------------------------------------------
+Upgrade data integrity test to perform compression/decompression, for AP51
+
+
+Differences from ART 5.3 Build 25 to ART 5.3 build 28
+-----------------------------------------------------
+- Supports 1.4
+- Turbo and SuperG disabled in the EEPROM.  
+- Fixed throughput problem at high input RSSI (problem occurring in builds 26 and 27).
+
+
+
+
+Differences from ART 5.3 Build 24 to ART 5.3 build 25
+----------------------------------------------------
+- Added full support for AR2425 1.1 to 1.3 (should work for 1.4, but not tested).
+
+
+
+
+Differences from ART 5.3 Build 23 to ART 5.3 build 24
+-----------------------------------------------------
+- Provide support for rf silent eeprom programming for pci express devices.  Setting RF_SILENT in the appropriate .eep file 
+and updating location 0xf of the atheros-express-eep.txt file to the correct RF silent GPIO information will result in 
+correct RF silent information in the eeprom
+
+- Provide the option to bypass the programming of L0s sleep state in the eeprom.  Set the flag LOs_BYPASS = 1 in the 
+appropriate .eep file to not have L0s state programmed. Default is 0, do not bypass L0s.
+
+
+Differences from ART 5.3 Build 21 to ART 5.3 build 22
+----------------------------------------------------
+- Fixed communication problem between host and client
+
+Differences from ART 5.3 Build 20 to ART 5.3 build 21
+----------------------------------------------------
+- Program Device Capability correctly for L0s/L1 sleep state. There is no issue here except for some system BIOS, it use
+this to determine disable/enable of L0s/L1 on the host side or endpoint side. Most system Bios do not do this checking.
+- Spur mitigation at 11a fixed.
+
+Differences from ART 5.3 Build 19 to ART 5.3 build 20
+----------------------------------------------------
+- Bypass LOs sleep state and go straight into L1 on the HOST side to workaround
+ICH7 Errata. 
+
+
+Differences from ART 5.3 Build 16 to ART 5.3 build 19
+----------------------------------------------------
+- A solution to the txContEnd issue.
+- Spur mitigation at 5800 MHz.
+- Current consumption tested in RX.
+- Number of fail points in spectral mask test can be set in calsetup.txt
+- Detailed error messages.
+
+Differences from ART 5.3 Build 13 to ART 5.3 build 15
+----------------------------------------------------
+- calibration algorithm adjustment to help 11g power control yield problems
+
+
+Differences from ART 5.3 Build 13 to ART 5.3 build 14
+----------------------------------------------------
+- added antB power control test limits
+- added rate selection for antB power control
+- OBW display fix 
+
+
+Differences from ART 5.3 Build 12 to ART 5.3 build 13
+----------------------------------------------------
+- new tests: channel accuracy, throughput rx and alternative antenna test added to manufacturing calibration menu.
+  See document (ACI-SE-TR-068) describing new tests.
+- GU must be AP30 or AP48 for new test
+
+
+Differences from ART 5.3 Build 9 to ART 5.3 build 11
+---------------------------------------------------
+- Add support for AR2415/AR2416
+- Prepare for AP61 support
+- Improve TGT Power Control on XB6x
+- Add new XB6x eep files
+
+
+Differences from ART 5.3 Build 7 to ART 5.3 build 9
+---------------------------------------------------
+- updated calTrgtPwr files for xb6? boards
+- eep files for all xb6? boards
+- updates for latest revision of pci express chipset.  In order to run with the latest chipset (3.2), the anwi
+  driver must be updated with the driver from this release.
+
+
+Differences from ART 5.3 Build 5 to ART 5.3 build 7
+---------------------------------------------------
+- updated rf parameter to improve 11g txper
+
+
+Differences from ART 5.3 Build 4 to ART 5.3 build 5
+---------------------------------------------------
+- Fix source code release tree for ap3xart.sys building
+
+- fix for USB devices - driver was not loading properly on a vid/pid change from default
+
+- AP48 support was added back - had accidentally been removed.
+
+
+Differences from ART 5.3 Build 3 to ART 5.3 build 4
+---------------------------------------------------
+- anwi driver crashing bug fix
+
+- change DISABLE_JAPAN_ODD_CHANNELS_UNI1_BAND to ENABLE_JAPAN_ODD_CHANNELS_UNI1_BAND.  Set this bit to enable 
+  Japan odd channels uni1 band.
+
+- automatically clear the 11a mode bit if the Japan new 11a bit is set
+
+- cleanup of all the eep and caltrgtpwr files
+
+
+Differences from ART 5.3 Build 2 to ART 5.3 build 3
+---------------------------------------------------
+- Look at the new Japan 11a bit during calibration and the ART menus and allow 11a operation if this bit is set
+  even although the 11a mode bit may not be set.
+
+- Code is generated from a dedicated 5.3 branch rather than from mainline, build2 was from mainline.
+
+
+ART 5.3 Build 2 release notes:
+-----------------------------
+
+- eeprom layout updated to version 5.3 to include new Japan regulartory Domain flags
+
+- Calibration speedup for single chip power calibration
+
+- respect turbo disable flags in eep file by not going into turbo mode in main menus
+
+- all adapter types should be supported by this release.

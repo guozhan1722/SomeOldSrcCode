@@ -1,0 +1,22 @@
+###wan protocol
+cmd network:Set or Get network config:wan:wan interface:proto:protocol for wan:set:setting the value for wan:static:set proto to static:set-network-wan-proto-static:
+cmd network:Set or Get network config:wan:wan interface:proto:protocol for wan:set:setting the value for wan:dhcp:set proto to dhcp:set-network-wan-proto-dhcp:
+cmd network:Set or Get network config:wan:wan interface:proto:protocol for wan:get:getting the value for wan:get-network-wan-proto:
+
+###wan ipaddr
+cmd network:Set or Get network config:wan:wan interface:ip-addr:ip address for wan:set:setting the value for wan:set-network-wan-ipaddr:
+cmd network:Set or Get network config:wan:wan interface:ip-addr:ip address for wan:get:getting the value for wan:get-network-wan-ipaddr:
+
+###wan netmask
+cmd network:Set or Get network config:wan:wan interface:netmask:netmask for network:set:setting the value for wan:set-network-wan-netmask:
+cmd network:Set or Get network config:wan:wan interface:netmask:netmask for network:get:getting the value for wan:get-network-wan-netmask:
+
+###wan dns
+cmd network:Set or Get network config:wan:wan interface:dns:dns for network:set:setting the value for wan:set-network-wan-dns:
+cmd network:Set or Get network config:wan:wan interface:dns:dns for network:get:getting the value for wan:get-network-wan-dns:
+
+###wan gateway
+cmd network:Set or Get network config:wan:wan interface:gateway:gateway for network:set:setting the value for wan:set-network-wan-gateway:
+cmd network:Set or Get network config:wan:wan interface:gateway:gateway for network:get:getting the value for wan:get-network-wan-gateway:
+
+

@@ -1,0 +1,36 @@
+#Paramters configurable for command line testing
+
+#test setup params
+NUM_ITERATIONS = 3	#number of iterations for link test
+NUM_PACKETS    = 100    #number of packets per rate 
+PACKET_SIZE    =1000   #Size of each packet 
+BEACON_TIMEOUT =2000   #timeout (in milliseconds) for beacon test recieve
+TP_NUM_PACKETS =500    #number of OFDM throughput packets per rate
+TP_CCK_NUM_PACKETS=100 #number of CCK throughput packets  per rate
+TP_RATE_MASK   =0x40 #Throughput rate mask 
+5G_SIDE_CHANNEL = 5140 #side channel for 5GHz sync.
+2G_SIDE_CHANNEL = 2484 #side channel for 2GHZ sync.
+EEP_SINGLE_LOCATION = bf
+
+MAC_ADDRESS_MIN = 00-03-7F-00-00-00
+MAC_ADDRESS_MAX = 00-03-7F-FF-FF-FF
+
+#Test pass thresholds
+PER_THRESHOLD = 90	#Number of packets per rate that should pass successfully
+TP_PER_THRESH = 480     #number of packets in throughput (OFDM) that should transmit successfully
+TP_PER_THRESH_11B = 90     #number of packets in throughput (CCK) that should transmit successfully
+TP_THRESHOLD_11A = 25.0    #Throughput threshold for 11a
+TP_THRESHOLD_11G = 25.0    #Throughput threshold for 11a
+TP_THRESHOLD_11B = 6.0    #Throughput threshold for llb
+PPM_MIN       = -10	#Lowest allowed value for PPM
+PPM_MAX	      = 10	#Highest allowed value for PPM
+RSSI_THRESHOLD_11A_ANT_A = 30   #Lowest allowed value for RSSI for 11a on antenna A
+RSSI_THRESHOLD_11B_ANT_A = 30   #Lowest allowed value for RSSI for 11b on antenna A
+RSSI_THRESHOLD_11G_ANT_A = 30   #Lowest allowed value for RSSI for 11b on antenna A
+RSSI_THRESHOLD_11A_ANT_B = 30   #Lowest allowed value for RSSI for 11a on antenna B
+RSSI_THRESHOLD_11B_ANT_B = 30   #Lowest allowed value for RSSI for 11b on antenna B
+RSSI_THRESHOLD_11G_ANT_B = 30   #Lowest allowed value for RSSI for 11b on antenna B
+CRC_THRESHOLD  = 50	#Maximum allowed CRC errors per iteration
+
+
+	

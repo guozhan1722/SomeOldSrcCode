@@ -1,0 +1,42 @@
+#!/bin/sh
+
+CHECKFILE=/tmp/run/gpscarrstat
+Sleep_time_count=0
+
+E362_S=`cat /usr/lib/hardware_desc | grep E362`
+if [ "$E362_S" ]; then
+     sleep 60
+fi
+
+/bin/gpscarrstart
+
+while true
+do
+    if [ -f $CHECKFILE ]; then
+        if [ $Sleep_time_count -gt 60 ]; then  #based 4 hours
+            /bin/gpscarrstart
+            Sleep_time_count=0
+        else
+            Sleep_time_count=`expr $Sleep_time_count + 1`
+        fi
+        rm $CHECKFILE
+    else
+        /bin/gpscarrstart
+        Sleep_time_count=0
+    fi
+    sleep 240  
+
+    GPSD_RUNNING=`ps  | grep /usr/sbin/gpsd | grep -v grep`
+    if [ -z $GPSD_RUNNING ]; then
+      	killall -9 mylocation
+    	killall -9 gpspipe
+        killall -9 gpscarrstart
+    	killall -9 gpsd
+        /etc/init.d/gpsd start 
+        exit 0
+    fi
+
+done
+
+
+

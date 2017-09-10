@@ -1,0 +1,11 @@
+/010-lua-5.1.3-lnum-full-260308.patch/1.1/Thu Apr  1 22:08:34 2010/-kkv/Tar71xx_4g
+/015-lnum-ppc-compat.patch/1.1/Thu Apr  1 22:08:34 2010/-kkv/Tar71xx_4g
+/020-shared_liblua.patch/1.1/Thu Apr  1 22:08:34 2010/-kkv/Tar71xx_4g
+/030-archindependent-bytecode.patch/1.1/Thu Apr  1 22:08:34 2010/-kkv/Tar71xx_4g
+/100-no_readline.patch/1.1/Thu Apr  1 22:08:34 2010/-kkv/Tar71xx_4g
+/200-lua-path.patch/1.1/Thu Apr  1 22:08:34 2010/-kkv/Tar71xx_4g
+/300-opcode_performance.patch/1.1/Thu Apr  1 22:08:34 2010/-kkv/Tar71xx_4g
+/400-luaposix_5.1.4-embedded.patch/1.1/Thu Apr  1 22:08:34 2010/-kkv/Tar71xx_4g
+/500-eglibc_config.patch/1.1/Thu Apr  1 22:08:34 2010/-kkv/Tar71xx_4g
+/600-refcounting.patch/1.1/Thu Apr  1 22:08:34 2010/-kkv/Tar71xx_4g
+D

@@ -1,0 +1,23 @@
+#options.ttyS1
+
+nodeflate
+noaccomp
+noccp
+nobsdcomp
+novjccomp
+novj
+lcp-echo-failure 0
+lcp-echo-interval 0
+unit 255
+idle 30
+asyncmap 0
+local
+lock
+silent
+proxyarp
+connect '/usr/sbin/chat -v -f /etc/ppp/chatscripts/client'
+9600
+nocrtscts
+192.168.0.1:192.168.0.99
+ms-dns 8.8.8.8
+ms-dns 8.8.4.4

@@ -1,0 +1,15 @@
+Source-Makefile: package/net-snmp/Makefile
+Package: net-snmp
+Version: 5.0.9
+Depends: +libuci +libpthread
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Microhard modified snmp package
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  This package contains the microhard home grown net-snmp server derived from IXP4xx based IP/VIP platform.
+@@
+
+

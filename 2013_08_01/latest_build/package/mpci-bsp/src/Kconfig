@@ -1,0 +1,3 @@
+config MPCI_BSP
+	tristate "BSP support for the MPCI board"
+	depends on @TARGET_ar71xx

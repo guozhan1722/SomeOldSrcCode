@@ -1,0 +1,20 @@
+Source-Makefile: package/libmatrixssl-nothread/Makefile
+Package: libmatrixssl-nothread
+Version: 1.8.5-1
+Depends: 
+Provides: 
+Section: libs
+Category: Libraries
+Title: Embedded SSL implementation
+Maintainer: Eric Bishop <eric@gargoyle-router.com>
+Source: 
+Type: ipkg
+Description: 	Embedded SSL implementation, compiled without 
+	libpthread dependency. This version is NOT
+	threadsafe but works with uclibc v0.9.29,
+	which has an implementation of libpthread that
+	causes problems.
+http://www.matrixssl.org/
+@@
+
+

@@ -1,0 +1,16 @@
+Source-Makefile: package/adxl345/Makefile
+Package: kmod-adxl34x
+Submenu: Other modules
+Version: <LINUX_VERSION>-1
+Depends: 
+Provides: 
+Section: kernel
+Category: Kernel modules
+Title: Accelerometer adxl34x support
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  Kernel module to support Accelerometer adxl34x.
+@@
+
+

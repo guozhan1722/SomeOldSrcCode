@@ -1,0 +1,230 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+. /etc/version
+
+START=60
+STOP=90
+
+start() {
+        rm -f /var/run/com1_packet
+        config_load comport
+        config_get status com1 COM1_Port_Status
+        [ "A" == "$status" ] || {
+                if [ "$HARDWARE" = "v1.0.0" ]; then
+                        config_get mode com1 COM1_Chanel_Mode
+                        /etc/init.d/ledcon stop
+                        if [ "A" = "$mode" ];then
+                                #for 232 mode
+                                mpci -gpio set 17 0
+                                mpci -gpio set 0 1
+                                mpci -gpio set 1 0
+                        elif [ "B" = "$mode" ];then
+                                #for 485 RX-only mode
+                                mpci -gpio set 17 1
+                                mpci -gpio set 0 0
+                                mpci -gpio set 1 0
+                        elif [ "C" = "$mode" ];then
+                                #for 422 mode
+                                mpci -gpio set 17 1
+                                mpci -gpio set 0 0
+                                mpci -gpio set 1 1
+                        else
+                                #default mode for 232 mode
+                                mpci -gpio set 17 0
+                                mpci -gpio set 0 1
+                                mpci -gpio set 1 0
+                        fi   
+                        /etc/init.d/ledcon start
+                        /bin/soipdmpci &
+                elif [ "$HARDWARE" = "v2.0.0" ]; then
+                        logger "<rc.d/soip> VIP4G v2.0.0 ledcon start"
+                        #do somthing here
+               	elif [ "$HARDWARE" = "3.0.0" ]; then
+                        config_get mode com1 COM1_Chanel_Mode
+                        #for SVIP board
+                        # !re_485 -- GPIO3
+                        # de_485  -- GPIO4
+                        # !RING    -- GPIO5
+                        if [ "A" = "$mode" ];then
+                                #for 232 mode
+                                vip -gpio set 5 1
+                                vip -gpio set 3 1
+                                vip -gpio set 4 0
+                        elif [ "B" = "$mode" ];then
+                                #for 485 RX-only mode
+                                vip -gpio set 5 0
+                                vip -gpio set 3 0
+                                vip -gpio set 4 0
+                        elif [ "C" = "$mode" ];then
+                                #for 422 mode
+                                vip -gpio set 5 0
+                                vip -gpio set 3 0
+                                vip -gpio set 4 1
+                        else
+                                #default mode for 232 mode
+                                vip -gpio set 5 1
+                                vip -gpio set 3 1
+                                vip -gpio set 4 0
+                        fi   
+                	/bin/soipd1 &
+
+               	elif [ "$HARDWARE" = "0.0.0" ]; then
+                        config_get mode com1 COM1_Chanel_Mode
+                        #for rev0 board
+                        # !re_485 -- GPIO3
+                        # de_485  -- GPIO4
+                        # !RING    -- GPIO11
+                        if [ "A" = "$mode" ];then
+                                #for 232 mode
+                                vip -gpio set 11 1
+                                vip -gpio set 3 1
+                                vip -gpio set 4 0
+                        elif [ "B" = "$mode" ];then
+                                #for 485 RX-only mode
+                                vip -gpio set 11 0
+                                vip -gpio set 3 0
+                                vip -gpio set 4 0
+                        elif [ "C" = "$mode" ];then
+                                #for 422 mode
+                                vip -gpio set 11 0
+                                vip -gpio set 3 0
+                                vip -gpio set 4 1
+                        else
+                                #default mode for 232 mode
+                                vip -gpio set 11 1
+                                vip -gpio set 3 1
+                                vip -gpio set 4 0
+                        fi   
+                	/bin/soipd1 &
+               	elif [ "$HARDWARE" = "5.0.0" ]; then
+                        config_get mode com1 COM1_Chanel_Mode
+                        #for rev0 board
+                        # !re_485 -- leds/re_485 brightness=0 high
+                        # de_485  -- leds/de_485 brightness=0 low
+                        # !RING    -- GPIO2
+                        if [ "A" = "$mode" ];then
+                                #for 232 mode
+                                vip -gpio set 2 1
+                            	echo 0 > /sys/class/leds/re_485/brightness
+                            	echo 0 > /sys/class/leds/de_485/brightness
+                        elif [ "B" = "$mode" ];then
+                                #for 485 RX-only mode
+                                vip -gpio set 2 0
+                            	echo 1 > /sys/class/leds/re_485/brightness
+                            	echo 0 > /sys/class/leds/de_485/brightness
+                        elif [ "C" = "$mode" ];then
+                                #for 422 mode
+                                vip -gpio set 2 0
+                            	echo 1 > /sys/class/leds/re_485/brightness
+                            	echo 1 > /sys/class/leds/de_485/brightness
+                        else
+                                #default mode for 232 mode
+                                vip -gpio set 2 1
+                            	echo 1 > /sys/class/leds/re_485/brightness
+                            	echo 0 > /sys/class/leds/de_485/brightness
+                        fi   
+                	/bin/soipd1 &
+               	elif [ "$HARDWARE" = "2.0.0" ]; then
+                        config_get mode com1 COM1_Chanel_Mode
+                        #for normal VIP board (fix me)
+                        # !re_485 -- GPIO3
+                        # de_485  -- GPIO4
+                        # !RING    -- GPIO11
+                        if [ "A" = "$mode" ];then
+                                #for 232 mode
+                                vip -gpio set 5 1
+                                vip -gpio set 3 1
+                                vip -gpio set 4 0
+                        elif [ "B" = "$mode" ];then
+                                #for 485 RX-only mode
+                                vip -gpio set 5 0
+                                vip -gpio set 3 0
+                                vip -gpio set 4 0
+                        elif [ "C" = "$mode" ];then
+                                #for 422 mode
+                                vip -gpio set 5 0
+                                vip -gpio set 3 0
+                                vip -gpio set 4 1
+                        else
+                                #default mode for 232 mode
+                                vip -gpio set 5 1
+                                vip -gpio set 3 1
+                                vip -gpio set 4 0
+                        fi   
+                	/bin/soipd1 &
+
+                else
+                        config_get mode com1 COM1_Chanel_Mode
+                        #for other VIP board (fix me)
+                        # !re_485 -- GPIO3
+                        # de_485  -- GPIO4
+                        # !RING    -- GPIO11
+                        if [ "A" = "$mode" ];then
+                                #for 232 mode
+                                vip -gpio set 11 1
+                                vip -gpio set 3 1
+                                vip -gpio set 4 0
+                        elif [ "B" = "$mode" ];then
+                                #for 485 RX-only mode
+                                vip -gpio set 11 0
+                                vip -gpio set 3 0
+                                vip -gpio set 4 0
+                        elif [ "C" = "$mode" ];then
+                                #for 422 mode
+                                vip -gpio set 11 0
+                                vip -gpio set 3 0
+                                vip -gpio set 4 1
+                        else
+                                #default mode for 232 mode
+                                vip -gpio set 11 1
+                                vip -gpio set 3 1
+                                vip -gpio set 4 0
+                        fi   
+                	/bin/soipd1 &
+	        fi
+        }
+}
+
+stop() {
+	if [ "$HARDWARE" = "v1.0.0" ]; then
+                #default mode for 232 mode
+                mpci -gpio set 17 0
+                mpci -gpio set 0 1
+                mpci -gpio set 1 0
+                killall soipdmpci
+        elif [ "$HARDWARE" = "v2.0.0" ]; then
+                logger "<rc.d/soip> VIP4G v2.0.0 ledcon stop"
+                #do somthing here
+       	elif [ "$HARDWARE" = "3.0.0" ]; then
+                #default mode for 232 mode
+                vip -gpio set 5 1
+                vip -gpio set 3 1
+                vip -gpio set 4 0
+	        killall -9 soipd1
+                rm /var/run/com1_packet 
+       	elif [ "$HARDWARE" = "5.0.0" ]; then
+                #default mode for 232 mode
+                vip -gpio set 2 1
+                echo 0 > /sys/class/leds/re_485/brightness
+                echo 0 > /sys/class/leds/de_485/brightness
+	        killall -9 soipd1 
+                rm /var/run/com1_packet
+ 	elif [ "$HARDWARE" = "2.0.0" ]; then
+                vip -gpio set 5 1
+                vip -gpio set 3 1
+                vip -gpio set 4 0
+	        killall -9 soipd1
+                rm /var/run/com1_packet 
+        else
+                #default mode for 232 mode
+                vip -gpio set 11 1
+                vip -gpio set 3 1
+                vip -gpio set 4 0
+	        killall -9 soipd1
+                rm /var/run/com1_packet 
+	fi
+	rm -f /var/run/com1_packet
+}
+
+

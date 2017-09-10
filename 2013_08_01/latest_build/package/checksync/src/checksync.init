@@ -1,0 +1,29 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+. /etc/version
+
+START=50
+STOP=90
+
+DAEMON1=/bin/checksync
+PIDFILE1=/var/run/checksync.pid
+
+
+start() {
+    #logger "Starting interface monitor (checksync) ... "
+    start-stop-daemon --start --quiet --pidfile $PIDFILE1 --exec $DAEMON1 --background
+    logger "interface monitor (checksync) started." 
+
+}
+
+stop() {
+    #logger "Stopping interface monitor (checksync) ... "
+    start-stop-daemon --stop --quiet  --exec $DAEMON1 
+    logger "interface monitor (checksync) stopped."
+}
+
+restart() {
+	stop
+	start
+}

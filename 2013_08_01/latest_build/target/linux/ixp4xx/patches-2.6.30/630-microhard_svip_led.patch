@@ -1,0 +1,95 @@
+diff -Nuar linux_old/arch/arm/mach-ixp4xx/vip-setup.c linux_new/arch/arm/mach-ixp4xx/vip-setup.c
+--- linux_old/arch/arm/mach-ixp4xx/vip-setup.c	2011-03-02 14:35:24.000000000 -0700
++++ linux_new/arch/arm/mach-ixp4xx/vip-setup.c	2011-03-02 14:01:47.000000000 -0700
+@@ -294,35 +294,58 @@
+ 
+ static struct latch_led vip_latch_leds[] = {
+ 	{
+-		.name	= "user",  /* green led */
++		.name	= "serial_rx",  /* green led */
+ 		.bit	= 0,
+ 	},
+ 	{
+-		.name	= "rssi1",  /* green led */
++		.name	= "serial_tx",  /* green led */
+ 		.bit	= 1,
+ 	},
+ 	{
+-		.name	= "rssi2",  /* green led */
++		.name	= "phy0_rssi6",  /* green led */
+ 		.bit	= 2,
+ 	},
+ 	{
+-		.name	= "rssi3",  /* green led */
++		.name	= "phy0_rssi5",  /* green led */
+ 		.bit	= 3,
+ 	},
+ 	{
+-		.name	= "dcd",  /* DCD0_i control signal */
++		.name	= "phy0_rssi4",  /* DCD0_i control signal */
+ 		.bit	= 4,
+ 	},
+ 	{
+-		.name	= "dsr",  /* DSR0_i control signal */
++		.name	= "phy0_rssi3",  /* DSR0_i control signal */
+ 		.bit	= 5,
+ 	},
+ 	{
+-		.name	= "re_485",  /* RE_485 control signal */
++		.name	= "phy0_rssi2",  /* RE_485 control signal */
+ 		.bit	= 6,
+ 	},
+ 	{
+-		.name	= "de_485",  /* DE_485 control signal */
++		.name	= "phy0_rssi1",  /* DE_485 control signal */
++		.bit	= 7,
++	}
++};
++
++static struct latch_led svip_latch_leds[] = {
++	{
++		.name	= "serial_rx",  /*Serial rx led */
++		.bit	= 0,
++	},
++	{
++		.name	= "serial_tx", /* Serial tx led */ 
++		.bit	= 1,
++	},
++	{
++		.name	= "phy0_rssi3",  	/* green led */
++		.bit	= 5,
++	},
++	{
++		.name	= "phy0_rssi2",    /* green led */
++		.bit	= 6,
++	},
++	{
++		.name	= "phy0_rssi1",   /* green led */
+ 		.bit	= 7,
+ 	}
+ };
+@@ -509,7 +532,7 @@
+ 
+ static void __init vip_board_setup(void)
+ {
+-
++	int revision = (*IXP4XX_EXP_CFG0 >> 17) & 0xf;
+ 	vip_gpio_resources[0].start = (1 << 9);
+ 	vip_gpio_resources[0].end = vip_gpio_resources[0].start;
+ 
+@@ -521,6 +544,15 @@
+ 	vip_gpio_buttons_data.buttons[0].gpio = 9;
+ 	platform_device_register(&vip_gpio_buttons_device);
+ 
++	if(revision == 3){
++		vip_latch_leds_data.num_leds = 5;
++		vip_latch_leds_data.leds = svip_latch_leds;
++		*IXP4XX_EXP_CS2 = 0xbfff0003; 
++		platform_device_register(&vip_latch_leds_device);
++	} else {
++		*IXP4XX_EXP_CS2 = 0xbfff0003; 
++		platform_device_register(&vip_latch_leds_device);
++	}
+ }
+ 
+ static void __init vip_board_rev0_setup(void)

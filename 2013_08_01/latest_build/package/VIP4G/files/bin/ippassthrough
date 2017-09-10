@@ -1,0 +1,280 @@
+#!/bin/sh
+. /etc/functions.sh
+. /etc/version
+
+local LTE_IFACE=$1
+local LTE_LOCAL=$2
+local IP_PASSTHROUGH=$3
+
+logger -t "ippassthrough" "Start IP PASS THROUGH : Status is $IP_PASSTHROUGH LTE_IFACE is $LTE_IFACE LTE_LOCAL is $LTE_LOCAL"
+#local dnspassthrough=$(uci get lte.connect.dnspassthrough)
+
+if [ "$IP_PASSTHROUGH" = "Ethernet" -o "$IP_PASSTHROUGH" = "WANport" ]; then
+    if [ "$PRODUCT" = "VIP4G" -o "$PRODUCT" = "VIP4GEXP"  ]; then    
+      #stop multiwan first
+      mwan_pid=$(ps |grep multiwan |grep -v grep |awk '{print $1}')
+      kill -9 $mwan_pid
+    fi
+    #stop ntp client
+    /etc/init.d/ntpclient stop
+    #set 4g ipaddress file
+    [ "$IP_PASSTHROUGH" = "Ethernet" ] && echo "$LTE_LOCAL on LAN" >/tmp/run/ippth_4g
+    [ "$IP_PASSTHROUGH" = "WANport" ] && echo "$LTE_LOCAL on WAN" >/tmp/run/ippth_4g
+    
+    if [ "${LTE_LOCAL##*.}" != "1" ]; then
+            LOCAL_IP="${LTE_LOCAL%.*}.1"
+    else
+            LOCAL_IP="${LTE_LOCAL%.*}.2"
+    fi
+    
+    #get gateway and netmask from /var/state/network file    
+    if [ "$PRODUCT" = "VIP4G" -o "$PRODUCT" = "VIP4GEXP" ];then
+         LTE_NETMASK=$(uci_get_state network wan2 netmask 255.255.255.0)
+         LTE_GATEWAY=$(uci_get_state network wan2 gateway)
+         #LTE_GATEWAY=$(uci_get_state network wan2 gateway $LOCAL_IP)
+    elif [ "$PRODUCT" = "IPn4G" -o "$PRODUCT" = "IPn4GEXP" ];then
+         LTE_NETMASK=$(uci_get_state network wan netmask 255.255.255.0)
+         LTE_GATEWAY=$(uci_get_state network wan gateway)
+         #LTE_GATEWAY=$(uci_get_state network wan gateway $LOCAL_IP)
+    else
+         LTE_NETMASK=$(uci_get_state network wan netmask 255.255.255.0)
+         LTE_GATEWAY=$(uci_get_state network wan gateway)
+         #LTE_GATEWAY=$(uci_get_state network wan gateway $LOCAL_IP)
+    fi
+
+    #Can not get gateway right way. need wait a while
+    cnt=0
+    while [ -z "$LTE_GATEWAY" -a "$cnt" -lt "10" ]; do
+        sleep 1
+       if [ "$PRODUCT" = "VIP4G" -o "$PRODUCT" = "VIP4GEXP" ];then
+            LTE_NETMASK=$(uci_get_state network wan2 netmask 255.255.255.0)
+            LTE_GATEWAY=$(uci_get_state network wan2 gateway)
+            #LTE_GATEWAY=$(uci_get_state network wan2 gateway $LOCAL_IP)
+       elif [ "$PRODUCT" = "IPn4G" -o "$PRODUCT" = "IPn4GEXP" ];then
+            LTE_NETMASK=$(uci_get_state network wan netmask 255.255.255.0)
+            LTE_GATEWAY=$(uci_get_state network wan gateway)
+            #LTE_GATEWAY=$(uci_get_state network wan gateway $LOCAL_IP)
+       else
+            LTE_NETMASK=$(uci_get_state network wan netmask 255.255.255.0)
+            LTE_GATEWAY=$(uci_get_state network wan gateway)
+            #LTE_GATEWAY=$(uci_get_state network wan gateway $LOCAL_IP)
+       fi
+        cnt=$(($cnt+1))
+        logger -t "ippassthrough Error" "count = $cnt and gateway is $LTE_GATEWAY"
+    done
+
+    #finally we can not get gateway 
+    ippassth_mode=$(uci get lte.connect.ippassth_mode)
+    if [ "$ippassth_mode" = "1" ];then
+         LTE_GATEWAY=$(uci get lte.connect.ippassth_GW)
+         LTE_NETMASK=$(uci get lte.connect.ippassth_NM)
+         eval err_check="$(netclass.sh E $LTE_GATEWAY $LTE_NETMASK $LTE_LOCAL 0)"
+         if [ -n "$err_check" ];then
+            logger -t "ippassthrough" "IP Error check :$err_check"    
+            LTE_GATEWAY=$LOCAL_IP 
+            LTE_NETMASK="255.255.255.0"
+         fi
+    else
+       [ -z "$LTE_GATEWAY" ] && {
+         LTE_GATEWAY=$LOCAL_IP 
+         LTE_NETMASK="255.255.255.0"
+         logger -t "ippassthrough Error" "Cannot get gateway using $LTE_GATEWAY as gateway"
+       } || {
+         eval err_check="$(netclass.sh E $LTE_GATEWAY $LTE_NETMASK $LTE_LOCAL 0)"
+         if [ -n "$err_check" ];then
+            logger -t "ippassthrough" "IP Error check :$err_check"    
+            LTE_NETMASK="255.255.255.0"
+         fi
+       }
+    fi
+
+    if [ "$IP_PASSTHROUGH" = "Ethernet" ]; then
+    #reset the LOCAL_IP value .
+    LOCAL_IP=$LTE_GATEWAY
+    ip addr flush dev br-lan
+    #ip addr add "$LTE_GATEWAY/$LTE_NETMASK" dev br-lan
+    ip addr add "$LOCAL_IP/$LTE_NETMASK" dev br-lan
+    #uci_set "network" "lan" "ipaddr" "$LOCAL_IP"
+    #/etc/init.d/network restart     
+        
+    ip addr flush dev "$LTE_IFACE"
+    ip route add default dev "$LTE_IFACE"
+    ip addr add "1.1.1.1/32" dev "$LTE_IFACE"
+    ip route add "$LTE_LOCAL/32" dev br-lan
+    ip route del "${LTE_LOCAL%.*}.0/24" dev br-lan
+
+    echo "1" > /proc/sys/net/ipv4/conf/br-lan/proxy_arp
+    #echo "1" > /proc/sys/net/ipv4/conf/br-lan/proxy_arp
+    #echo "1" > /proc/sys/net/ipv4/conf/br-lan/proxy_arp
+    
+    [ -s /tmp/resolv.conf.auto ] && {
+        dns=$(awk '/nameserver/{print $2}' /tmp/resolv.conf.auto)
+        dns=$(echo $dns | awk '{gsub(/ /,",");print}')
+    }
+
+    #here will backup old file for return back no ippassthrough mode
+    [ -f "/etc/dhcp_ippbackup" ] || cp -f /etc/config/dhcp /etc/dhcp_ippbackup
+    #config_load dhcp
+    uci_remove "dhcp" "lan" "dhcp_option" 
+    uci_set "dhcp" "lan" "netmask" "255.255.255.0"
+    uci_set "dhcp" "lan" "ipaddr"  "${LTE_LOCAL}"
+    uci_set "dhcp" "lan" "start"   "${LTE_LOCAL##*.}"
+    uci_set "dhcp" "lan" "limit"  "0"
+    uci_set "dhcp" "lan" "ignore"  "0"
+    uci_set "dhcp" "lan" "netmask"  "${LTE_NETMASK}"
+    uci add_list dhcp.lan.dhcp_option="6,$dns" 
+    #uci_set "dhcp" "lan" "leasetime"  "2m"
+    uci_commit dhcp
+    else
+    #reset the LOCAL_IP value .
+    LOCAL_IP=$LTE_GATEWAY
+    ip addr flush dev br-wan
+    #ip addr add "$LTE_GATEWAY/$LTE_NETMASK" dev br-lan
+    ip addr add "$LOCAL_IP/$LTE_NETMASK" dev br-wan
+    #uci_set "network" "lan" "ipaddr" "$LOCAL_IP"
+    #/etc/init.d/network restart     
+        
+    ip addr flush dev "$LTE_IFACE"
+    ip route add default dev "$LTE_IFACE"
+    ip addr add "1.1.1.1/32" dev "$LTE_IFACE"
+    ip route add "$LTE_LOCAL/32" dev br-wan
+    ip route del "${LTE_LOCAL%.*}.0/24" dev br-wan
+
+    echo "1" > /proc/sys/net/ipv4/conf/br-wan/proxy_arp
+    #echo "1" > /proc/sys/net/ipv4/conf/br-lan/proxy_arp
+    #echo "1" > /proc/sys/net/ipv4/conf/br-lan/proxy_arp
+    
+    [ -s /tmp/resolv.conf.auto ] && {
+        dns=$(awk '/nameserver/{print $2}' /tmp/resolv.conf.auto)
+        dns=$(echo $dns | awk '{gsub(/ /,",");print}')
+    }
+
+    #here will backup old file for return back no ippassthrough mode
+    [ -f "/etc/dhcp_ippbackup" ] || cp -f /etc/config/dhcp /etc/dhcp_ippbackup
+    #config_load dhcp
+    uci_remove "dhcp" "lan" "dhcp_option" 
+    uci_remove "dhcp" "wan" "dhcp_option" 
+    uci_set "dhcp" "wan" "netmask" "255.255.255.0"
+    uci_set "dhcp" "wan" "ipaddr"  "${LTE_LOCAL}"
+    uci_set "dhcp" "wan" "start"   "${LTE_LOCAL##*.}"
+    uci_set "dhcp" "wan" "limit"  "0"
+    uci_set "dhcp" "wan" "ignore"  "0"
+    uci_set "dhcp" "wan" "netmask"  "${LTE_NETMASK}"
+    uci add_list dhcp.wan.dhcp_option="6,$dns" 
+    uci add_list dhcp.lan.dhcp_option="6,$dns" 
+    #uci_set "dhcp" "lan" "leasetime"  "2m"
+    uci_commit dhcp
+    fi
+    logger -t "ippassthrough" "dnsmasq stop"
+    /etc/init.d/dnsmasq stop
+    #just make sure dnsmasq is totolly stopped
+    killall -9 dnsmasq  2>/dev/null
+    #reset lan port to let PC can refresh their IP address AUTO
+    #fix me , do not know if need add eth1 in?
+    #sleep 1
+    rm /tmp/dhcp.leases
+    sleep 1
+    logger -t "ippassthrough" "dnsmasq start"
+    /etc/init.d/dnsmasq start
+    sleep 1
+    [ "$IP_PASSTHROUGH" = "Ethernet" ] && mii-tool -R eth0
+    [ "$IP_PASSTHROUGH" = "WANport" ] && mii-tool -R eth1
+    logger -t "ippassthrough" "reset eth port"
+    include /lib/network
+    setup_switch
+
+
+    HTTP_PORT=$(uci get httpd.@httpd[0].port )
+    HTTPS_PORT=$(uci get webif.general.ssl_port)
+    [ -z "$HTTP_PORT" ] && HTTP_PORT=80
+    [ -z "$HTTPS_PORT" ] && HTTPS_PORT=443
+
+    [ ! -d /etc/firewall_stop ] && mkdir /etc/firewall_stop
+    echo "/usr/sbin/iptables -t nat -A PREROUTING -p tcp -i $LTE_IFACE --dport $HTTP_PORT -j DNAT --to-destination ${LOCAL_IP}:$HTTP_PORT" > /etc/firewall_stop/ippassthrough
+    echo "/usr/sbin/iptables -t nat -A PREROUTING -p tcp -i $LTE_IFACE --dport $HTTPS_PORT -j DNAT --to-destination ${LOCAL_IP}:$HTTPS_PORT" >> /etc/firewall_stop/ippassthrough
+    logger -t "ippassthrough" "write firewall 1"
+    snmpdstatus=$(uci get snmpd.snmpd.NetWork_SNMP_MODE)
+    if [ "$snmpdstatus" = "B" ];then
+        SNMP_PORT=$(uci get snmpd.snmpd.NetWork_SNMP_Listen_Port)
+        [ -z "$SNMP_PORT" ] && SNMP_PORT=161
+        echo "/usr/sbin/iptables -t nat -A PREROUTING -p tcp -i $LTE_IFACE --dport $SNMP_PORT -j DNAT --to-destination ${LOCAL_IP}:$SNMP_PORT" >> /etc/firewall_stop/ippassthrough
+        echo "/usr/sbin/iptables -t nat -A PREROUTING -p udp -i $LTE_IFACE --dport $SNMP_PORT -j DNAT --to-destination ${LOCAL_IP}:$SNMP_PORT" >> /etc/firewall_stop/ippassthrough
+    fi
+
+    comstatus=$(uci get comport2.com2.COM2_Port_Status)
+    if [ "$comstatus" = "B" ];then
+        comproto=$(uci get comport2.com2.COM2_IP_Protocol)
+        if [ "$comproto" = "B" -o "$comproto" = "C" ]; then
+            COM_PORT=$(uci get comport2.com2.COM2_T_Server_Listen_Port)
+            PROTO="tcp"
+        elif [ "$comproto" = "D" ]; then
+            COM_PORT=$(uci get comport2.com2.COM2_U_PtoP_Listen_Port)
+            PROTO="udp"
+        elif [ "$comproto" = "E" ]; then
+            COM_PORT=$(uci get comport2.com2.COM2_UM_P_Listen_Port)
+            PROTO="udp"
+        fi    
+        [ -z "$COM_PORT" ] && COM_PORT=20002
+        [ -z "$PROTO" ] && PROTO="tcp"
+        echo "/usr/sbin/iptables -t nat -A PREROUTING -p $PROTO -i $LTE_IFACE --dport $COM_PORT -j DNAT --to-destination ${LOCAL_IP}:$COM_PORT" >> /etc/firewall_stop/ippassthrough
+    fi
+
+    if [ "$PRODUCT" = "IPn4G" -o "$PRODUCT" = "IPn4GEXP" ];then
+      com1status=$(uci get comport.com1.COM1_Port_Status)
+      if [ "$com1status" = "B" ];then
+        com1proto=$(uci get comport.com1.COM1_IP_Protocol)
+        if [ "$com1proto" = "B" -o "$com1proto" = "C" ]; then
+            COM1_PORT=$(uci get comport.com1.COM1_T_Server_Listen_Port)
+            PROTO="tcp"
+        elif [ "$com1proto" = "D" ]; then
+            COM1_PORT=$(uci get comport.com1.COM1_U_PtoP_Listen_Port)
+            PROTO="udp"
+        elif [ "$com1proto" = "E" ]; then
+            COM1_PORT=$(uci get comport.com1.COM1_UM_P_Listen_Port)
+            PROTO="udp"
+        fi    
+        [ -z "$COM1_PORT" ] && COM1_PORT=20001
+        [ -z "$PROTO" ] && PROTO="tcp"
+        echo "/usr/sbin/iptables -t nat -A PREROUTING -p $PROTO -i $LTE_IFACE --dport $COM1_PORT -j DNAT --to-destination ${LOCAL_IP}:$COM1_PORT" >> /etc/firewall_stop/ippassthrough
+      fi
+   fi
+    gpsdstatus=$(uci get gpsd.gpsd_conf.status)
+    if [ "$gpsdstatus" = "1" ];then
+        gpsport=$(uci get gpsd.gpsd_conf.GPSD_TCP_Port)
+        [ -z "$gpsport" ] && gpsport=2947
+        echo "/usr/sbin/iptables -t nat -A PREROUTING -p tcp -i $LTE_IFACE --dport $gpsport -j DNAT --to-destination ${LOCAL_IP}:$gpsport" >> /etc/firewall_stop/ippassthrough
+        echo "/usr/sbin/iptables -t nat -A PREROUTING -p udp -i $LTE_IFACE --dport $gpsport -j DNAT --to-destination ${LOCAL_IP}:$gpsport" >> /etc/firewall_stop/ippassthrough
+    fi
+    
+    if [ "$IP_PASSTHROUGH" = "Ethernet" ]; then
+    logger -t "ippassthrough" "write firewall 2"
+    echo "/usr/sbin/iptables -t nat -A POSTROUTING -p udp -o $LTE_IFACE -j SNAT --to-source $LTE_LOCAL" >> /etc/firewall_stop/ippassthrough
+    echo "/usr/sbin/iptables -t nat -A POSTROUTING -p tcp -o $LTE_IFACE -j SNAT --to-source $LTE_LOCAL" >> /etc/firewall_stop/ippassthrough
+    echo "/usr/sbin/iptables -t nat -A POSTROUTING -p icmp -o $LTE_IFACE -j SNAT --to-source $LTE_LOCAL" >> /etc/firewall_stop/ippassthrough
+    else
+    logger -t "ippassthrough" "write firewall 3"
+    echo "/usr/sbin/iptables -t nat -A POSTROUTING -o $LTE_IFACE -j SNAT --to-source $LTE_LOCAL" >> /etc/firewall_stop/ippassthrough
+    fi
+
+    /etc/init.d/firewall stop
+
+    udhcp_pid=$(ps |grep udhcpc |grep br-wan2 |grep -v grep |awk '{print $1}')
+    kill -9 $udhcp_pid
+    rm /tmp/.uci/* >&- 2>&-
+else
+    logger -t "ippassthrough" "Disable ip pass through Function and remove dhcp option settings"
+    rm -rf /tmp/run/ippth_4g
+    #[ -f "/etc/dhcp_ippbackup" ] && {
+    #     mv /etc/dhcp_ippbackup /etc/config/dhcp
+    #}    
+
+    #for dns passthrough , we have to restart dnsmasq server.
+    #/etc/init.d/dnsmasq stop
+    #killall -9 dnsmasq
+    #sleep 1
+    #/etc/init.d/dnsmasq start
+#         logger -t "ippassthrough" "Restart dnsmasq Server"
+#   }
+fi
+
+

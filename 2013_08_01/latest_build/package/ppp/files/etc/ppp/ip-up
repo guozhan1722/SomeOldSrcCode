@@ -1,0 +1,55 @@
+#!/bin/sh
+. /etc/functions.sh
+PPP_IFACE="$1"
+PPP_TTY="$2"
+PPP_SPEED="$3"
+PPP_LOCAL="$4"
+PPP_REMOTE="$5"
+PPP_IPPARAM="$(echo $6 | sed 's/\./_/g')"
+PPP_UNIT="${PPP_IFACE##ppp}"
+
+export PPP_IFACE PPP_TTY PPP_SPEED PPP_LOCAL PPP_REMOTE PPP_IPPARAM
+[ -z "$PPP_IPPARAM" -o -z "$PPP_LOCAL" ] || {
+	uci_set_state network "$PPP_IPPARAM" unit "$PPP_UNIT"
+	uci_set_state network "$PPP_IPPARAM" ipaddr "$PPP_LOCAL"
+	uci_set_state network "$PPP_IPPARAM" gateway "$PPP_REMOTE"
+
+	local dns="$DNS1${DNS2:+ $DNS2}"
+	[ -n "$dns" ] && uci_set_state network "$PPP_IPPARAM" dns "$dns"
+}
+[ -z "$PPP_IPPARAM" ] || env -i ACTION="ifup" INTERFACE="$PPP_IPPARAM" DEVICE="$PPP_IFACE" PROTO=ppp /sbin/hotplug-call "iface"
+
+[ -d /var/run/ipsecfirewall ] || mkdir /var/run/ipsecfirewall
+echo "iptables -A forwarding_rule -i $PPP_IFACE -j ACCEPT" > /var/run/ipsecfirewall/firewall.$PPP_IFACE
+echo "iptables -A forwarding_rule -o $PPP_IFACE -j ACCEPT" >> /var/run/ipsecfirewall/firewall.$PPP_IFACE
+iptables -A forwarding_rule -i $PPP_IFACE -j ACCEPT
+iptables -A forwarding_rule -o $PPP_IFACE -j ACCEPT
+rm -f /var/run/"$PPP_IFACE".status
+st=$(date +"%c")
+echo "starttime=$st" >> /var/run/"$PPP_IFACE".status
+st=$(date +"%s")
+echo "stime=$st" >> /var/run/"$PPP_IFACE".status
+echo "lip=$PPP_LOCAL" >> /var/run/"$PPP_IFACE".status
+echo "remoteip=$PPP_REMOTE" >> /var/run/"$PPP_IFACE".status
+echo "remotegateway=$6" >> /var/run/"$PPP_IFACE".status
+ttype=$(uci get ipsec.$6)
+if [ $ttype = "x2ctunnel" ]; then
+     [ -f "/var/run/${6}.ctl" ] && rm -f /var/run/${6}.ctl
+     echo "action=ipup" > /var/run/mipsec/$6
+     echo "status=connected" >> /var/run/mipsec/$6
+     echo "constat=Disconnect" >> /var/run/mipsec/$6
+     echo "inf=$PPP_IFACE" >> /var/run/mipsec/$6
+     echo "localip=$PPP_LOCAL" >> /var/run/mipsec/$6
+     echo "serverip=$PPP_REMOTE" >> /var/run/mipsec/$6
+     echo "$6" > /var/run/${PPP_IFACE}.x2c
+     subnet=$(uci get ipsec.${6}.rightsubnet)
+     mask=$(uci get ipsec.${6}.rightmask)
+     /sbin/route add -net $subnet netmask $mask gw $PPP_REMOTE dev $PPP_IFACE
+fi
+
+[ -d /etc/ppp/ip-up.d ] && {
+	for SCRIPT in /etc/ppp/ip-up.d/*
+	do
+		[ -x "$SCRIPT" ] && "$SCRIPT" "$@"
+	done
+}

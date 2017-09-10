@@ -1,0 +1,35 @@
+#!/bin/sh
+# Copyright (C) 2012 Microhard
+
+. /etc/functions.sh
+
+logger "iface.50mvpn $ACTION $INTERFACE"
+case "${ACTION:-ifup}" in
+    ifup)
+
+	   [ "$INTERFACE" = "wan2" ] && {
+	          logger "call ipsec_wan2"
+	          /sbin/ipsec_wan2 &
+            }		
+	    [ "$INTERFACE" = "wan" ] && {
+	          logger "call ipsec_wan"
+	          /sbin/ipsec_wan &  
+	    }
+    ;;
+    ifdown)
+	[ "$INTERFACE" = "wan2" ] && {
+	    logger "kill ipsec_wan2"
+	    killall -9 ipsec_wan2
+	    rm -f /var/lock/ipsec_wan2.lock
+	    rm -rf /var/lock/mipsec
+	    /sbin/mipsec.sh shutdown_wan2 &
+	} 
+	[ "$INTERFACE" = "wan" ] && {
+	    logger "kill ipsec_wan"
+	    killall -9 ipsec_wan
+	    rm -rf /var/lock/mipsec
+	    rm -f /var/lock/ipsec_wan.lock
+	    /sbin/mipsec.sh shutdown_wan &
+	}
+     ;;
+esac

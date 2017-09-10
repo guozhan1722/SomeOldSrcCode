@@ -1,0 +1,17 @@
+Source-Makefile: package/carl9170/Makefile
+Package: kmod-carl9170
+Submenu: Wireless Drivers
+Version: <LINUX_VERSION>+1.0.1.1-1
+Depends: @USB_SUPPORT +kmod-mac80211 +kmod-ath +kmod-usb-core
+Provides: 
+Section: kernel
+Category: Kernel modules
+Title: Driver for Atheros AR9170 USB sticks
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: carl9170-1.0.1.1.tar.bz2
+Type: ipkg
+Description:  This package contains a driver for Atheros AR9170 USB sticks using the free firmware
+http://www.kernel.org/pub/linux/kernel/people/chr/carl9170
+@@
+
+

@@ -1,0 +1,976 @@
+diff -Nuar linux-2.6.30.10.bak/drivers/net/bonding/bond_bcast_ex.c linux-2.6.30.10/drivers/net/bonding/bond_bcast_ex.c
+--- linux-2.6.30.10.bak/drivers/net/bonding/bond_bcast_ex.c	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.30.10/drivers/net/bonding/bond_bcast_ex.c	2011-08-02 14:08:47.000000000 -0600
+@@ -0,0 +1,526 @@
++/*
++ * Copyright(c) 1999 - 2004 Intel Corporation. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License as published by the Free
++ * Software Foundation; either version 2 of the License, or (at your option)
++ * any later version.
++ *
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ * more details.
++ *
++ * You should have received a copy of the GNU General Public License along with
++ * this program; if not, write to the Free Software Foundation, Inc., 59
++ * Temple Place - Suite 330, Boston, MA  02111-1307, USA.
++ *
++ * The full GNU General Public License is included in this distribution in the
++ * file called LICENSE.
++ *
++ */
++
++#include <linux/skbuff.h>
++#include <linux/if_ether.h>
++#include <linux/netdevice.h>
++#include <linux/spinlock.h>
++#include <linux/ethtool.h>
++#include <linux/etherdevice.h>
++#include <linux/pkt_sched.h>
++#include <net/net_namespace.h>
++#include "bonding.h"
++#include "bond_bcast_ex.h"
++
++// compare MAC addresses
++#define MAC_ADDRESS_COMPARE(A, B) memcmp(A, B, ETH_ALEN)
++static const u8 BROADCAST_ADDR[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
++
++static inline u16 bond_ex_inc_with_wrap(u16 u_seq)
++{
++    u16 new_seq;
++
++    if( u_seq >= BCAST_EX_MAX_SEQ )
++        new_seq = BCAST_EX_MIN_SEQ;
++    else
++        new_seq = u_seq + 1;
++
++    return new_seq;
++}
++
++static int bcast_ex_hs_send(struct net_device *dev, u8 *dest_addr, u8 *bond_dest_addr, u8 cmd, u16 seq)
++{
++    struct sk_buff *skb;
++    struct bcast_ex_hs_ethhdr *hs_header;
++    int length = sizeof(struct bcast_ex_hs_ethhdr);
++
++    struct bonding *bond = netdev_priv(dev);
++    struct slave *slave, *start_at;
++    struct net_device *tx_dev = NULL;
++    int i;
++    int res = 1;
++
++    read_lock(&bond->lock);
++
++    if (!BOND_IS_OK(bond)) {
++        goto out;
++    }
++
++    skb = dev_alloc_skb(length);
++    if (!skb) {
++		read_unlock(&bond->lock);
++        return -ENOMEM;
++    }
++
++    skb->dev = dev;
++    skb_reset_mac_header(skb);
++    skb->network_header = skb->mac_header + ETH_HLEN;
++    skb->protocol = PKT_TYPE_BCAST_EX;
++    skb->priority = TC_PRIO_CONTROL;
++
++    hs_header = (struct bcast_ex_hs_ethhdr *)skb_put(skb, length);
++
++    memcpy(hs_header->h_source, dev->dev_addr, ETH_ALEN);
++    hs_header->h_bcast_ex_proto = PKT_TYPE_BCAST_EX;
++    hs_header->h_hs_magic = BCAST_EX_HS_MAGIC; /* to tell a handshake frame from a regular sequenced eth frame */
++    memcpy(hs_header->h_bond_source, dev->dev_addr, ETH_ALEN);
++    hs_header->h_len_or_proto = htons(length -BCAST_EX_ETH_HLEN);
++    hs_header->version_number = 0; /* first version of this protocol */
++    hs_header->cmd = cmd;
++
++    if(cmd == HS_START)
++    {
++        memcpy(hs_header->h_dest, BROADCAST_ADDR, ETH_ALEN);
++        hs_header->h_seq = htons(BCAST_EX_MIN_SEQ-1);
++        memcpy(hs_header->h_bond_dest, BROADCAST_ADDR, ETH_ALEN);
++    }
++    else
++    {
++        memcpy(hs_header->h_dest, dest_addr, ETH_ALEN);
++        hs_header->h_seq = htons(seq);
++        memcpy(hs_header->h_bond_dest, bond_dest_addr, ETH_ALEN);
++    }
++
++    /* packet is ready let's transmit on all slave interfaces */
++
++    read_lock(&bond->curr_slave_lock);
++    start_at = bond->curr_active_slave;
++    read_unlock(&bond->curr_slave_lock);
++
++    if (!start_at) {
++        goto out;
++    }
++
++    bond_for_each_slave_from(bond, slave, i, start_at) {
++        if (IS_UP(slave->dev) &&
++            (slave->link == BOND_LINK_UP) &&
++            (slave->state == BOND_STATE_ACTIVE)) {
++            if (tx_dev) {
++                struct sk_buff *skb2 = skb_clone(skb, GFP_ATOMIC);
++                if (!skb2) {
++                    printk(KERN_ERR DRV_NAME
++                           ": %s: Error: bond_es_hs_send(): "
++                           "skb_clone() failed\n",
++                           dev->name);
++                    continue;
++                }
++
++                res = bond_dev_queue_xmit(bond, skb2, tx_dev);
++                if (res) {
++                    dev_kfree_skb(skb2);
++                    continue;
++                }
++            }
++            tx_dev = slave->dev;
++        }   
++    }
++
++    if (tx_dev) {
++        res = bond_dev_queue_xmit(bond, skb, tx_dev);
++    }
++
++out:
++    if (res) {
++        /* no suitable interface, frame not sent */
++        dev_kfree_skb(skb);
++    }
++    /* frame sent to all suitable interfaces */
++    read_unlock(&bond->lock);
++
++    return 0;
++}
++
++/**
++ * bond_bcast_ex_initialize - initialize a bond's bcast_ex 
++ * parameters and structures 
++ *
++ * Can be called only after the mac address of the bond is set.
++ */
++void bond_bcast_ex_initialize(struct bonding *bond)
++{
++    struct rx_tbl_node *node, *node_next;
++
++    read_lock(&bond->lock);
++
++    if (!BOND_IS_OK(bond)) {
++        goto out;
++    }
++
++    node=bond->bcast_ex_info.rx_tbl;
++    while(node)
++    {
++        node_next = node->next;
++        kfree(node);
++        node = node_next;
++    }
++
++    bond->bcast_ex_info.tx_seq = BCAST_EX_MIN_SEQ-1;
++    bond->bcast_ex_info.rx_tbl = NULL;
++
++    /* a new bonding interface is up online, start synchronizing */
++    bcast_ex_hs_send(bond->dev, (u8 *)BROADCAST_ADDR, (u8 *)BROADCAST_ADDR, HS_START, 0);
++
++out:
++    read_unlock(&bond->lock);
++}
++
++/* register to receive broadcast_ex on a bond */
++void bond_register_bcast_ex_handler(struct bonding *bond)
++{
++    netdev_rx_handler_register(bond->dev, bond_handle_bcast_ex_frame, NULL);
++}
++
++/* unregister to receive broadcast_ex on a bond */
++void bond_unregister_bcast_ex_handler(struct bonding *bond)
++{
++
++    struct rx_tbl_node *node, *node_next;
++
++    if (!BOND_IS_OK(bond)) {
++        return;
++    }
++
++    node=bond->bcast_ex_info.rx_tbl;
++    while(node)
++    {
++        node_next = node->next;
++        kfree(node);
++        node = node_next;
++    }
++
++    bond->bcast_ex_info.rx_tbl = NULL;
++
++    netdev_rx_handler_unregister(bond->dev);
++}
++
++int bond_bcast_ex_xmit(struct sk_buff *skb, struct net_device *dev)
++{
++	struct bonding *bond = netdev_priv(dev);
++	struct slave *slave, *start_at;
++	struct net_device *tx_dev = NULL;
++	int i;
++	int res = 1;
++	u16 new_seq;
++
++	read_lock(&bond->lock);
++
++	if (!BOND_IS_OK(bond)) {
++		goto out;
++	}
++
++        /* check whether it is a bcast_ex frame already */
++	if(skb->protocol == htons(BOND_ETH_P_BCAST_EX))
++        	goto out;
++
++	read_lock(&bond->curr_slave_lock);
++	start_at = bond->curr_active_slave;
++	read_unlock(&bond->curr_slave_lock);
++
++	if (!start_at) {
++		goto out;
++	}
++
++	new_seq = bond_ex_inc_with_wrap(bond->bcast_ex_info.tx_seq);
++
++	bond_for_each_slave_from(bond, slave, i, start_at) {
++		if (IS_UP(slave->dev) &&
++			(slave->link == BOND_LINK_UP) &&
++			(slave->state == BOND_STATE_ACTIVE)) {
++			if (tx_dev) {
++				struct sk_buff *skb2 = skb_clone(skb, GFP_ATOMIC);
++
++				if (!skb2) {
++					printk(KERN_ERR DRV_NAME
++						   ": %s: Error: bond_ex_xmit_broadcast(): "
++						   "skb_clone() failed\n",
++						   dev->name);
++					continue;
++				}
++				skb2 = __bcast_ex_put_tag(skb2, dev, new_seq);
++				if( skb2 )
++				{
++				    res = bond_dev_queue_xmit(bond, skb2, tx_dev);
++				    if (res) {
++					dev_kfree_skb(skb2);
++					continue;
++				    }
++				    bond->bcast_ex_info.tx_seq = new_seq;
++				}
++			}
++			tx_dev = slave->dev;
++		}
++	}
++
++	if (tx_dev) {
++		skb = __bcast_ex_put_tag(skb, dev, new_seq);
++		if(skb)
++		{
++		    res = bond_dev_queue_xmit(bond, skb, tx_dev);
++		    bond->bcast_ex_info.tx_seq = new_seq;
++		}
++	}
++
++out:
++	if (res) {
++		/* no suitable interface, frame not sent */
++		dev_kfree_skb(skb);
++	}
++	/* frame sent to all suitable interfaces */
++	read_unlock(&bond->lock);
++	return 0;
++}
++
++static inline void bcast_ex_set_encap_proto(struct sk_buff *skb,
++                struct bcast_ex_hdr *bcast_hdr)
++{
++        __be16 proto;
++        unsigned char *rawp;
++
++        /*
++         * Was a BCAST_EX packet, grab the encapsulated protocol, which the layer
++         * three protocols care about.
++         */
++
++        proto = bcast_hdr->h_encapsulated_proto;
++        if (ntohs(proto) >= 1536) {
++                skb->protocol = proto;
++                return;
++        }
++
++        rawp = skb->data;
++        if (*(unsigned short *)rawp == 0xFFFF)
++                /*
++                 * This is a magic hack to spot IPX packets. Older Novell
++                 * breaks the protocol design and runs IPX over 802.3 without
++                 * an 802.2 LLC layer. We look for FFFF which isn't a used
++                 * 802.2 SSAP/DSAP. This won't work for fault tolerant netware
++                 * but does for the rest.
++                 */
++                skb->protocol = htons(ETH_P_802_3);
++        else
++                /*
++                 * Real 802.2 LLC
++                 */
++                skb->protocol = htons(ETH_P_802_2);
++}
++
++struct sk_buff *bond_handle_bcast_ex_frame(struct sk_buff *skb)
++{
++    struct net_device *bond_dev;
++    struct bonding *bond;
++
++    struct bcast_ex_hdr *bcast_hdr;
++    u16 rx_seq;
++    int32_t int_expected, int_recv;
++    struct rx_tbl_node *node, *prev_node; 
++    bool found = false;
++
++    skb = skb_share_check(skb, GFP_ATOMIC);
++    if (unlikely(!skb))
++	return NULL;
++
++    if (!(skb->dev->priv_flags & IFF_BONDING) || !(skb->dev->flags & IFF_MASTER))
++        goto out;
++
++    bond_dev = skb->dev;
++
++    bond = netdev_priv(bond_dev);
++
++    if (!BOND_IS_OK(bond)) {
++        goto out;
++    }
++
++    if (unlikely(!pskb_may_pull(skb, BCAST_EX_HLEN)))
++        goto drop;
++
++    read_lock(&bond->lock);
++
++    bcast_hdr = (struct bcast_ex_hdr *)skb->data;
++
++    /* check whether it is a bcast_ex frame */
++    if(skb->protocol != htons(BOND_ETH_P_BCAST_EX))
++        goto drop;
++
++    rx_seq = ntohs(bcast_hdr->h_seq);
++
++    if(rx_seq == BCAST_EX_HS_MAGIC)
++    {
++        struct bcast_ex_hs_ethhdr *hs_ethhdr = (struct bcast_ex_hs_ethhdr *)(skb->data - ETH_HLEN);
++
++        switch (hs_ethhdr->cmd)
++        {
++            case HS_START:
++            case HS_RESPONSE:
++                 /* to us or broadcast? */
++                if (!MAC_ADDRESS_COMPARE(bond_dev->dev_addr, hs_ethhdr->h_bond_dest) ||
++                    !MAC_ADDRESS_COMPARE(BROADCAST_ADDR, hs_ethhdr->h_bond_dest) )
++                {
++                    rx_seq = ntohs(hs_ethhdr->h_seq);
++
++                    /* search the table */
++                    prev_node = bond->bcast_ex_info.rx_tbl;
++
++                   for(node = bond->bcast_ex_info.rx_tbl; node!=NULL; node=node->next)
++                   {
++                       if( !MAC_ADDRESS_COMPARE(hs_ethhdr->h_bond_source, &node->source) )
++                       {
++                           found = true;
++                           break;
++                       }
++                       prev_node = node;
++                   }
++
++                   /* found */
++                   if( found && node )
++                   {
++                       /* this could be a duplicated one as well */
++                       int_recv = (int32_t)bond_ex_inc_with_wrap(rx_seq);                       
++                       if( (int_recv > (int32_t)node->rx_seq) ||
++                               (int_recv < (int32_t)node->rx_seq - BCAST_EX_SYNC_THRESHOLD) )
++                       {
++    
++                           node->rx_seq = (u16)int_recv;
++                       }
++                   }
++                   else
++                   {
++                       /* new source, should pass up */
++                       struct rx_tbl_node *new_node = kmalloc(sizeof(struct rx_tbl_node), GFP_KERNEL);
++                       if (!new_node)
++                           goto frame_consumed;
++
++                       /* set the new node and link it into the list */
++                       new_node->next = NULL;
++                       memcpy(&new_node->source, hs_ethhdr->h_bond_source, ETH_ALEN);
++                       new_node->rx_seq  = bond_ex_inc_with_wrap(rx_seq);
++
++                       if(prev_node)
++                           prev_node->next = new_node;
++                       else
++                           bond->bcast_ex_info.rx_tbl = new_node;
++                   }
++                }
++
++                break;
++            case HS_REQUEST:
++
++                 /* to us? */
++                if (!MAC_ADDRESS_COMPARE(bond_dev->dev_addr, hs_ethhdr->h_bond_dest))
++                {
++                    bcast_ex_hs_send(bond_dev, hs_ethhdr->h_source, hs_ethhdr->h_bond_source, HS_RESPONSE, bond->bcast_ex_info.tx_seq);
++                }
++
++                break;
++            default:
++                break;
++        }
++
++frame_consumed:
++        /* frame consumed */
++        dev_kfree_skb(skb);
++        skb = NULL;
++        goto out_unlock;
++    }
++    else
++    {
++        int_recv = (int32_t)rx_seq;
++
++        /* search the table */
++        prev_node = bond->bcast_ex_info.rx_tbl;
++
++        for(node = bond->bcast_ex_info.rx_tbl; node!=NULL; node=node->next)
++        {
++            if( !MAC_ADDRESS_COMPARE(bcast_hdr->h_bond_source, &node->source) )
++            {
++                found = true;
++                break;
++            }
++            prev_node = node;
++        }
++
++        /* found */
++        if( found && node )
++        {
++            int_expected = (int32_t)node->rx_seq;
++
++	        /* check it is dup or not */
++            if( int_recv >= int_expected )
++            {
++                node->rx_seq = bond_ex_inc_with_wrap(rx_seq);
++                goto pass_up;
++            }
++            else if( int_recv < int_expected - BCAST_EX_SYNC_THRESHOLD )	                
++            {
++                /* lost sync, we need to request a re-sync */
++                bcast_ex_hs_send(bond_dev, eth_hdr(skb)->h_source, bcast_hdr->h_bond_source, HS_REQUEST, 0 /* does not care */);
++                goto drop;
++            }
++            else /* simply duplicated packted */
++                goto drop;
++        }
++        else
++        {
++            /* new source, should pass up */
++            struct rx_tbl_node *new_node = kmalloc(sizeof(struct rx_tbl_node), GFP_KERNEL);
++            if (!new_node)
++                goto drop;
++
++            /* set the new node and link it into the list */
++            new_node->next = NULL;
++            memcpy(&new_node->source, bcast_hdr->h_bond_source, ETH_ALEN);
++            new_node->rx_seq  = bond_ex_inc_with_wrap(rx_seq);
++
++            if(prev_node)
++                prev_node->next = new_node;
++            else
++                bond->bcast_ex_info.rx_tbl = new_node;
++
++            goto pass_up;
++        }
++drop:
++        /* drop */
++        read_unlock(&bond->lock);
++        dev_kfree_skb(skb);
++        return NULL;
++
++pass_up:
++        skb_pull_rcsum(skb, BCAST_EX_HLEN);
++
++        /* restore skb protocol */
++        bcast_ex_set_encap_proto(skb, bcast_hdr);
++
++        /* restore the eth hdr */
++        if (skb_cow(skb, skb_headroom(skb)) < 0)
++            skb = NULL;
++
++        if (skb) {
++            memmove(skb->data - ETH_HLEN,
++                skb->data - BCAST_EX_ETH_HLEN, 2 * ETH_ALEN);
++            skb->mac_header += BCAST_EX_HLEN;
++        }
++    }
++
++out_unlock:
++    read_unlock(&bond->lock);
++out:
++    return skb;
++}
+diff -Nuar linux-2.6.30.10.bak/drivers/net/bonding/bond_bcast_ex.h linux-2.6.30.10/drivers/net/bonding/bond_bcast_ex.h
+--- linux-2.6.30.10.bak/drivers/net/bonding/bond_bcast_ex.h	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.30.10/drivers/net/bonding/bond_bcast_ex.h	2011-08-02 14:08:47.000000000 -0600
+@@ -0,0 +1,151 @@
++/*
++ * Copyright(c) 1999 - 2004 Intel Corporation. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License as published by the Free
++ * Software Foundation; either version 2 of the License, or (at your option)
++ * any later version.
++ *
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ * more details.
++ *
++ * You should have received a copy of the GNU General Public License along with
++ * this program; if not, write to the Free Software Foundation, Inc., 59
++ * Temple Place - Suite 330, Boston, MA  02111-1307, USA.
++ *
++ * The full GNU General Public License is included in this distribution in the
++ * file called LICENSE.
++ *
++ */
++
++#ifndef __BOND_BCAST_EX_H__
++#define __BOND_BCAST_EX_H__
++
++#include <asm/byteorder.h>
++#include <linux/skbuff.h>
++#include <linux/netdevice.h>
++
++// General definitions
++#define BCAST_EX_MIN_SEQ        1
++#define BCAST_EX_MAX_SEQ        0xFFFE
++
++#define BCAST_EX_HS_MAGIC       0
++
++#define BCAST_EX_SYNC_THRESHOLD	100
++
++#define BOND_ETH_P_BCAST_EX     0x8888
++#define PKT_TYPE_BCAST_EX       cpu_to_be16(BOND_ETH_P_BCAST_EX)
++
++#define BCAST_EX_HLEN       10               /* The additional bytes (on top of the Ethernet header)
++                                             * that BCAST_EX protocol requires.
++                                             */
++#define BCAST_EX_ETH_HLEN   24              /* Total octets in header.       */
++
++struct bcast_ex_hdr {
++        __be16  h_seq;
++        u8	h_bond_source[ETH_ALEN];
++        __be16  h_encapsulated_proto;
++};
++
++/**
++ *      struct bcast_ex_ethhdr - bcast_ex ethernet header (ethhdr + bcast_ex_hdr)
++ *      @h_dest: destination ethernet address
++ *      @h_source: source ethernet address
++ *      @h_bcast_ex_proto: ethernet protocol (always 0x8888)
++ *      @h_seq: the sequence num
++ *      @h_encapsulated_proto: packet type ID or len
++ */
++struct bcast_ex_ethhdr {
++        u8		h_dest[ETH_ALEN];
++        u8		h_source[ETH_ALEN];
++        __be16          h_bcast_ex_proto;
++        __be16          h_seq;
++        u8              h_bond_source[ETH_ALEN];
++        __be16          h_encapsulated_proto;
++};
++
++/* shake hand protocol */
++enum hs_cmd {
++    HS_START=0x01,
++    HS_REQUEST=0x02,
++    HS_RESPONSE=0x03
++};
++struct bcast_ex_hs_ethhdr {
++    u8		h_dest[ETH_ALEN];
++    u8		h_source[ETH_ALEN];
++    __be16	h_bcast_ex_proto;
++    __be16	h_hs_magic; /* always 0x0000 to indicate it is a handshake frame */
++    u8		h_bond_source[ETH_ALEN];
++    __be16	h_len_or_proto; /* this will be a len field in the hs protocol */
++    u8		version_number;
++    u8		cmd;
++    __be16	h_seq;
++    u8          h_bond_dest[ETH_ALEN];
++    u8		pad_20[20];
++};
++
++typedef struct rx_tbl_node {
++    struct mac_addr source;
++    u16 rx_seq;
++    struct rx_tbl_node *next;
++} rx_tbl_node_t;
++
++
++#pragma pack(1)
++
++typedef struct bcast_ex {
++    struct rx_tbl_node *rx_tbl;
++    u16 tx_seq;
++} bcast_ex_t;
++
++#pragma pack()
++
++/**
++ * __bcast_ex_put_tag - regular tag inserting
++ * @skb: skbuff to tag
++ * @seq: seq# to insert
++ *
++ * Inserts the seq# into @skb as part of the payload
++ * Returns a tagged skb. If a new skb is created, @skb is freed.
++ *
++ * Following the skb_unshare() example, in case of error, the calling function
++ * doesn't have to worry about freeing the original skb.
++ */
++static inline struct sk_buff *__bcast_ex_put_tag(struct sk_buff *skb, struct net_device *dev, u16 seq)
++{
++        struct bcast_ex_ethhdr *bcast_eth;
++
++        if (skb_cow_head(skb, BCAST_EX_HLEN) < 0) {
++                kfree_skb(skb);
++                return NULL;
++        }
++        bcast_eth = (struct bcast_ex_ethhdr *)skb_push(skb, BCAST_EX_HLEN);
++
++        /* Move the mac addresses to the beginning of the new header. */
++        memmove(skb->data, skb->data + BCAST_EX_HLEN, 2 * ETH_ALEN);
++        skb->mac_header -= BCAST_EX_HLEN;
++
++        /* first, the ethernet type */
++        bcast_eth->h_bcast_ex_proto = htons(BOND_ETH_P_BCAST_EX);
++
++        /* now, the seq */
++        bcast_eth->h_seq = htons(seq);
++
++	memcpy(bcast_eth->h_bond_source, dev->dev_addr, ETH_ALEN);
++
++        skb->protocol = htons(BOND_ETH_P_BCAST_EX);
++
++        return skb;
++}
++
++
++// ================= Exported functions to the main bonding code ==================
++void bond_bcast_ex_initialize(struct bonding *bond);
++void bond_register_bcast_ex_handler(struct bonding *bond);
++void bond_unregister_bcast_ex_handler(struct bonding *bond);
++int bond_bcast_ex_xmit(struct sk_buff *skb, struct net_device *dev);
++struct sk_buff *bond_handle_bcast_ex_frame(struct sk_buff *skb);
++#endif //__BOND_BCAST_EX_H__
++
+diff -Nuar linux-2.6.30.10.bak/drivers/net/bonding/bonding.h linux-2.6.30.10/drivers/net/bonding/bonding.h
+--- linux-2.6.30.10.bak/drivers/net/bonding/bonding.h	2009-12-03 23:00:07.000000000 -0700
++++ linux-2.6.30.10/drivers/net/bonding/bonding.h	2011-08-02 14:08:47.000000000 -0600
+@@ -22,6 +22,7 @@
+ #include <linux/in6.h>
+ #include "bond_3ad.h"
+ #include "bond_alb.h"
++#include "bond_bcast_ex.h"
+ 
+ #define DRV_VERSION	"3.5.0"
+ #define DRV_RELDATE	"November 4, 2008"
+@@ -210,6 +211,7 @@
+ 	u16      rr_tx_counter;
+ 	struct   ad_bond_info ad_info;
+ 	struct   alb_bond_info alb_info;
++	struct   bcast_ex bcast_ex_info;
+ 	struct   bond_params params;
+ 	struct   list_head vlan_list;
+ 	struct   vlan_group *vlgrp;
+diff -Nuar linux-2.6.30.10.bak/drivers/net/bonding/bond_main.c linux-2.6.30.10/drivers/net/bonding/bond_main.c
+--- linux-2.6.30.10.bak/drivers/net/bonding/bond_main.c	2009-12-03 23:00:07.000000000 -0700
++++ linux-2.6.30.10/drivers/net/bonding/bond_main.c	2011-08-02 14:08:47.000000000 -0600
+@@ -78,6 +78,7 @@
+ #include "bonding.h"
+ #include "bond_3ad.h"
+ #include "bond_alb.h"
++#include "bond_bcast_ex.h"
+ 
+ /*---------------------------- Module parameters ----------------------------*/
+ 
+@@ -175,6 +176,7 @@
+ {	"802.3ad",		BOND_MODE_8023AD},
+ {	"balance-tlb",		BOND_MODE_TLB},
+ {	"balance-alb",		BOND_MODE_ALB},
++{	"broadcast-ex",		BOND_MODE_BROADCAST_EX},
+ {	NULL,			-1},
+ };
+ 
+@@ -224,9 +226,10 @@
+ 		[BOND_MODE_8023AD]= "IEEE 802.3ad Dynamic link aggregation",
+ 		[BOND_MODE_TLB] = "transmit load balancing",
+ 		[BOND_MODE_ALB] = "adaptive load balancing",
++		[BOND_MODE_BROADCAST_EX] = "fault-tolerance (broadcast) without duplicates",
+ 	};
+ 
+-	if (mode < 0 || mode > BOND_MODE_ALB)
++	if (mode < 0 || mode > BOND_MODE_BROADCAST_EX)
+ 		return "unknown";
+ 
+ 	return names[mode];
+@@ -1716,6 +1719,10 @@
+ 		bond_set_slave_inactive_flags(new_slave);
+ 		bond_select_active_slave(bond);
+ 		break;
++	case BOND_MODE_BROADCAST_EX:
++		bond_bcast_ex_initialize(bond);
++		/* intentionally full through, as it should go the same routine as regular broadcast handling path*/
++
+ 	default:
+ 		pr_debug("This slave is always active in trunk mode\n");
+ 
+@@ -3802,6 +3809,11 @@
+ 		bond_3ad_initiate_agg_selection(bond, 1);
+ 	}
+ 
++	if (bond->params.mode == BOND_MODE_BROADCAST_EX) {
++
++                bond_register_bcast_ex_handler(bond);
++	}
++
+ 	return 0;
+ }
+ 
+@@ -3817,6 +3829,10 @@
+ 	if (bond->params.arp_validate)
+ 		bond_unregister_arp(bond);
+ 
++	if (bond->params.mode == BOND_MODE_BROADCAST_EX) {
++		bond_unregister_bcast_ex_handler(bond);
++	}
++
+ 	write_lock_bh(&bond->lock);
+ 
+ 	bond->send_grat_arp = 0;
+@@ -4485,6 +4501,8 @@
+ 	case BOND_MODE_ALB:
+ 	case BOND_MODE_TLB:
+ 		return bond_alb_xmit(skb, dev);
++	case BOND_MODE_BROADCAST_EX:
++		return bond_bcast_ex_xmit(skb, dev);
+ 	default:
+ 		/* Should never happen, mode already checked */
+ 		printk(KERN_ERR DRV_NAME ": %s: Error: Unknown bonding mode %d\n",
+@@ -4522,6 +4540,8 @@
+ 		/* FALLTHRU */
+ 	case BOND_MODE_TLB:
+ 		break;
++	case BOND_MODE_BROADCAST_EX:
++		break;
+ 	default:
+ 		/* Should never happen, mode already checked */
+ 		printk(KERN_ERR DRV_NAME
+diff -Nuar linux-2.6.30.10.bak/drivers/net/bonding/Makefile linux-2.6.30.10/drivers/net/bonding/Makefile
+--- linux-2.6.30.10.bak/drivers/net/bonding/Makefile	2009-12-03 23:00:07.000000000 -0700
++++ linux-2.6.30.10/drivers/net/bonding/Makefile	2011-08-02 14:08:47.000000000 -0600
+@@ -4,7 +4,7 @@
+ 
+ obj-$(CONFIG_BONDING) += bonding.o
+ 
+-bonding-objs := bond_main.o bond_3ad.o bond_alb.o bond_sysfs.o
++bonding-objs := bond_main.o bond_3ad.o bond_alb.o bond_bcast_ex.o bond_sysfs.o
+ 
+ ipv6-$(subst m,y,$(CONFIG_IPV6)) += bond_ipv6.o
+ bonding-objs += $(ipv6-y)
+diff -Nuar linux-2.6.30.10.bak/include/linux/if_bonding.h linux-2.6.30.10/include/linux/if_bonding.h
+--- linux-2.6.30.10.bak/include/linux/if_bonding.h	2011-08-02 13:43:11.000000000 -0600
++++ linux-2.6.30.10/include/linux/if_bonding.h	2011-08-02 14:01:10.000000000 -0600
+@@ -70,6 +70,7 @@
+ #define BOND_MODE_8023AD        4
+ #define BOND_MODE_TLB           5
+ #define BOND_MODE_ALB		6 /* TLB + RLB (receive load balancing) */
++#define BOND_MODE_BROADCAST_EX  7
+ 
+ /* each slave's link has 4 states */
+ #define BOND_LINK_UP    0           /* link is up and running */
+diff -Nuar linux-2.6.30.10.bak/include/linux/netdevice.h linux-2.6.30.10/include/linux/netdevice.h
+--- linux-2.6.30.10.bak/include/linux/netdevice.h	2011-08-02 13:43:10.000000000 -0600
++++ linux-2.6.30.10/include/linux/netdevice.h	2011-08-02 14:01:10.000000000 -0600
+@@ -614,6 +614,8 @@
+  *	moves out.
+  */
+ 
++typedef struct sk_buff *rx_handler_func_t(struct sk_buff *skb);
++
+ struct net_device
+ {
+ 
+@@ -784,6 +786,9 @@
+ 
+ 	struct netdev_queue	rx_queue;
+ 
++    rx_handler_func_t *rx_handler;
++    void              *rx_handler_data;
++
+ 	struct netdev_queue	*_tx ____cacheline_aligned_in_smp;
+ 
+ 	/* Number of TX queues allocated at alloc_netdev_mq() time  */
+@@ -1469,6 +1474,11 @@
+ 
+ extern int		netdev_budget;
+ 
++extern int netdev_rx_handler_register(struct net_device *dev,
++                                      rx_handler_func_t *rx_handler,
++                                      void *rx_handler_data);
++extern void netdev_rx_handler_unregister(struct net_device *dev);
++
+ /* Called by rtnetlink.c:rtnl_unlock() */
+ extern void netdev_run_todo(void);
+ 
+diff -Nuar linux-2.6.30.10.bak/include/linux/skbuff.h linux-2.6.30.10/include/linux/skbuff.h
+--- linux-2.6.30.10.bak/include/linux/skbuff.h	2011-08-02 13:43:08.000000000 -0600
++++ linux-2.6.30.10/include/linux/skbuff.h	2011-08-02 14:01:10.000000000 -0600
+@@ -385,7 +385,11 @@
+ #endif
+ #endif
+ #ifdef CONFIG_IPV6_NDISC_NODETYPE
+-	__u8			ndisc_nodetype:2;
++	__u8			ndisc_nodetype:2,
++				deliver_no_wcard:1;
++#else
++	__u8			deliver_no_wcard:1;
++
+ #endif
+ #if 1
+ 	__u8			do_not_encrypt:1;
+diff -Nuar linux-2.6.30.10.bak/net/core/dev.c linux-2.6.30.10/net/core/dev.c
+--- linux-2.6.30.10.bak/net/core/dev.c	2011-08-02 13:44:40.000000000 -0600
++++ linux-2.6.30.10/net/core/dev.c	2011-08-02 14:01:10.000000000 -0600
+@@ -2179,6 +2179,51 @@
+ }
+ #endif
+ 
++/**
++*      netdev_rx_handler_register - register receive handler
++*      @dev: device to register a handler for
++*      @rx_handler: receive handler to register
++*      @rx_handler_data: data pointer that is used by rx handler
++*
++*      Register a receive hander for a device. This handler will then be
++*      called from __netif_receive_skb. A negative errno code is returned
++*      on a failure.
++*
++*      The caller must hold the rtnl_mutex.
++*/
++int netdev_rx_handler_register(struct net_device *dev,
++                               rx_handler_func_t *rx_handler,
++                               void *rx_handler_data)
++{
++        ASSERT_RTNL();
++
++        if (dev->rx_handler)
++                return -EBUSY;
++
++        rcu_assign_pointer(dev->rx_handler_data, rx_handler_data);
++        rcu_assign_pointer(dev->rx_handler, rx_handler);
++
++        return 0;
++}
++EXPORT_SYMBOL_GPL(netdev_rx_handler_register);
++
++/**
++ *      netdev_rx_handler_unregister - unregister receive handler
++ *      @dev: device to unregister a handler from
++ *
++ *      Unregister a receive hander from a device.
++ *
++ *      The caller must hold the rtnl_mutex.
++ */
++void netdev_rx_handler_unregister(struct net_device *dev)
++{
++
++        ASSERT_RTNL();
++        rcu_assign_pointer(dev->rx_handler, NULL);
++        rcu_assign_pointer(dev->rx_handler_data, NULL);
++}
++EXPORT_SYMBOL_GPL(netdev_rx_handler_unregister);
++
+ /*
+  * 	netif_nit_deliver - deliver received packets to network taps
+  * 	@skb: buffer
+@@ -2224,6 +2269,7 @@
+ int netif_receive_skb(struct sk_buff *skb)
+ {
+ 	struct packet_type *ptype, *pt_prev;
++	rx_handler_func_t *rx_handler;
+ 	struct net_device *orig_dev;
+ 	struct net_device *null_or_orig;
+ 	int ret = NET_RX_DROP;
+@@ -2246,7 +2292,9 @@
+ 	orig_dev = skb->dev;
+ 	if (orig_dev->master) {
+ 		if (skb_bond_should_drop(skb))
++		{
+ 			null_or_orig = orig_dev; /* deliver only exact match */
++		}
+ 		else
+ 			skb->dev = orig_dev->master;
+ 	}
+@@ -2284,6 +2332,21 @@
+ ncls:
+ #endif
+ 
++    rx_handler = rcu_dereference(skb->dev->rx_handler);
++    if (rx_handler) {
++		struct net_device *prev_dev;
++
++        if (pt_prev) {
++            ret = deliver_skb(skb, pt_prev, orig_dev);
++            pt_prev = NULL;
++        }
++		prev_dev = skb->dev;
++
++        skb = rx_handler(skb);
++        if (!skb)
++            goto out;
++    }
++
+ 	skb = handle_bridge(skb, &pt_prev, &ret, orig_dev);
+ 	if (!skb)
+ 		goto out;
+@@ -2298,7 +2361,9 @@
+ 		    (ptype->dev == null_or_orig || ptype->dev == skb->dev ||
+ 		     ptype->dev == orig_dev)) {
+ 			if (pt_prev)
++			{
+ 				ret = deliver_skb(skb, pt_prev, orig_dev);
++			}
+ 			pt_prev = ptype;
+ 		}
+ 	}
+diff -Nuar linux-2.6.30.10.bak/net/core/skbuff.c linux-2.6.30.10/net/core/skbuff.c
+--- linux-2.6.30.10.bak/net/core/skbuff.c	2011-08-02 13:44:40.000000000 -0600
++++ linux-2.6.30.10/net/core/skbuff.c	2011-08-02 14:01:10.000000000 -0600
+@@ -626,6 +626,7 @@
+ 	new->ip_summed		= old->ip_summed;
+ 	skb_copy_queue_mapping(new, old);
+ 	new->priority		= old->priority;
++	new->deliver_no_wcard	= old->deliver_no_wcard;
+ #if defined(CONFIG_IP_VS) || defined(CONFIG_IP_VS_MODULE)
+ 	new->ipvs_property	= old->ipvs_property;
+ #endif

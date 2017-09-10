@@ -1,0 +1,7 @@
+/001-rb600.patch/1.1/Thu Apr  1 22:09:29 2010/-kkv/Tar71xx_4g
+/002-mpc8377e-wlan_support.patch/1.1/Thu Apr  1 22:09:29 2010/-kkv/Tar71xx_4g
+/003-esdhc_wp-inverted_property.patch/1.1/Thu Apr  1 22:09:29 2010/-kkv/Tar71xx_4g
+/004-mpc8377e-wlan_u-boot_size_fix.patch/1.1/Thu Apr  1 22:09:29 2010/-kkv/Tar71xx_4g
+/005-powerpc_mkuboot.patch/1.1/Thu Apr  1 22:09:29 2010/-kkv/Tar71xx_4g
+/006-powerpc_create_fit_uImages.patch/1.1/Thu Apr  1 22:09:29 2010/-kkv/Tar71xx_4g
+D

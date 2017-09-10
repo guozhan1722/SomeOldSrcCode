@@ -1,0 +1,22 @@
+/Config.in/1.1/Thu Apr  1 22:16:16 2010//Tar71xx_4g
+D/archival////
+D/console-tools////
+D/coreutils////
+D/debianutils////
+D/e2fsprogs////
+D/editors////
+D/findutils////
+D/init////
+D/libbb////
+D/loginutils////
+D/mailutils////
+D/miscutils////
+D/modutils////
+D/networking////
+D/printutils////
+D/procps////
+D/runit////
+D/selinux////
+D/shell////
+D/sysklogd////
+D/util-linux////

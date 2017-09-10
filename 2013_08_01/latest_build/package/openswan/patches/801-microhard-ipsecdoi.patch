@@ -1,0 +1,23 @@
+--- a/programs/pluto/ipsec_doi.c	2013-07-15 09:02:31.358803812 -0600
++++ b/programs/pluto/ipsec_doi.c	2013-07-16 10:30:40.079835676 -0600
+@@ -387,6 +387,12 @@
+ 	 * we already have it from when we negotiated the ISAKMP SA!
+ 	 * It isn't clear what to do with the error return.
+ 	 */
++     openswan_log("quick_outl1 #%d{ref=%d refhim=%d} replacing=%lu try=%d",
++            (int)st->st_serialno,
++			(int)st->st_ref,
++			(int)st->st_refhim,
++            replacing,
++            try);
+ 	(void) quick_outI1(whack_sock, st, c, policy, try
+ 			   , replacing
+ #ifdef HAVE_LABELED_IPSEC
+@@ -464,6 +470,7 @@
+ 		policy |= POLICY_TUNNEL;
+ 	}
+ 	passert(HAS_IPSEC_POLICY(policy));
++    openswan_log("ipsecdoi_init by ipsecdoi_replace");
+ 	ipsecdoi_initiate(whack_sock, st->st_connection, policy, try
+ 			  , st->st_serialno, st->st_import 
+ #ifdef HAVE_LABELED_IPSEC

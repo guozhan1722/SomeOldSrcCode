@@ -1,0 +1,1000 @@
+diff -Nuar org/linux/net/ipsec/ipsec_proc.c microhard/linux/net/ipsec/ipsec_proc.c
+--- org/linux/net/ipsec/ipsec_proc.c	2013-04-23 11:43:21.198404000 -0600
++++ microhard/linux/net/ipsec/ipsec_proc.c	2013-06-11 10:55:46.189213123 -0600
+@@ -130,7 +130,7 @@
+ int debug_rcv = 0;
+ int debug_netlink = 0;
+ int sysctl_ipsec_debug_verbose = 0;
+-int sysctl_ipsec_debug_ipcomp =0;
++int sysctl_ipsec_debug_ipcomp = 0;
+ int sysctl_ipsec_icmp = 0;
+ int sysctl_ipsec_tos = 0;
+ 
+@@ -315,7 +315,7 @@
+ 		len += ipsec_snprintf(buffer+len, length-len, " encr_pad_errs=%d",
+ 			       sa_p->ips_errs.ips_encpad_errs);
+ 	}
+-	
++
+ 	len += ipsec_snprintf(buffer+len, length-len, " life(c,s,h)=");
+ 
+ 	len += ipsec_lifetime_format(buffer + len,
+@@ -348,6 +348,7 @@
+ 				     ipsec_life_countbased,
+ 				     &sa_p->ips_life.ipl_packets);
+ 	
++    
+ 	if(sa_p->ips_life.ipl_usetime.ipl_last) { /* XXX-MCR should be last? */
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,3,0)
+ 		len += ipsec_snprintf(buffer+len, length-len, " idle=%Ld",
+@@ -442,7 +443,6 @@
+ 	return len;
+ }
+ 
+-
+ IPSEC_PROCFS_DEBUG_NO_STATIC
+ int
+ ipsec_spi_get_info(char *buffer,
+diff -Nuar org/programs/pluto/ikev1_quick.c microhard/programs/pluto/ikev1_quick.c
+--- org/programs/pluto/ikev1_quick.c	2012-03-23 15:33:43.000000000 -0600
++++ microhard/programs/pluto/ikev1_quick.c	2013-07-18 15:02:54.537773722 -0600
+@@ -783,6 +783,19 @@
+     st->st_myuserport = c->spd.this.port;
+     st->st_peeruserport = c->spd.that.port;
+ 
++    if (replacing != SOS_NOBODY) {
++    
++    struct state *ost = state_with_serialno(replacing);
++    if (ost) {
++	openswan_log("quick_outl1 st->st_ref=%u  refhim=%u myuserprotoid=%d ost->st_ref=%u refhim=%u ost(kind=%s)"
++		     , st->st_ref, st->st_refhim, st->st_myuserprotoid, ost->st_ref, ost->st_refhim
++             , enum_show(&connection_kind_names, ost->st_connection->kind));
++    if (st->st_myuserprotoid == 0 && ost->st_connection->kind == CK_PERMANENT) {
++            st->st_refhim=ost->st_refhim;
++    }
++
++    }
++    }
+     st->st_msgid = generate_msgid(isakmp_sa);
+     change_state(st, STATE_QUICK_I1);
+ 
+@@ -2428,7 +2441,22 @@
+ #ifdef NAT_TRAVERSAL
+     if ((st->hidden_variables.st_nat_traversal & NAT_T_DETECTED) &&
+ 	(st->hidden_variables.st_nat_traversal & NAT_T_WITH_NATOA)) {
++    if ((st->st_myuserport==1701) &&
++        (st->st_myuserprotoid==17) &&
++        (st->st_connection->policy & POLICY_SAREF_TRACK_CONNTRACK) &&
++        !(st->st_connection->policy & POLICY_TUNNEL)) {
++        openswan_log("quick_inR1_outI2_cryptotail: original st_nat_traversal=%#x",st->hidden_variables.st_nat_traversal);
++        st->hidden_variables.st_nat_traversal |= LELEM(29);
++        openswan_log("quick_inR1_outI2_cryptotail: modified st_nat_traversal=%#x",st->hidden_variables.st_nat_traversal);
++        }
+ 	nat_traversal_natoa_lookup(md, &st->hidden_variables);
++    if ((st->st_myuserport==1701) &&
++        (st->st_myuserprotoid==17) &&
++        (st->st_connection->policy & POLICY_SAREF_TRACK_CONNTRACK) &&
++        !(st->st_connection->policy & POLICY_TUNNEL)) {
++       st->hidden_variables.st_nat_traversal &= ~LELEM(29);
++       openswan_log("quick_inR1_outI2_cryptotail: change to original st_nat_traversal=%#x",st->hidden_variables.st_nat_traversal);
++       }
+     }
+ #endif
+ 
+diff -Nuar org/programs/pluto/kernel.c microhard/programs/pluto/kernel.c
+--- org/programs/pluto/kernel.c	2012-03-23 15:33:43.000000000 -0600
++++ microhard/programs/pluto/kernel.c	2013-07-18 16:26:30.968774083 -0600
+@@ -553,10 +553,8 @@
+     struct connection *ero      /* who, if anyone, owns our eroute? */
+         , *ro = route_owner(c, &c->spd, &rosr, &ero, &esr); /* who owns our route? */
+ 
+-    DBG(DBG_CONTROL,
+-        DBG_log("could_route called for %s (kind=%s)"
+-                , c->name
+-                , enum_show(&connection_kind_names, c->kind)));
++    openswan_log("could_route called for (kind=%s)"
++                , enum_show(&connection_kind_names, c->kind));
+ 
+     /* it makes no sense to route a connection that is ISAKMP-only */
+     if (!NEVER_NEGOTIATE(c->policy) && !HAS_IPSEC_POLICY(c->policy))
+@@ -1371,6 +1369,9 @@
+     int encapsulation;
+ 
+     replace = inbound && (kernel_ops->get_spi != NULL);
++/* refhim debug start */
++    openswan_log("setup_half_ipsec_sa, %s refhim=%u ref=%u", (inbound ? "inbound" : "outbound") , refhim, st->st_ref);
++/* refhim debug end */
+ 
+     src.maskbits = 0;
+     dst.maskbits = 0;
+@@ -1460,7 +1461,7 @@
+ 	    said_next->ref    = refhim;
+ 	    outgoing_ref_set  = TRUE;
+ 	}
+-
++#if 0
+ 	if(inbound) {
+ 	    /*
+ 	     * set corresponding outbound SA. We can do this on
+@@ -1472,15 +1473,19 @@
+ 	    said_next->ref    = refhim;
+ 	    outgoing_ref_set  = TRUE;
+ 	}
+-
+-        if (!kernel_ops->add_sa(said_next, replace)) {
+-	    DBG(DBG_KLIPS, DBG_log("add_sa tunnel failed"));
++#endif
++/* refhim debug start */
++    openswan_log("setup_half_ipsec_sa, %s before add_sa said_next->ref=%u said_next->refhim=%u",(inbound ? "inbound" : "outbound"), said_next->ref,said_next->refhim);
++    openswan_log("setup_half_ipsec_sa, %s add_sa %s", (inbound ? "inbound" : "outbound"), (replace ? "replace" : "add"));
++/* refhim debug end */
++    if (!kernel_ops->add_sa(said_next, replace)) {
++	    openswan_log("add_sa tunnel failed");
+             goto fail;
+ 	}
+ 
+ 	time((inbound)? &st->st_esp.our_lastused : &st->st_esp.peer_lastused);
+ 
+-	DBG(DBG_KLIPS, DBG_log("added tunnel with ref=%u", said_next->ref));
++	openswan_log("%s added tunnel with ref=%u refhim=%u", (inbound ? "inbound" : "outbound"), said_next->ref,said_next->refhim);
+ 
+ 	/*
+ 	 * SA refs will have been allocated for this SA.
+@@ -1488,7 +1493,7 @@
+ 	 * since we refer to it in the policy that we instantiate.
+ 	 */
+ 	if(new_refhim == IPSEC_SAREF_NULL && !inbound) {
+-	    DBG(DBG_KLIPS, DBG_log("recorded ref=%u as refhim", said_next->ref));
++	    openswan_log("%s recorded ref=%u as refhim", (inbound ? "inbound" : "outbound"), said_next->ref);
+ 	    new_refhim = said_next->ref;
+ 	    if(new_refhim == IPSEC_SAREF_NULL) {
+ 		new_refhim = IPSEC_SAREF_NA;
+@@ -1496,6 +1501,7 @@
+ 	}
+ 	if(!incoming_ref_set && inbound) {
+ 	    st->st_ref = said_next->ref;
++        openswan_log("%s recorded incoming ref=%u", (inbound ? "inbound" : "outbound"), said_next->ref);
+ 	    incoming_ref_set=TRUE;
+ 	}
+         said_next++;
+@@ -1650,7 +1656,7 @@
+ 		natt_sport = st->st_localport;
+ 		natt_dport = st->st_remoteport;
+ 	    }
+-		
++	
+             natt_oa = st->hidden_variables.st_nat_oa;
+         }
+ #endif
+@@ -2336,7 +2342,7 @@
+ {
+     struct connection *c = st->st_connection;
+     struct state *ost = state_with_serialno(c->newest_ipsec_sa);
+-    
++
+     DBG(DBG_CONTROL,
+ 	DBG_log("checking if this is a replacement state");
+ 	DBG_log("  st=%p ost=%p st->serialno=#%lu ost->serialno=#%lu "
+@@ -2369,25 +2375,36 @@
+      * obsolete and should be eliminated.  Interestingly, this is
+      * the only case in which we can tell that a connection is obsolete.
+      */
++/* refhim debug start */    
++	openswan_log("install_inbound_ipsec_sa");
++/* refhim debug end */
+     passert(c->kind == CK_PERMANENT || c->kind == CK_INSTANCE);
++    int flag=0;
+     if (c->spd.that.has_client)
+     {
++        
+         for (;;)
+         {
+             struct spd_route *esr;
+             struct connection *o = route_owner(c, &c->spd, &esr, NULL, NULL);
+ 
+-            if (o == NULL || c==o)
++            if (o == NULL || c==o){
++                flag=1;
+                 break;  /* nobody interesting has a route */
++            }
+ 
+             /* note: we ignore the client addresses at this end */
+             if (sameaddr(&o->spd.that.host_addr, &c->spd.that.host_addr)
+-		&& o->interface == c->interface)
+-                break;  /* existing route is compatible */
++		&& o->interface == c->interface){
++                flag=2;
++                    break;  /* existing route is compatible */
++            }
+ 
+ #if 0	    /* this stops us removing certain RW routes, and later we fail */
+-            if (o->kind == CK_TEMPLATE && streq(o->name, c->name))
+-                break;  /* ??? is this good enough?? */
++            if (o->kind == CK_TEMPLATE && streq(o->name, c->name)){
++                flag=3;
++                    break;  /* ??? is this good enough?? */
++            }
+ #endif
+ 
+             if(kernel_ops->overlap_supported) {
+@@ -2395,28 +2412,30 @@
+ 		 * [bart] not sure if this is actually intended, but am
+ 		 *        leaving it in to make it behave like before */
+ 		if (!LIN(POLICY_TUNNEL, c->policy)
+-		    && !LIN(POLICY_TUNNEL, o->policy))
++		    && !LIN(POLICY_TUNNEL, o->policy)){
++            flag=4;
+ 		    break;
++        }
+ 		/* Both declared that overlapping is OK. */
+ 		if (LIN(POLICY_OVERLAPIP, c->policy)
+-		    && LIN(POLICY_OVERLAPIP, o->policy))
++		    && LIN(POLICY_OVERLAPIP, o->policy)){
++            flag=5;
+ 		    break;
+             }
+-		
++            }
+ 	    loglog(RC_LOG_SERIOUS, "route to peer's client conflicts with \"%s\" %s; releasing old connection to free the route"		
+ 		   , o->name, ip_str(&o->spd.that.host_addr));
+ 	    release_connection(o, FALSE);
+         }
+     }
+ 
+-    DBG(DBG_CONTROL, DBG_log("install_inbound_ipsec_sa() checking if we can route"));
++    openswan_log("install_inbound_ipsec_sa() checking if we can route flag=%d",flag);
+     /* check that we will be able to route and eroute */
+     switch (could_route(c))
+     {
+     case route_easy:
+     case route_nearconflict:
+-	DBG(DBG_CONTROL
+-	    , DBG_log("   routing is easy, or has resolvable near-conflict"));
++	openswan_log("   routing is easy, or has resolvable near-conflict");
+ 	break;
+ 
+     case route_unnecessary:
+@@ -2442,7 +2461,7 @@
+ 	if(!st->st_connection->loopback) {
+ #endif
+ 
+-	DBG(DBG_CONTROL, DBG_log("installing outgoing SA now as refhim=%u", st->st_refhim));
++	openswan_log("installing outgoing SA now as refhim=%u", st->st_refhim);
+ 	if(!setup_half_ipsec_sa(st, FALSE)) {
+ 	    DBG_log("failed to install outgoing SA: %u", st->st_refhim);
+ 	    return FALSE;
+@@ -2457,7 +2476,7 @@
+ 
+ 	st->st_outbound_done = TRUE;
+     }
+-    DBG(DBG_CONTROL, DBG_log("outgoing SA has refhim=%u", st->st_refhim));
++    openswan_log("outgoing SA has refhim=%u", st->st_refhim);
+ 
+     /* (attempt to) actually set up the SAs */
+ 
+@@ -2500,7 +2519,6 @@
+ 
+     ro = route_owner(c, sr, &rosr, &ero, &esr);
+ 
+-    DBG(DBG_CONTROLMORE,
+         DBG_log("route_and_eroute with c: %s (next: %s) ero:%s esr:{%p} ro:%s rosr:{%p} and state: %lu"
+                 , c->name
+                 , (c->policy_next ? c->policy_next->name : "none")
+@@ -2508,7 +2526,7 @@
+                 , esr 
+                 , ro ? ro->name : "null"
+                 , rosr
+-                , st ? st->st_serialno : 0));
++                , st ? st->st_serialno : 0);
+ 
+     /* look along the chain of policies for one with the same name */
+ 
+@@ -2596,9 +2614,8 @@
+ 
+     /* install the route */
+ 
+-    DBG(DBG_CONTROL,
+-        DBG_log("route_and_eroute: firewall_notified: %s"
+-                , firewall_notified ? "true" : "false"));
++    openswan_log("route_and_eroute: firewall_notified: %s"
++                , firewall_notified ? "true" : "false");
+     if (!firewall_notified)
+     {
+         /* we're in trouble -- don't do routing */
+@@ -2793,10 +2810,10 @@
+     struct spd_route *sr;
+     enum routability rb;
+ 
+-    DBG(DBG_CONTROL, DBG_log("install_ipsec_sa() for #%ld: %s"
++    openswan_log("install_ipsec_sa() for #%ld: %s"
+                              , st->st_serialno
+                              , inbound_also?
+-                             "inbound and outbound" : "outbound only"));
++                             "inbound and outbound" : "outbound only");
+ #ifdef HAVE_LABELED_IPSEC
+     if(st->st_connection->loopback && st->st_state == STATE_QUICK_R1) {
+ 	return TRUE;
+@@ -2826,7 +2843,7 @@
+ 	if(!setup_half_ipsec_sa(st, FALSE)) {
+ 	    return FALSE;
+ 	}
+-	DBG(DBG_KLIPS, DBG_log("set up outoing SA, ref=%u/%u", st->st_ref, st->st_refhim));
++	openswan_log("install_ipsec_sa() set up outoing SA, ref=%u refhim=%u", st->st_ref, st->st_refhim);
+ 	st->st_outbound_done = TRUE;
+     }
+ 
+@@ -2835,15 +2852,25 @@
+ 	if(!setup_half_ipsec_sa(st, TRUE)) {
+ 	    return FALSE;
+ 	}
+-	DBG(DBG_KLIPS, DBG_log("set up incoming SA, ref=%u/%u", st->st_ref, st->st_refhim));
++	openswan_log("install_ipsec_sa() set up incoming SA, ref=%u refhim=%u", st->st_ref, st->st_refhim);
+     }
+ 
++    sr = &st->st_connection->spd;
+     if(rb == route_unnecessary) {
++#ifdef KLIPS_MAST
++		    /* in mast mode we must also delete the iptables rule */
++		    if (kern_interface == USE_MASTKLIPS){
++                       if (st->st_myuserprotoid==47)
++                           (void) do_command(st->st_connection, sr, "gup", st);
++                       else
++                           (void) do_command(st->st_connection, sr, "xup", st);
++            }
++#endif
++        
+ 	return TRUE;
+     }
+ 
+-
+-    sr = &st->st_connection->spd;
++    
+     if (st->st_connection->remotepeertype == CISCO) {
+     sr = sr->next;
+     }
+@@ -2851,9 +2878,9 @@
+     /* for (sr = &st->st_connection->spd; sr != NULL; sr = sr->next) */
+     for (; sr != NULL; sr = sr->next)
+     {
+-        DBG(DBG_CONTROL, DBG_log("sr for #%ld: %s"
++        openswan_log("sr for #%ld: %s"
+                                  , st->st_serialno
+-                                 , enum_name(&routing_story, sr->routing)));
++                                 , enum_name(&routing_story, sr->routing));
+ 
+         /*
+          * if the eroute owner is not us, then make it us.
+@@ -2905,14 +2932,16 @@
+     case USE_NETKEY:
+ 	if (!inbound_only)
+ 	{
++        
+ 	    /* If the state is the eroute owner, we must adjust
+ 	     * the routing for the connection.
+ 	     */
++        
+ 	    struct connection *c = st->st_connection;
+ 	    struct spd_route *sr;
+ 	    
+ 	    passert(st->st_connection);
+-	    
++	    openswan_log("delete_ipsec_sa: not inbound_only st->st_myuserprotoid=%d", st->st_myuserprotoid);
+ 	    for (sr = &c->spd; sr; sr = sr->next)
+ 	    {
+ 		if (sr->eroute_owner == st->st_serialno
+@@ -2955,7 +2984,17 @@
+ 		    if (kern_interface == USE_MASTKLIPS)
+ 			    (void) sag_eroute(st, sr, ERO_DELETE, "delete");
+ #endif
+-		}
++		} else {
++#ifdef KLIPS_MAST
++		    /* in mast mode we must also delete the iptables rule */
++		    if (kern_interface == USE_MASTKLIPS && !LIN(POLICY_TUNNEL, st->st_connection->policy)){
++                       if (st->st_myuserprotoid==47)
++                           (void) do_command(c, sr, "gdown", st);
++                       else
++                           (void) do_command(c, sr, "xdown", st);
++            }
++#endif
++        }
+ 	    }
+ #ifdef HAVE_LABELED_IPSEC
+ 	    if(!st->st_connection->loopback) {
+diff -Nuar org/programs/pluto/kernel_mast.c microhard/programs/pluto/kernel_mast.c
+--- org/programs/pluto/kernel_mast.c	2012-03-23 15:33:43.000000000 -0600
++++ microhard/programs/pluto/kernel_mast.c	2013-07-18 16:16:13.183735908 -0600
+@@ -224,6 +224,9 @@
+      */
+     for (ifp = rifaces; ifp != NULL; ifp = ifp->next)
+     {
++		openswan_log("searching interface %s with %s"
++                 , ifp->name
++			     , ip_str(&ifp->addr));
+ 	/* ignore if virtual (ipsec*) interface */
+ 	if (strncmp(ifp->name, IPSECDEVPREFIX, sizeof(IPSECDEVPREFIX)-1) == 0)
+ 	    continue;
+@@ -257,9 +260,14 @@
+ 
+ 	    while(q != NULL)
+ 	    {
++		openswan_log("comparing interfaces %s %s/%s %s"
++			     , q->ip_dev->id_rname
++			     , ip_str(&q->ip_addr)
++                 , ifp->name
++			     , ip_str(&ifp->addr));
+ 		/* search over if matching old entry found */
+ 		if (streq(q->ip_dev->id_rname, ifp->name)
+-		    && sameaddr(&q->ip_addr, &ifp->addr))
++		    || sameaddr(&q->ip_addr, &ifp->addr))
+ 		{
+ 		    newone = FALSE;
+ 
+@@ -483,7 +491,7 @@
+ 	       )
+ {
+     /* actually, we did all the work with iptables in _updown */
+-    DBG_log("mast_raw_eroute called op=%u said=%s", op, text_said);
++    DBG(DBG_KLIPS, DBG_log("mast_raw_eroute called op=%u said=%s", op, text_said));
+     return pfkey_raw_eroute(this_host, this_client, that_host, that_client,
+ 		    spi, proto, transport_proto, satype,
+ 		    proto_info, use_lifetime, op, text_said
+@@ -507,7 +515,7 @@
+ 		   , enum pluto_sadb_operations op UNUSED
+ 		  , const char *opname UNUSED)
+ {
+-    DBG_log("mast_shunt_eroute called op=%u/%s", op, opname);
++    DBG(DBG_KLIPS, DBG_log("mast_shunt_eroute called op=%u/%s", op, opname));
+     return TRUE;
+ }
+ 
+@@ -531,7 +539,7 @@
+ 	if (!old_st)
+ 		old_st = st;
+ 
+-	DBG_log("mast_sag_eroute_replace state #%d{ref=%d refhim=%d} "
++	openswan_log("mast_sag_eroute_replace state #%d{ref=%d refhim=%d} "
+ 			"with #%d{ref=%d refhim=%d}",
+ 			(int)old_st->st_serialno,
+ 			(int)old_st->st_ref,
+@@ -545,7 +553,7 @@
+ 
+ 	/* drop the old rule -- we ignore failure */
+ 	if (old_st->st_serialno != st->st_serialno)
+-	    (void)mast_do_command(c, sr, "spddel", old_st);
++	    (void)mast_do_command(c, sr, "oldspddel", old_st);
+ 
+ 	return success;
+ }
+@@ -558,7 +566,7 @@
+     bool ok;
+     bool addop = FALSE;
+ 
+-    DBG_log("mast_sag_eroute called op=%u/%s", op, opname);
++    openswan_log("mast_sag_eroute called op=%u/%s", op, opname);
+ 
+     /* handle ops we have to do no work for */
+     switch(op) {
+@@ -581,7 +589,7 @@
+     /* first try to update the routing policy */
+     ok = pfkey_sag_eroute(st, sr, op, opname);
+     if (!ok) {
+-        DBG_log("mast_sag_eroute failed to %s/%d pfkey eroute", opname, op);
++        openswan_log("mast_sag_eroute failed to %s/%d pfkey eroute", opname, op);
+         if (addop)
+             /* If the pfkey op failed, and we were adding a new SA,
+              * then it's OK to fail early. */
+diff -Nuar org/programs/pluto/nat_traversal.c microhard/programs/pluto/nat_traversal.c
+--- org/programs/pluto/nat_traversal.c	2012-03-23 15:33:43.000000000 -0600
++++ microhard/programs/pluto/nat_traversal.c	2013-04-23 11:26:28.287218000 -0600
+@@ -440,12 +440,77 @@
+ 			"ignored because peer is not NATed", i);
+ 		return;
+ 	}
+-	else if (i>1) {
+-		loglog(RC_LOG_SERIOUS, "NAT-Traversal: received %d NAT-OA. "
+-			"using first, ignoring others", i);
++	
++    /** second one **/
++    if (hv->st_nat_traversal & LELEM(29)) {
++    openswan_log("NAT-Traversal: received %d NAT-OA. "
++			"using second, ignoring first", i);
++	p = md->chain[ISAKMP_NEXT_NATOA_RFC];
++    p = p->next;
++
++	DBG(DBG_PARSING,
++		DBG_dump("NAT-OA:", p->pbs.start, pbs_room(&p->pbs));
++	);
++
++	switch (p->payload.nat_oa.isanoa_idtype) {
++		case ID_IPV4_ADDR:
++			if (pbs_left(&p->pbs) == sizeof(struct in_addr)) {
++				initaddr(p->pbs.cur, pbs_left(&p->pbs)
++					 , AF_INET, &ip);
++			}
++			else {
++				loglog(RC_LOG_SERIOUS
++				       , "NAT-Traversal: received IPv4 NAT-OA "
++				       "with invalid IP size (%d)"
++				       , (int)pbs_left(&p->pbs));
++				return;
++			}
++			break;
++
++		case ID_IPV6_ADDR:
++			if (pbs_left(&p->pbs) == sizeof(struct in6_addr)) {
++				initaddr(p->pbs.cur, pbs_left(&p->pbs)
++					 , AF_INET6, &ip);
++			}
++			else {
++				loglog(RC_LOG_SERIOUS
++				       , "NAT-Traversal: received IPv6 NAT-OA "
++				       "with invalid IP size (%d)"
++				       , (int)pbs_left(&p->pbs));
++				return;
++			}
++			break;
++		default:
++			loglog(RC_LOG_SERIOUS, "NAT-Traversal: "
++				"invalid ID Type (%d) in NAT-OA - ignored",
++				p->payload.nat_oa.isanoa_idtype);
++			return;
++			break;
+ 	}
+ 
++	DBG(DBG_NATT,
++		{
++			char ip_t[ADDRTOT_BUF];
++			addrtot(&ip, 0, ip_t, sizeof(ip_t));
++			DBG_log("received NAT-OA: %s", ip_t);
++		}
++	);
++
++	if (isanyaddr(&ip)) {
++		openswan_log("NAT-Traversal: received 0.0.0.0 NAT-OA...");
++	} else {
++		hv->st_nat_oa = ip;
++			char ip_t[ADDRTOT_BUF];
++			addrtot(&(hv->st_nat_oa), 0, ip_t, sizeof(ip_t));
++			DBG_log("received NAT-OA: %s", ip_t);
++	}
++    return;
++    }
+ 	/** Take first **/
++    if (i>1) {
++		openswan_log("NAT-Traversal: received %d NAT-OA. "
++			"using first, ignoring others", i);
++	}
+ 	p = md->chain[ISAKMP_NEXT_NATOA_RFC];
+ 
+ 	DBG(DBG_PARSING,
+@@ -497,12 +562,15 @@
+ 	);
+ 
+ 	if (isanyaddr(&ip)) {
+-		loglog(RC_LOG_SERIOUS
+-		       , "NAT-Traversal: received 0.0.0.0 NAT-OA...");
+-	}
+-	else {
++		openswan_log("NAT-Traversal: received 0.0.0.0 NAT-OA...");
++	} else {
+ 		hv->st_nat_oa = ip;
++			char ip_t[ADDRTOT_BUF];
++			addrtot(&(hv->st_nat_oa), 0, ip_t, sizeof(ip_t));
++			DBG_log("received NAT-OA: %s", ip_t);
+ 	}
++
++
+ }
+ 
+ bool nat_traversal_add_natoa(u_int8_t np, pb_stream *outs,
+diff -Nuar org/programs/pluto/state.c microhard/programs/pluto/state.c
+--- org/programs/pluto/state.c	2012-03-23 15:33:43.000000000 -0600
++++ microhard/programs/pluto/state.c	2013-04-23 11:26:28.307216000 -0600
+@@ -1441,7 +1441,7 @@
+ 	    if (get_sa_info(st, FALSE, &ago))
+ 	    {
+ 		snprintf(state_buf2, state_buf2_len,
+-		  " (%'u bytes)" , st->st_esp.peer_bytes);
++		  " (%u bytes)" , st->st_esp.peer_bytes);
+ 	    }
+ #endif
+ 	    add_said(&c->spd.this.host_addr, st->st_esp.our_spi, SA_ESP);
+@@ -1449,7 +1449,7 @@
+ 	    if (get_sa_info(st, TRUE, &ago))
+ 	    {
+ 		snprintf(state_buf2, state_buf2_len,
+-		  " (%'u bytes)" , st->st_esp.our_bytes);
++		  " (%u bytes)" , st->st_esp.our_bytes);
+ 	    }
+ #endif
+ 
+@@ -1480,6 +1480,55 @@
+     }
+ }
+ 
++void fmt_state_microhard(struct state *st, const time_t n
++, char *state_buf2, const size_t state_buf2_len)
++{
++    /* what the heck is interesting about a state? */
++    const struct connection *c = st->st_connection;
++    const char *np2 = c->newest_ipsec_sa == st->st_serialno
++	? " newest-IPSEC" : "";
++
++    /* print out SPIs if SAs are established */
++    if (state_buf2_len != 0)
++	state_buf2[0] = '\0';	/* default to empty */
++    if ((IS_IPSEC_SA_ESTABLISHED(st->st_state)) && (c->newest_ipsec_sa == st->st_serialno))
++    {
++	char buf[SATOT_BUF*6 + 1];
++	char *p = buf;
++
++#	define add_said(adst, aspi, aproto) { \
++	    ip_said s; \
++	    \
++	    initsaid(adst, aspi, aproto, &s); \
++	    if (p < &buf[sizeof(buf)-1]) \
++	    { \
++		*p++ = ' '; \
++		p += satot(&s, 'x', p, &buf[sizeof(buf)] - p) - 1; \
++	    } \
++	}
++
++	*p = '\0';
++
++#ifdef KLIPS
++	if (st->st_ah.attrs.encapsulation == ENCAPSULATION_MODE_TUNNEL
++	    || st->st_esp.attrs.encapsulation == ENCAPSULATION_MODE_TUNNEL
++	    || st->st_ipcomp.attrs.encapsulation == ENCAPSULATION_MODE_TUNNEL)
++	{
++	    add_said(&c->spd.that.host_addr, st->st_tunnel_out_spi, SA_IPIP);
++	    add_said(&c->spd.this.host_addr, st->st_tunnel_in_spi, SA_IPIP);
++	}
++#endif
++	snprintf(state_buf2, state_buf2_len
++	    , "#%lu: \"%s\"%s%s"
++	    , st->st_serialno
++	    , c->name, np2
++	    , buf);
++
++
++#	undef add_said
++    }
++}
++
+ /*
+  * sorting logic is:
+  *
+@@ -1552,7 +1601,14 @@
+ 	  whack_log(RC_COMMENT, "%s", state_buf);
+ 	  if (state_buf2[0] != '\0')
+ 		whack_log(RC_COMMENT, "%s", state_buf2);
+-
++      if ((kern_interface == USE_MASTKLIPS) 
++          && (st->st_connection->policy & POLICY_TUNNEL)) {
++      memset(state_buf2, 0, sizeof(state_buf2));
++      fmt_state_microhard(st, n
++		, state_buf2, sizeof(state_buf2));
++	  if (state_buf2[0] != '\0')
++		whack_log(RC_COMMENT, "%s", state_buf2);
++      }
+ 	  /* show any associated pending Phase 2s */
+ 	  if (IS_PHASE1(st->st_state))
+ 		show_pending_phase2(st->st_connection, st);
+diff -Nuar org/programs/_realsetup/_realsetup.in microhard/programs/_realsetup/_realsetup.in
+--- org/programs/_realsetup/_realsetup.in	2012-03-23 15:33:43.000000000 -0600
++++ microhard/programs/_realsetup/_realsetup.in	2013-07-18 16:11:49.014758403 -0600
+@@ -73,7 +73,7 @@
+ IPSECcrlcheckinterval=${IPSECcrlcheckinterval:-0}
+ IPSECprotostack=${IPSECprotostack:-auto}
+ # IPSECoverridemtu	""
+-
++Mplutoopts=$(cat /var/run/mgre_list)
+ # set defaults
+ mast=false
+ klips=false
+@@ -217,6 +217,7 @@
+ 	# announcement
+ 	# (Warning, changes to this log message may affect barf.)
+ 	version="`ipsec --version | awk 'NR == 1 { print $(3) }' | sed -e 's/^U\(.*\)\/K(.*/\1/'`"
++        perform echo "\"Microhard Starting Opts $Mplutoopts \""
+ 	case "$1" in
+ 	start|--start)	perform echo "\"Starting Openswan ${VENDOR}IPsec $version...\""	;;
+ 	_autostart)	perform echo "\"Restarting Openswan ${VENDOR}IPsec $version...\""	;;
+@@ -327,7 +328,7 @@
+ 			--nhelpers "\"$IPSECnhelpers\"" \
+ 			--secctx_attr_value "\"$IPSECsecctx_attr_value\"" \
+ 			--dump "\"$IPSECdumpdir\"" \
+-			--opts "\"$IPSECplutoopts\"" \
++			--opts "\"$IPSECplutoopts $Mplutoopts\"" \
+ 			--stderrlog "\"$IPSECplutostderrlog\"" \
+ 			--wait "\"$IPSECplutowait\"" \
+ 			--pre "\"$IPSECprepluto\"" \
+diff -Nuar org/programs/_updown.mast/_updown.mast.in microhard/programs/_updown.mast/_updown.mast.in
+--- org/programs/_updown.mast/_updown.mast.in	2012-03-23 15:33:43.000000000 -0600
++++ microhard/programs/_updown.mast/_updown.mast.in	2013-06-19 17:24:30.857450599 -0600
+@@ -254,18 +254,18 @@
+ 	iptables -t mangle -I PREROUTING 1 -j IPSEC
+     fi
+ 
+-    if [ -w /proc/sys/net/ipv4/conf/$PLUTO_INTERFACE/src_valid_mark ] ; then
++    #if [ -w /proc/sys/net/ipv4/conf/$PLUTO_INTERFACE/src_valid_mark ] ; then
+         # finally make sure that the top bit of source vmark for mast0 is set
+-        vmark=$(cat /proc/sys/net/ipv4/conf/$PLUTO_INTERFACE/src_valid_mark)
+-        vmark=$(( $vmark | 0x80000000 ))
+-        echo "$vmark" > /proc/sys/net/ipv4/conf/$PLUTO_INTERFACE/src_valid_mark
+-    else
++        #vmark=$(cat /proc/sys/net/ipv4/conf/$PLUTO_INTERFACE/src_valid_mark)
++        #vmark=$(( $vmark | 0x80000000 ))
++        #echo "$vmark" > /proc/sys/net/ipv4/conf/$PLUTO_INTERFACE/src_valid_mark
++    #else
+         # In case that we don't have the means to get rp_filter to cooperate 
+         # with KLIPS nfmark based routing scheme, we disable rp_filter.
+-        for n in /proc/sys/net/ipv4/conf/*/rp_filter ; do
+-            echo 0 > $n
+-        done
+-    fi
++    #    for n in /proc/sys/net/ipv4/conf/*/rp_filter ; do
++    #        echo 0 > $n
++    #    done
++    #fi
+   fi
+   fi
+ }
+@@ -350,11 +350,12 @@
+ 
+ restoreresolvconf() {
+ if [ -n "`pidof unbound`" ]; then
+-    if [ -n "$PLUTO_CISCO_DNS_INFO" ]
++    if [ -n "$PLUTO_CISCO_DNS_INFO" ]; then
+         echo "flushing local nameserver of $PLUTO_CISCO_DOMAIN_INFO"
+         /usr/sbin/unbound-control forward_remove $PLUTO_CISCO_DOMAIN_INFO
+         /usr/sbin/unbound-control flush_zone $PLUTO_CISCO_DOMAIN_INFO
+     return
++    fi
+ fi
+ 
+ if [ -z "$PLUTO_NM_CONFIGURED" -o "$PLUTO_NM_CONFIGURED" = 0 ]; then
+@@ -513,14 +514,39 @@
+  
+ 
+ # the big choice
++
+ case "$PLUTO_VERB:$1" in
++vtbit-client:*|vtbit-host:*)
++        logger -p local0.error -t "ipsec updown.mast" "$PLUTO_VERB:$1 $PLUTO_CONNECTION PLUTO_PEER=$PLUTO_PEER PLUTO_PEER_CLIENT=$PLUTO_PEER_CLIENT PLUTO_INTERFACE=$PLUTO_INTERFACE"
++        /sbin/mipsec.sh vtbit_s2s $PLUTO_CONNECTION $PLUTO_PEER >/dev/null 2>&1 &
++        ;;
++
++dpdbackup-client:*)
++        logger -p local0.error -t "ipsec updown.mast" "$PLUTO_VERB:$1 $PLUTO_CONNECTION PLUTO_PEER=$PLUTO_PEER PLUTO_PEER_CLIENT=$PLUTO_PEER_CLIENT PLUTO_INTERFACE=$PLUTO_INTERFACE"
++        /sbin/mipsec.sh backup_s2s $PLUTO_CONNECTION $PLUTO_PEER >/dev/null 2>&1 &
++        ;;
++
+ spdadd-client:*|spdadd-host:*)
+-	checkipsec;
+-	doipsecrule add;;
++        logger -p local0.error -t "ipsec updown.mast" "$PLUTO_VERB $PLUTO_CONNECTION srcnet=$PLUTO_MY_CLIENT_NET/$PLUTO_MY_CLIENT_MASK dstnet=$PLUTO_PEER_CLIENT_NET/$PLUTO_PEER_CLIENT_MASK saref=$PLUTO_MY_REF/$PLUTO_PEER_REF"
++	checkipsec
++	doipsecrule add
++        ;;
+ 
+ spddel-client:*|spddel-host:*)
+-	checkipsec
+-	doipsecrule delete;;
++        logger -p local0.error -t "ipsec updown.mast" "$PLUTO_VERB $PLUTO_CONNECTION srcnet=$PLUTO_MY_CLIENT_NET/$PLUTO_MY_CLIENT_MASK dstnet=$PLUTO_PEER_CLIENT_NET/$PLUTO_PEER_CLIENT_MASK saref=$PLUTO_MY_REF/$PLUTO_PEER_REF"
++	#checkipsec
++	doipsecrule delete
++        ;;
++
++oldspddel-client:*|oldspddel-host:*)
++        logger -p local0.error -t "ipsec updown.mast" "$PLUTO_VERB $PLUTO_CONNECTION srcnet=$PLUTO_MY_CLIENT_NET/$PLUTO_MY_CLIENT_MASK dstnet=$PLUTO_PEER_CLIENT_NET/$PLUTO_PEER_CLIENT_MASK saref=$PLUTO_MY_REF/$PLUTO_PEER_REF"
++	#checkipsec
++        res=$(iptables -t mangle -S | grep -c "comment \"${PLUTO_CONNECTION}\"")
++        [ $res -gt 1 ] && {
++        logger -p local0.error -t "ipsec updown.mast" "$PLUTO_VERB $PLUTO_CONNECTION res=$res so delete rule actually"
++        doipsecrule delete
++        }
++        ;;
+ 
+ prepare-host:*|prepare-client:*)
+ 	# set up a "%trap" equivalent (we don't know how do this yet!)
+@@ -536,19 +562,187 @@
+ 	# remove %TRAP equivalent
+ 	;;
+ 
+-up-host:*)
++xup-host:*)
++        logger -p local0.error -t "ipsec updown.mast" "xup-host $PLUTO_CONNECTION PLUTO_PEER=$PLUTO_PEER PLUTO_INTERFACE=$PLUTO_INTERFACE saref=$PLUTO_MY_REF/$PLUTO_PEER_REF $PLUTO_SAREF_TRACKING"
++              checkipsec
++	      doipsecrule add
++              ip route flush cache
++        if [ "$PLUTO_CONNECTION" = "roadwarrior-l2tp-updatedwin" -o "$PLUTO_CONNECTION" = "roadwarrior-l2tp" -o "$PLUTO_CONNECTION" = "macintosh-l2tp" ]; then
++             if [ ! -p /var/run/xl2tpd/wan-control ]; then
++	          /etc/init.d/xl2tpd-wan restart >/dev/null 2>&1
++                  logger -p local0.error -t "ipsec updown.mast" "xup-host $PLUTO_CONNECTION restart xl2tpd-wan"
++             fi
++
++        else
++             if [ "$PLUTO_CONNECTION" = "roadwarrior-l2tp2-updatedwin" -o "$PLUTO_CONNECTION" = "roadwarrior-l2tp2" -o "$PLUTO_CONNECTION" = "macintosh-l2tp2" ]; then
++                  if [ ! -p /var/run/xl2tpd/wan2-control ]; then
++	               /etc/init.d/xl2tpd-wan2 restart >/dev/null 2>&1
++                       logger -p local0.error -t "ipsec updown.mast" "xup-host $PLUTO_CONNECTION restart xl2tpd-wan2"
++                  fi
++             else
++                  if [ "$PLUTO_SAREF_TRACKING" = "conntrack" ]; then
++                        ttype=$(uci get ipsec.${PLUTO_CONNECTION})
++                        if [ "$ttype" = "x2ctunnel" ]; then
++                              logger -p local0.error -t "ipsec updown.mast" "xup-host call_xl2tp $PLUTO_CONNECTION"
++                              /sbin/mxl2tpd call_xl2tp "$PLUTO_CONNECTION" "$PLUTO_MY_REF" "$PLUTO_PEER_REF" > /dev/null 2>&1 &
++                        fi
++                  fi
++             fi
++        fi
++        ;;
++
++xdown-host:*)
++        logger -p local0.error -t "ipsec updown.mast" "xdown-host $PLUTO_CONNECTION PLUTO_PEER=$PLUTO_PEER PLUTO_INTERFACE=$PLUTO_INTERFACE saref=$PLUTO_PEER_REF"
++	     doipsecrule delete
++             ip route flush cache
++        ;;
++
++gup-host:*)
+ 	# If you are doing a custom version, firewall commands go here.
++        logger -p local0.error -t "ipsec updown.mast" "gup-host $PLUTO_CONNECTION PLUTO_PEER=$PLUTO_PEER PLUTO_INTERFACE=$PLUTO_INTERFACE saref=$PLUTO_PEER_REF"
++        logger -p local0.error -t "ipsec updown.mast" "gup-host PLUTO_ME=$PLUTO_ME PLUTO_MY_SOURCEIP=$PLUTO_MY_SOURCEIP PLUTO_PEER_CLIENT=$PLUTO_PEER_CLIENT"
++                 ttype=$(uci get gre-tunnels.${PLUTO_CONNECTION}.ipsec_mode)
++                 if [ "$ttype" = "transport" ]; then
++                     ttype=$(uci get gre-tunnels.${PLUTO_CONNECTION}.enableipsec)
++                     if [ "$ttype" = "ags" ]; then
++                          [ -d /var/run/mipsec ] || mkdir /var/run/mipsec
++                          echo "action=checked" > /var/run/mipsec/${PLUTO_CONNECTION}.status
++                          echo "status=connected" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++                          echo "constat=Disconnect" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++                          logger -p local0.error -t "ipsec updown.mast" "gre transport mode $ttype $PLUTO_CONNECTION peer=$PLUTO_PEER peer_client=$PLUTO_PEER_CLIENT up done"
++                     else
++                          checkipsec
++	                  doipsecrule add
++                          ip route flush cache
++                          logger -p local0.error -t "ipsec updown.mast" "gre transport mode $ttype add gre $PLUTO_CONNECTION"
++                          /bin/gre ipsec_gre_trans "$PLUTO_CONNECTION" > /dev/null 2>&1 &
++                     fi
++                 fi
+ 	;;
+ 
+-down-host:*)
++gdown-host:*)
+ 	# If you are doing a custom version, firewall commands go here.
++                 logger -p local0.error -t "ipsec updown.mast" "gdown-host $PLUTO_CONNECTION"
++                 ttype=$(uci get gre-tunnels.${PLUTO_CONNECTION}.ipsec_mode)
++                 if [ "$ttype" = "transport" ]; then
++                     [ -d /var/run/mipsec ] || mkdir /var/run/mipsec
++                     echo "action=checked" > /var/run/mipsec/${PLUTO_CONNECTION}.status
++                     echo "status=waiting for connection" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++                     echo "constat=Connect" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++                     logger -p local0.error -t "ipsec updown.mast" "gre transport mode $PLUTO_CONNECTION peer=$PLUTO_PEER peer_client=$PLUTO_PEER_CLIENT down done"
++                     ttype=$(uci get gre-tunnels.${PLUTO_CONNECTION}.enableipsec)
++                     [ "$ttype" = "bgs" ] && {
++                        logger -p local0.error -t "ipsec updown.mast" "gre transport mode $ttype del gre $PLUTO_CONNECTION"
++                	doipsecrule delete
++                        ip route flush cache
++                        ip link set "$PLUTO_CONNECTION" down
++                        ip tunnel del "$PLUTO_CONNECTION"
++                     }
++                 fi
+ 	;;
+-
++up-host:*)
++	# If you are doing a custom version, firewall commands go here.
++        ;;
++down-host:*)
++	# If you are doing a custom version, firewall commands go here.
++        ;;
+ up-client:)
+ 	# If you are doing a custom version, firewall commands go here.
++        logger -p local0.error -t "ipsec updown.mast" "up-cleint $PLUTO_CONNECTION PLUTO_PEER=$PLUTO_PEER PLUTO_PEER_CLIENT=$PLUTO_PEER_CLIENT PLUTO_INTERFACE=$PLUTO_INTERFACE"
++        ttype=$(uci get ipsec.${PLUTO_CONNECTION})
++        if [ "$ttype" = "s2stunnel" -o "$ttype" = "s2stb" ]; then
++            [ -d /var/run/mipsec ] || mkdir /var/run/mipsec
++            tun="$PLUTO_CONNECTION"
++            [ "$ttype" = "s2stb" ] && tun=$(/sbin/uci get ipsec.${PLUTO_CONNECTION}.primary)
++            echo "action=checked" > /var/run/mipsec/${tun}.status
++            echo "status=connected" >> /var/run/mipsec/${tun}.status
++            echo "constat=Disconnect" >> /var/run/mipsec/${tun}.status
++            echo "peer=$PLUTO_PEER" >> /var/run/mipsec/${tun}.status
++            ip route replace $PLUTO_PEER_CLIENT dev $PLUTO_INTERFACE
++            ip route flush cache
++            cmd="/usr/sbin/iptables -S | grep -c 'forwarding_rule -s $PLUTO_PEER_CLIENT -j ACCEPT'"
++            fws=`eval $cmd`
++            if [ "$fws" -gt 0 ]; then
++                  logger -p local0.error -t "ipsec updown.mast" "s2stunnel $PLUTO_CONNECTION the firewall rule4 exists"
++            else
++                  /usr/sbin/iptables -A forwarding_rule -s $PLUTO_PEER_CLIENT -j ACCEPT > /dev/null 2>&1
++            fi
++            cmd="/usr/sbin/iptables -S | grep -c 'forwarding_rule -d $PLUTO_PEER_CLIENT -j ACCEPT'"
++            fws=`eval $cmd`
++            if [ "$fws" -gt 0 ]; then
++                  logger -p local0.error -t "ipsec updown.mast" "s2stunnel $PLUTO_CONNECTION the firewall rule5 exists"
++            else
++                  /usr/sbin/iptables -A forwarding_rule -d $PLUTO_PEER_CLIENT -j ACCEPT > /dev/null 2>&1
++            fi
++            logger -p local0.error -t "ipsec updown.mast" "s2stunnel $PLUTO_CONNECTION peer=$PLUTO_PEER peer_client=$PLUTO_PEER_CLIENT up done"
++            /sbin/mipsec.sh s2s_trap up $tun $ttype >/dev/null 2>&1 &
++        else
++             ttype=$(uci get gre-tunnels.${PLUTO_CONNECTION}.enableipsec)
++             if [ "$ttype" = "ags" ]; then
++                  ttype=$(uci get gre-tunnels.${PLUTO_CONNECTION}.ipsec_mode)
++                  if [ "$ttype" = "tunnel" ]; then
++                       echo "action=checked" > /var/run/mipsec/${PLUTO_CONNECTION}.status
++                       echo "status=connected" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++                       echo "constat=Disconnect" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++                       logger -p local0.error -t "ipsec updown.mast" "gre tunnel mode $PLUTO_CONNECTION peer=$PLUTO_PEER peer_client=$PLUTO_PEER_CLIENT up done"
++                  fi
++             else
++                  if [ "$ttype" = "bgs" ]; then 
++                       ttype=$(uci get gre-tunnels.${PLUTO_CONNECTION}.ipsec_mode)
++                       if [ "$ttype" = "tunnel" ]; then
++                          logger -p local0.error -t "ipsec updown.mast" "up-client $PLUTO_CONNECTION PLUTO_PEER=$PLUTO_PEER PLUTO_INTERFACE=$PLUTO_INTERFACE saref=$PLUTO_PEER_REF"
++                          logger -p local0.error -t "ipsec updown.mast" "up-client PLUTO_ME=$PLUTO_ME PLUTO_MY_SOURCEIP=$PLUTO_MY_SOURCEIP PLUTO_PEER_CLIENT=$PLUTO_PEER_CLIENT"
++                          #ip rule add from all iif $PLUTO_CONNECTION lookup main > /dev/null 2>&1
++                          #ip tunnel add ${PLUTO_INTERFACE}.${PLUTO_CONNECTION} mode ipip local $PLUTO_ME remote $PLUTO_PEER dev $PLUTO_INTERFACE > /dev/null 2>&1
++                          #ip addr add dev ${PLUTO_INTERFACE}.${PLUTO_CONNECTION} $PLUTO_MY_SOURCEIP peer $PLUTO_PEER_CLIENT > /dev/null 2>&1
++                          #ip route add $PLUTO_PEER_CLIENT dev $PLUTO_INTERFACE src $PLUTO_MY_SOURCEIP > /dev/null 2>&1
++                          #ip route flush cache
++                          logger -p local0.error -t "ipsec updown.mast" "gre tunnel mode $ttype $PLUTO_CONNECTION peer=$PLUTO_PEER peer_client=$PLUTO_PEER_CLIENT up done"
++                          logger -p local0.error -t "ipsec updown.mast" "ipsec_gre $PLUTO_CONNECTION $PLUTO_MY_CLIENT $PLUTO_PEER_CLIENT $PLUTO_PEER $PLUTO_INTERFACE"
++                          /bin/gre ipsec_gre $PLUTO_CONNECTION $PLUTO_MY_CLIENT $PLUTO_PEER_CLIENT $PLUTO_PEER $PLUTO_INTERFACE > /dev/null 2>&1 &
++                       fi
++
++                  fi
++             fi
++        fi
+ 	;;
+ down-client:)
+ 	# If you are doing a custom version, firewall commands go here.
++        logger -p local0.error -t "ipsec updown.mast" "down-cleint $PLUTO_CONNECTION PLUTO_PEER=$PLUTO_PEER PLUTO_PEER_CLIENT=$PLUTO_PEER_CLIENT PLUTO_INTERFACE=$PLUTO_INTERFACE"
++        ttype=$(uci get ipsec.${PLUTO_CONNECTION})
++        if [ "$ttype" = "s2stunnel" -o "$ttype" = "s2stb" ]; then
++            [ -d /var/run/mipsec ] || mkdir /var/run/mipsec
++            tun="$PLUTO_CONNECTION"
++            [ "$ttype" = "s2stb" ] && tun=$(/sbin/uci get ipsec.${PLUTO_CONNECTION}.primary)
++            [ -d /var/run/mipsec ] || mkdir /var/run/mipsec
++            echo "action=down" > /var/run/mipsec/${tun}.status
++            echo "status=waiting for connection" >> /var/run/mipsec/${tun}.status
++            echo "constat=Connect" >> /var/run/mipsec/${tun}.status
++            echo "peer=$PLUTO_PEER" >> /var/run/mipsec/${tun}.status
++            ip route del $PLUTO_PEER_CLIENT dev $PLUTO_INTERFACE
++            ip route flush cache
++            /usr/sbin/iptables -D forwarding_rule -s $PLUTO_PEER_CLIENT -j ACCEPT
++            /usr/sbin/iptables -D forwarding_rule -d $PLUTO_PEER_CLIENT -j ACCEPT
++            logger -p local0.error -t "ipsec updown.mast" "s2stunnel $PLUTO_CONNECTION peer=$PLUTO_PEER peer_client=$PLUTO_PEER_CLIENT down done"
++            /sbin/mipsec.sh s2s_trap down $tun $ttype >/dev/null 2>&1 &
++        else
++             ttype=$(uci get gre-tunnels.${PLUTO_CONNECTION}.ipsec_mode)
++             if [ "$ttype" = "tunnel" ]; then
++                  echo "action=checked" > /var/run/mipsec/${PLUTO_CONNECTION}.status
++                  echo "status=waiting for connection" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++                  echo "constat=Connect" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++                  logger -p local0.error -t "ipsec updown.mast" "gre tunnel mode $PLUTO_CONNECTION peer=$PLUTO_PEER peer_client=$PLUTO_PEER_CLIENT down done"
++                  ttype=$(uci get gre-tunnels.${PLUTO_CONNECTION}.enableipsec)
++                  [ "$ttype" = "bgs" ] && {
++                        logger -p local0.error -t "ipsec updown.mast" "gre tunnel mode $ttype del gre $PLUTO_CONNECTION"
++                        ip link set "$PLUTO_CONNECTION" down
++                        #ip rule del from all iif $PLUTO_CONNECTION lookup main
++                        ip tunnel del "$PLUTO_CONNECTION"
++                        #ip tunnel del ${PLUTO_INTERFACE}.${PLUTO_CONNECTION}
++                        #ip route flush cache
++                  }
++             fi
++        fi
+ 	;;
+ updateresolvconf-host|updateresolvconf-client)
+         # updating resolv.conf using DNS info obtained from the server
+@@ -562,6 +756,7 @@
+         # sending disconnect signal to NM, as something went wrong.
+         disconnectNM
+         ;;
++  
+ #
+ # IPv6
+ #

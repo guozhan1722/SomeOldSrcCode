@@ -1,0 +1,15 @@
+Source-Makefile: package/eurd/Makefile
+Package: eurd
+Version: 1
+Depends: +libuci +libpthread +zlib
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Microhard eurd/udp report
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  This package contains the microhard home grown serial/net daemon
+@@
+
+

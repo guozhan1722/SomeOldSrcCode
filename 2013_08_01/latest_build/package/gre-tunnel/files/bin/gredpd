@@ -1,0 +1,57 @@
+#!/bin/sh 
+ exec>/dev/null
+
+. /etc/functions.sh
+  cfg="$1"
+
+  [ -d "/var/run/gre-tunnels" ] || mkdir /var/run/gre-tunnels
+  while true; do
+       config_load gre-tunnels
+
+       config_get keepalive_ip $cfg keepalive_ip
+       config_get keepalive_delay $cfg keepalive_delay
+       config_get keepalive_timeout $cfg keepalive_timeout
+
+       [ -z "$keepalive_ip" ] && {
+            logger -t "bin/gredpd" "keepalive_ip=$keepalive_ip is empty so exit"
+            exit 0
+       }
+       [ "$keepalive_ip" == "0.0.0.0" ] && {
+            logger -t "bin/gredpd" "keepalive_ip=$keepalive_ip so exit"
+            exit 0
+       }
+       [ "$keepalive_delay" == "0" ] && {
+            logger -t "bin/gredpd" "keepalive_delay=$keepalive_delay is empty so exit"
+            exit 0
+       }
+       [ "$keepalive_timeout" == "0" ] && {
+            logger -t "bin/gredpd" "keepalive_timeout=$keepalive_timeout is empty so exit"
+            exit 0
+       }
+
+       COUNTER=0
+       RES=0
+       while [ $COUNTER -lt $keepalive_timeout ]; do
+                    ping ${keepalive_ip:-8.8.8.8} -c 1 -s 1 -W 5 2>&1 >/dev/null
+                    let COUNTER=COUNTER+1
+                    if [ "$?" = "0" ]; then
+                        let RES=0
+                        break;
+                    else
+                        let RES=RES+1
+                    fi
+       done
+       
+       if [ "$RES" = "$keepalive_timeout" ]; then
+          echo "Dead" > /var/run/gre-tunnels/$cfg
+       else
+          echo "Alive" > /var/run/gre-tunnels/$cfg
+       fi
+
+       sleep $keepalive_delay  
+      
+   done
+
+exit 0
+
+

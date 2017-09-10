@@ -1,0 +1,613 @@
+#!/bin/sh
+
+ exec>/dev/null
+
+. /etc/functions.sh
+
+setup_firewall() {
+    local cfg="$1"
+    local interface
+
+    config_get interface "$cfg" interface
+    if [ "$interface" = "br-wan" ]; then
+         zone="zone_wan"
+    else
+         zone="zone_wan2"
+    fi
+    config_get local_status "$cfg" local_status
+    if [ "$local_status" == "Enable" ]; then
+    #echo "iptables -t nat -I POSTROUTING 1 -o $cfg -s $lnet -d $rnet -j ACCEPT" >> /etc/firewall.gre
+    echo "/usr/sbin/iptables -A forwarding_rule -p all -i $cfg -o br-lan -j ACCEPT" >> /etc/firewall.gre
+    echo "/usr/sbin/iptables -A forwarding_rule -p all -i br-lan -o $cfg -j ACCEPT" >> /etc/firewall.gre
+    echo "/usr/sbin/iptables -A input_rule -i $cfg -p all -j ACCEPT" >> /etc/firewall.gre
+    echo "/usr/sbin/iptables -A forward -i $cfg -j ${zone}_forward" >> /etc/firewall.gre
+    echo "/usr/sbin/iptables -A input -i $cfg -j $zone" >> /etc/firewall.gre
+    echo "/usr/sbin/iptables -A input_rule -i $cfg -p icmp -m icmp --icmp-type 0 -j ACCEPT" >> /etc/firewall.gre
+    echo "/usr/sbin/iptables -A input_rule -i $cfg -p icmp -m icmp --icmp-type 8 -j ACCEPT" >> /etc/firewall.gre
+    echo "/usr/sbin/iptables -A input_rule -i $cfg -p icmp -m icmp --icmp-type 3 -j ACCEPT" >> /etc/firewall.gre
+    config_get enableipsec "$cfg" enableipsec
+    if [ "$enableipsec" = "ags" ]; then
+    testr=$(cat /etc/firewall.gre | grep -c '/usr/sbin/iptables -A forwarding_rule -i mast0 -o br-lan -j ACCEPT')
+    [ "$testr" = "0" ] && echo "/usr/sbin/iptables -A forwarding_rule -i mast0 -o br-lan -j ACCEPT" >> /etc/firewall.gre
+    testr=$(cat /etc/firewall.gre | grep -c '/usr/sbin/iptables -A forwarding_rule -i br-lan -o mast0 -j ACCEPT')
+    [ "$testr" = "0" ] && echo "/usr/sbin/iptables -A forwarding_rule -i br-lan -o mast0 -j ACCEPT" >> /etc/firewall.gre
+    fi       
+    fi
+}
+
+
+netmask2bin() {
+   local mask="$1"
+   local mask1=$(echo $mask | cut -d '.' -f 1)
+   local mask2=$(echo $mask | cut -d '.' -f 2)
+   local mask3=$(echo $mask | cut -d '.' -f 3)
+   local mask4=$(echo $mask | cut -d '.' -f 4)
+   local rem=1
+   local result=0
+   while [ $mask1 -gt 0 ] 
+   do
+       rem=`expr $mask1 % 2`
+       [ $rem -eq 1 ] && let "result+=1"
+       mask1=`expr $mask1 / 2`
+   done
+   while [ $mask2 -gt 0 ] 
+   do
+       rem=`expr $mask2 % 2`
+       [ $rem -eq 1 ] && let "result+=1"
+       mask2=`expr $mask2 / 2`
+   done
+   while [ $mask3 -gt 0 ] 
+   do
+       rem=`expr $mask3 % 2`
+       [ $rem -eq 1 ] && let "result+=1"
+       mask3=`expr $mask3 / 2`
+   done  
+   while [ $mask4 -gt 0 ] 
+   do
+       rem=`expr $mask4 % 2`
+       [ $rem -eq 1 ] && let "result+=1"
+       mask4=`expr $mask4 / 2`
+   done    
+   return $result   
+}
+
+cfg="$2"
+escape_local="local"
+escape_set="set"
+
+case "$1" in
+
+sf)    
+    fwfile="/etc/firewall.gre"
+    [ -f "$fwfile" ] && rm -f $fwfile 
+  
+    fnum=$(ls -l /etc/config/gre-tunnels | wc -l)
+
+    if [ "$fnum" -gt 0 ]; then
+        config_load gre-tunnels
+        config_foreach setup_firewall gretunnel
+        echo "/usr/sbin/iptables -A input_rule -p gre -j ACCEPT" >> $fwfile
+    fi
+
+    /etc/init.d/firewall restart  >/dev/null 2>&1
+
+;;
+
+# ipsec_gre will be invoked by _updown.mast when ipsec is up
+# condition are
+# enableipsec=bgs that means to up ipsec before to set gre tunnel 
+# ipsec is configed to tunnel mode
+ipsec_gre)
+    uci_load gre-tunnels
+    config_get local_status "$cfg" local_status
+    config_get multicast "$cfg" multicast
+    config_get arp "$cfg" arp
+    config_get ttl "$cfg" ttl
+    config_get local_tunnel_ip "$cfg" local_tunnel_ip
+    config_get local_tunnel_mask "$cfg" local_tunnel_mask
+    config_get local_wan "$cfg" local_wan
+    config_get remote_subnet "$cfg" remote_subnet
+    config_get remote_netmask "$cfg" remote_netmask
+    config_get remote_wan "$cfg" remote_wan
+    config_get gre_key "$cfg" gre_key
+    config_get enablemroute "$cfg" enablemroute
+    config_get enableipsec "$cfg" enableipsec
+
+    config_get ipsec_mode "$cfg" ipsec_mode
+
+    if [ "$local_status" == "Enable" ]; then
+    logger -p local0.error -t "bin/gre" "ipsec_gre $cfg"
+    [ "$enableipsec" = "bgs" ] && {
+         ip link "$escape_set" "$cfg" down
+         ip tunnel del "$cfg"
+         if [ -n "$gre_key" ]; then
+              ip tunnel add "$cfg" mode gre remote "$remote_wan" "$escape_local" "$local_wan" ttl "$ttl" key "$gre_key"
+         else
+              ip tunnel add "$cfg" mode gre remote "$remote_wan" "$escape_local" "$local_wan" ttl "$ttl"
+         fi
+         ip link "$escape_set" "$cfg" up
+         ip addr add "$local_tunnel_ip"/"$local_tunnel_mask" dev "$cfg"
+         if [ "$multicast" == "Enable" ]; then
+               ip link "$escape_set" "$cfg" multicast on
+         fi
+         if [ "$arp" == "Enable" ]; then
+               ip link "$escape_set" "$cfg" arp on
+         fi
+
+         [ "$enablemroute" == "Enable" ] && {
+               config_get mroutename              "$cfg" mroutename
+               config_get mroute_localip          "$cfg" mroute_localip
+               config_get mroute_localmask        "$cfg" mroute_localmask
+               config_get mroute_remoteip         "$cfg" mroute_remoteip
+               config_get mroute_remotemask       "$cfg" mroute_remotemask
+               config_get mroute_sip              "$cfg" mroute_sip
+               config_get mroute_smask            "$cfg" mroute_smask
+               config_get mroute_gip              "$cfg" mroute_gip
+	       uci_add mcast  mcast "mcast_$mroutename"; add_gre_cfg="$CONFIG_SECTION"
+               uci_set mcast "$add_gre_cfg" tunnel         yes
+               uci_set mcast "$add_gre_cfg" grename       "$cfg"
+               uci_set mcast "$add_gre_cfg" localip       "$mroute_localip"
+               uci_set mcast "$add_gre_cfg" localmask     "$mroute_localmask"
+               uci_set mcast "$add_gre_cfg" remoteip      "$mroute_remoteip"
+               uci_set mcast "$add_gre_cfg" remotemask    "$mroute_remotemask"
+               uci_set mcast "$add_gre_cfg" srcip         "$mroute_sip"
+               uci_set mcast "$add_gre_cfg" srcmask       "$mroute_smask"
+               uci_set mcast "$add_gre_cfg" grpip         "$mroute_gip"
+               /sbin/uci commit mcast
+               /etc/init.d/mconfread restart >/dev/null 2>&1
+         }
+    fwfile="/etc/firewall.gre"
+    [ -f "$fwfile" ] && rm -f $fwfile 
+   
+    fnum=$(ls -l /etc/config/gre-tunnels | wc -l)
+
+    if [ "$fnum" -gt 0 ]; then
+        config_load gre-tunnels
+        config_foreach setup_firewall gretunnel
+        echo "/usr/sbin/iptables -A input_rule -p gre -j ACCEPT" >> $fwfile
+    fi
+
+    GRE_PLUTO_MY_CLIENT=$3
+    GRE_PLUTO_PEER_CLIENT=$4
+    GRE_PLUTO_PEER=$5
+    GRE_PLUTO_INTERFACE=$6
+    [ -f "/etc/debugipsec" ] && logger -p local0.error -t "bin/gre" "ipsec_gre $cfg PLUTO_MY_CLIENT=$3 PLUTO_PEER_CLIENT=$4 PLUTO_PEER=$5 PLUTO_INTERFACE=$6"
+    netmask2bin "$remote_netmask"
+    remote_netmask="$?"
+    lan_ip=$(/sbin/uci get network.lan.ipaddr)
+    ip route add "$remote_subnet"/"$remote_netmask" via "$local_tunnel_ip" dev "$cfg" src "$lan_ip"
+             [ -d /var/run/mipsec ] || mkdir /var/run/mipsec
+             echo "action=checked" > /var/run/mipsec/${cfg}.status
+             echo "status=connected" >> /var/run/mipsec/${cfg}.status
+             echo "constat=Disconnect" >> /var/run/mipsec/${cfg}.status
+             [ "$GRE_PLUTO_INTERFACE" = "br-wan" ] && zone="zone_wan"               
+             [ "$GRE_PLUTO_INTERFACE" = "br-wan2" ] && zone="zone_wan2"  
+             [ -d /var/run/ipsecfirewall ] || mkdir /var/run/ipsecfirewall
+             echo "/usr/sbin/iptables -t nat -I POSTROUTING 1 -o $GRE_PLUTO_INTERFACE -s $GRE_PLUTO_MY_CLIENT -d $GRE_PLUTO_PEER_CLIENT -j ACCEPT" > /var/run/ipsecfirewall/firewall.$cfg
+             echo "/usr/sbin/iptables -A forwarding_rule -s $GRE_PLUTO_PEER_CLIENT -j ACCEPT" >> //var/run/ipsecfirewall/firewall.$cfg
+             echo "/usr/sbin/iptables -I $zone 1 -s $GRE_PLUTO_PEER -j ACCEPT" >> /var/run/ipsecfirewall/firewall.$cfg
+             echo "/usr/sbin/iptables -I $zone 1 -s $GRE_PLUTO_PEER_CLIENT -j ACCEPT" >> /var/run/ipsecfirewall/firewall.$cfg
+
+    /etc/init.d/firewall restart  >/dev/null 2>&1
+    }
+    fi
+;;
+
+# ipsec_gre will be invoked by _updown.mast when ipsec is up
+# condition are
+# enableipsec=bgs that means to up ipsec before to set gre tunnel 
+# ipsec is configed to transport mode
+ipsec_gre_trans)
+    uci_load gre-tunnels
+    config_get local_status "$cfg" local_status
+    config_get multicast "$cfg" multicast
+    config_get arp "$cfg" arp
+    config_get ttl "$cfg" ttl
+    config_get local_tunnel_ip "$cfg" local_tunnel_ip
+    config_get local_tunnel_mask "$cfg" local_tunnel_mask
+    config_get local_wan "$cfg" local_wan
+    config_get remote_subnet "$cfg" remote_subnet
+    config_get remote_netmask "$cfg" remote_netmask
+    config_get remote_wan "$cfg" remote_wan
+    config_get gre_key "$cfg" gre_key
+    config_get enablemroute "$cfg" enablemroute
+    config_get enableipsec "$cfg" enableipsec
+    config_get ipsec_localsip "$cfg" ipsec_localsip
+
+    config_get ipsec_mode "$cfg" ipsec_mode
+
+    if [ "$local_status" == "Enable" ]; then
+    logger -p local0.error -t "bin/gre" "ipsec_gre_trans $cfg"
+    [ "$enableipsec" = "bgs" ] && {
+         ip link "$escape_set" "$cfg" down
+         ip tunnel del "$cfg"
+         if [ -n "$gre_key" ]; then
+              ip tunnel add "$cfg" mode gre remote "$remote_wan" "$escape_local" "$local_wan" ttl "$ttl" key "$gre_key"
+         else
+              ip tunnel add "$cfg" mode gre remote "$remote_wan" "$escape_local" "$local_wan" ttl "$ttl"
+         fi
+         ip link "$escape_set" "$cfg" up
+         ip addr add "$local_tunnel_ip"/"$local_tunnel_mask" dev "$cfg"
+         if [ "$multicast" == "Enable" ]; then
+               ip link "$escape_set" "$cfg" multicast on
+         fi
+         if [ "$arp" == "Enable" ]; then
+               ip link "$escape_set" "$cfg" arp on
+         fi
+
+         [ "$enablemroute" == "Enable" ] && {
+               config_get mroutename              "$cfg" mroutename
+               config_get mroute_localip          "$cfg" mroute_localip
+               config_get mroute_localmask        "$cfg" mroute_localmask
+               config_get mroute_remoteip         "$cfg" mroute_remoteip
+               config_get mroute_remotemask       "$cfg" mroute_remotemask
+               config_get mroute_sip              "$cfg" mroute_sip
+               config_get mroute_smask            "$cfg" mroute_smask
+               config_get mroute_gip              "$cfg" mroute_gip
+	       uci_add mcast  mcast "mcast_$mroutename"; add_gre_cfg="$CONFIG_SECTION"
+               uci_set mcast "$add_gre_cfg" tunnel         yes
+               uci_set mcast "$add_gre_cfg" grename       "$cfg"
+               uci_set mcast "$add_gre_cfg" localip       "$mroute_localip"
+               uci_set mcast "$add_gre_cfg" localmask     "$mroute_localmask"
+               uci_set mcast "$add_gre_cfg" remoteip      "$mroute_remoteip"
+               uci_set mcast "$add_gre_cfg" remotemask    "$mroute_remotemask"
+               uci_set mcast "$add_gre_cfg" srcip         "$mroute_sip"
+               uci_set mcast "$add_gre_cfg" srcmask       "$mroute_smask"
+               uci_set mcast "$add_gre_cfg" grpip         "$mroute_gip"
+               /sbin/uci commit mcast
+               /etc/init.d/mconfread restart >/dev/null 2>&1
+         }
+    fwfile="/etc/firewall.gre"
+    [ -f "$fwfile" ] && rm -f $fwfile 
+     
+    fnum=$(ls -l /etc/config/gre-tunnels | wc -l)
+
+    if [ "$fnum" -gt 0 ]; then
+        config_load gre-tunnels
+        config_foreach setup_firewall gretunnel
+        echo "/usr/sbin/iptables -A input_rule -p gre -j ACCEPT" >> $fwfile
+    fi
+
+    netmask2bin "$remote_netmask"
+    remote_netmask="$?"
+    ip route add "$remote_subnet"/"$remote_netmask" via "$local_tunnel_ip" dev "$cfg" src "$ipsec_localsip"
+    echo "action=checked" > /var/run/mipsec/${cfg}.status
+    echo "status=connected" >> /var/run/mipsec/${cfg}.status
+    echo "constat=Disconnect" >> /var/run/mipsec/${cfg}.status
+    /etc/init.d/firewall restart  >/dev/null 2>&1
+    }
+    fi
+;;
+
+# add_gre will be invoked during init
+# condition are 
+# gre tunnel without ipsec
+# enableipsec=ags that means to set gre tunnel before to up ipsec 
+add_gre)
+    uci_load gre-tunnels
+    config_get local_status "$cfg" local_status
+    config_get multicast "$cfg" multicast
+    config_get arp "$cfg" arp
+    config_get ttl "$cfg" ttl
+    config_get local_tunnel_ip "$cfg" local_tunnel_ip
+    config_get local_tunnel_mask "$cfg" local_tunnel_mask
+    config_get local_wan "$cfg" local_wan
+    config_get remote_subnet "$cfg" remote_subnet
+    config_get remote_netmask "$cfg" remote_netmask
+    config_get remote_wan "$cfg" remote_wan
+    config_get gre_key "$cfg" gre_key
+    config_get enablemroute "$cfg" enablemroute
+    config_get enableipsec "$cfg" enableipsec
+
+    config_get ipsec_mode "$cfg" ipsec_mode
+
+    if [ "$local_status" == "Enable" ]; then
+    [ "$enableipsec" = "bgs" ] || {
+         if [ -n "$gre_key" ]; then
+              ip tunnel add "$cfg" mode gre remote "$remote_wan" "$escape_local" "$local_wan" ttl "$ttl" key "$gre_key"
+         else
+              ip tunnel add "$cfg" mode gre remote "$remote_wan" "$escape_local" "$local_wan" ttl "$ttl"
+         fi
+         ip link "$escape_set" "$cfg" up
+         ip addr add "$local_tunnel_ip"/"$local_tunnel_mask" dev "$cfg"
+         if [ "$multicast" == "Enable" ]; then
+               ip link "$escape_set" "$cfg" multicast on
+         fi
+         if [ "$arp" == "Enable" ]; then
+               ip link "$escape_set" "$cfg" arp on
+         fi
+
+         [ "$enablemroute" == "Enable" ] && {
+               config_get mroutename              "$cfg" mroutename
+               config_get mroute_localip          "$cfg" mroute_localip
+               config_get mroute_localmask        "$cfg" mroute_localmask
+               config_get mroute_remoteip         "$cfg" mroute_remoteip
+               config_get mroute_remotemask       "$cfg" mroute_remotemask
+               config_get mroute_sip              "$cfg" mroute_sip
+               config_get mroute_smask            "$cfg" mroute_smask
+               config_get mroute_gip              "$cfg" mroute_gip
+	       uci_add mcast  mcast "mcast_$mroutename"; add_gre_cfg="$CONFIG_SECTION"
+               uci_set mcast "$add_gre_cfg" tunnel         yes
+               uci_set mcast "$add_gre_cfg" grename       "$cfg"
+               uci_set mcast "$add_gre_cfg" localip       "$mroute_localip"
+               uci_set mcast "$add_gre_cfg" localmask     "$mroute_localmask"
+               uci_set mcast "$add_gre_cfg" remoteip      "$mroute_remoteip"
+               uci_set mcast "$add_gre_cfg" remotemask    "$mroute_remotemask"
+               uci_set mcast "$add_gre_cfg" srcip         "$mroute_sip"
+               uci_set mcast "$add_gre_cfg" srcmask       "$mroute_smask"
+               uci_set mcast "$add_gre_cfg" grpip         "$mroute_gip"
+               /sbin/uci commit mcast
+               /etc/init.d/mconfread restart >/dev/null 2>&1
+         }
+    fwfile="/etc/firewall.gre"
+    [ -f "$fwfile" ] && rm -f $fwfile 
+     
+    fnum=$(ls -l /etc/config/gre-tunnels | wc -l)
+
+    if [ "$fnum" -gt 0 ]; then
+        config_load gre-tunnels
+        config_foreach setup_firewall gretunnel
+        echo "/usr/sbin/iptables -A input_rule -p gre -j ACCEPT" >> $fwfile
+    fi
+
+    #/etc/init.d/firewall restart  >/dev/null 2>&1
+    netmask2bin "$remote_netmask"
+    remote_netmask="$?"
+    if [ "$enableipsec" = "ags" ]; then
+    config_get ipsec_localsip "$cfg" ipsec_localsip
+    ip route add "$remote_subnet"/"$remote_netmask" via "$local_tunnel_ip" dev "$cfg" src "$ipsec_localsip"
+    else
+    ip route add "$remote_subnet"/"$remote_netmask" via "$local_tunnel_ip" dev "$cfg"
+    fi
+    }
+    fi
+;;
+
+add)
+    uci_load gre-tunnels
+    config_get local_status "$cfg" local_status
+    config_get multicast "$cfg" multicast
+    config_get arp "$cfg" arp
+    config_get ttl "$cfg" ttl
+    config_get local_tunnel_ip "$cfg" local_tunnel_ip
+    config_get local_tunnel_mask "$cfg" local_tunnel_mask
+    config_get local_wan "$cfg" local_wan
+    config_get remote_subnet "$cfg" remote_subnet
+    config_get remote_netmask "$cfg" remote_netmask
+    config_get remote_wan "$cfg" remote_wan
+    config_get gre_key "$cfg" gre_key
+    config_get enablemroute "$cfg" enablemroute
+    config_get enableipsec "$cfg" enableipsec
+
+    config_get ipsec_mode "$cfg" ipsec_mode
+
+    if [ "$local_status" == "Enable" ]; then
+    [ "$enableipsec" = "bgs" ] && {
+         /sbin/mipsec.sh add_grebgs $cfg >/dev/null 2>&1
+    } || {
+         if [ -n "$gre_key" ]; then
+               ip tunnel add "$cfg" mode gre remote "$remote_wan" "$escape_local" "$local_wan" ttl "$ttl" key "$gre_key"
+         else
+               ip tunnel add "$cfg" mode gre remote "$remote_wan" "$escape_local" "$local_wan" ttl "$ttl"
+         fi
+         ip link "$escape_set" "$cfg" up
+         ip addr add "$local_tunnel_ip"/"$local_tunnel_mask" dev "$cfg"
+         if [ "$multicast" == "Enable" ]; then
+               ip link "$escape_set" "$cfg" multicast on
+         fi
+         if [ "$arp" == "Enable" ]; then
+               ip link "$escape_set" "$cfg" arp on
+         fi
+         if [ "$enableipsec" = "ags" ]; then
+              /sbin/mipsec.sh add_greags "$cfg" >/dev/null 2>&1
+         fi
+         netmask2bin "$remote_netmask"
+         remote_netmask="$?"
+         if [ "$enableipsec" = "ags" ]; then
+              config_get ipsec_localsip "$cfg" ipsec_localsip
+              ip route add "$remote_subnet"/"$remote_netmask" via "$local_tunnel_ip" dev "$cfg" src "$ipsec_localsip"
+         else
+              ip route add "$remote_subnet"/"$remote_netmask" via "$local_tunnel_ip" dev "$cfg"
+         fi
+
+         [ "$enablemroute" == "Enable" ] && {
+               config_get mroutename              "$cfg" mroutename
+               config_get mroute_localip          "$cfg" mroute_localip
+               config_get mroute_localmask        "$cfg" mroute_localmask
+               config_get mroute_remoteip         "$cfg" mroute_remoteip
+               config_get mroute_remotemask       "$cfg" mroute_remotemask
+               config_get mroute_sip              "$cfg" mroute_sip
+               config_get mroute_smask            "$cfg" mroute_smask
+               config_get mroute_gip              "$cfg" mroute_gip
+	       uci_add mcast  mcast "mcast_$mroutename"; add_gre_cfg="$CONFIG_SECTION"
+               uci_set mcast "$add_gre_cfg" tunnel         yes
+               uci_set mcast "$add_gre_cfg" grename       "$cfg"
+               uci_set mcast "$add_gre_cfg" localip       "$mroute_localip"
+               uci_set mcast "$add_gre_cfg" localmask     "$mroute_localmask"
+               uci_set mcast "$add_gre_cfg" remoteip      "$mroute_remoteip"
+               uci_set mcast "$add_gre_cfg" remotemask    "$mroute_remotemask"
+               uci_set mcast "$add_gre_cfg" srcip         "$mroute_sip"
+               uci_set mcast "$add_gre_cfg" srcmask       "$mroute_smask"
+               uci_set mcast "$add_gre_cfg" grpip         "$mroute_gip"
+               /sbin/uci commit mcast
+               /etc/init.d/mconfread restart >/dev/null 2>&1
+         }
+    }
+    fi
+    fwfile="/etc/firewall.gre"
+    [ -f "$fwfile" ] && rm -f $fwfile 
+    
+ 
+    fnum=$(ls -l /etc/config/gre-tunnels | wc -l)
+
+    if [ "$fnum" -gt 0 ]; then
+        config_load gre-tunnels
+        config_foreach setup_firewall gretunnel
+        echo "/usr/sbin/iptables -A input_rule -p gre -j ACCEPT" >> $fwfile
+    fi
+
+    /etc/init.d/firewall restart  >/dev/null 2>&1
+;;
+
+edit)
+    [ -f /var/run/ipsecfirewall/firewall.$cfg ] && rm -f /var/run/ipsecfirewall/firewall.$cfg
+    ip link "$escape_set" "$cfg" down
+    ip tunnel del "$cfg"
+    [ -f "/var/run/mipsec/${cfg}.status" ] && rm -f /var/run/mipsec/${cfg}.status
+    [ -f "/tmp/gre/${cfg}.mname" ] && {
+             mname=$(cat /tmp/gre/${cfg}.mname)
+             uci_remove "mcast" "mcast_$mname"
+             uci_commit "mcast"
+             rm -f /tmp/gre/${cfg}.mname
+             /etc/init.d/mconfread restart >/dev/null 2>&1
+    }
+    [ -f "/tmp/gre/${cfg}.eipsec" ] && {
+             eipsec=$(cat /tmp/gre/${cfg}.eipsec)
+             [ $eipsec = "Disable" ] || {
+                     [ -f "/tmp/gre/${cfg}.oinf" ] && {
+                          oinf=$(cat /tmp/gre/${cfg}.oinf)
+                          if [ $oinf != "ipsec" ]; then
+                                ipsec auto --down $cfg
+                                ipsec auto --delete $cfg
+                          fi
+                     }
+                     /etc/init.d/ipsec_vpn start >/dev/null 2>&1
+             }
+             rm -f /tmp/gre/${cfg}.eipsec
+             rm -f /tmp/gre/${cfg}.oinf
+    }
+    uci_load gre-tunnels
+    config_get local_status "$cfg" local_status
+    config_get multicast "$cfg" multicast
+    config_get arp "$cfg" arp
+    config_get ttl "$cfg" ttl
+    config_get local_tunnel_ip "$cfg" local_tunnel_ip
+    config_get local_tunnel_mask "$cfg" local_tunnel_mask
+    config_get local_wan "$cfg" local_wan
+    config_get remote_subnet "$cfg" remote_subnet
+    config_get remote_netmask "$cfg" remote_netmask
+    config_get remote_wan "$cfg" remote_wan
+    config_get gre_key "$cfg" gre_key
+    config_get enablemroute "$cfg" enablemroute
+    config_get enableipsec "$cfg" enableipsec
+
+    if [ "$local_status" == "Enable" ]; then
+    [ "$enableipsec" = "bgs" ] && {
+         /sbin/mipsec.sh add_grebgs $cfg >/dev/null 2>&1
+    } || {
+         if [ -n "$gre_key" ]; then
+              ip tunnel add "$cfg" mode gre remote "$remote_wan" "$escape_local" "$local_wan" ttl "$ttl" key "$gre_key"
+         else
+              ip tunnel add "$cfg" mode gre remote "$remote_wan" "$escape_local" "$local_wan" ttl "$ttl"
+         fi
+         ip link "$escape_set" "$cfg" up
+         ip addr add "$local_tunnel_ip"/"$local_tunnel_mask" dev "$cfg"
+         if [ "$multicast" == "Enable" ]; then
+               ip link "$escape_set" "$cfg" multicast on
+         fi
+         if [ "$arp" == "Enable" ]; then
+               ip link "$escape_set" "$cfg" arp on
+         fi
+         
+         if [ "$enableipsec" = "ags" ]; then
+              /sbin/mipsec.sh add_greags $cfg >/dev/null 2>&1
+         fi
+         netmask2bin "$remote_netmask"
+         remote_netmask="$?"
+         if [ "$enableipsec" = "ags" ]; then
+              config_get ipsec_localsip "$cfg" ipsec_localsip
+              ip route add "$remote_subnet"/"$remote_netmask" via "$local_tunnel_ip" dev "$cfg" src "$ipsec_localsip"
+         else
+              ip route add "$remote_subnet"/"$remote_netmask" via "$local_tunnel_ip" dev "$cfg"
+         fi
+         [ "$enablemroute" == "Enable" ] && {
+               config_get mroutename              "$cfg" mroutename
+               config_get mroute_localip          "$cfg" mroute_localip
+               config_get mroute_localmask        "$cfg" mroute_localmask
+               config_get mroute_remoteip         "$cfg" mroute_remoteip
+               config_get mroute_remotemask       "$cfg" mroute_remotemask
+               config_get mroute_sip              "$cfg" mroute_sip
+               config_get mroute_smask            "$cfg" mroute_smask
+               config_get mroute_gip              "$cfg" mroute_gip
+	       uci_add mcast  mcast "mcast_$mroutename"; add_gre_cfg="$CONFIG_SECTION"
+               uci_set mcast "$add_gre_cfg" tunnel         yes
+               uci_set mcast "$add_gre_cfg" grename       "$cfg"
+               uci_set mcast "$add_gre_cfg" localip       "$mroute_localip"
+               uci_set mcast "$add_gre_cfg" localmask     "$mroute_localmask"
+               uci_set mcast "$add_gre_cfg" remoteip      "$mroute_remoteip"
+               uci_set mcast "$add_gre_cfg" remotemask    "$mroute_remotemask"
+               uci_set mcast "$add_gre_cfg" srcip         "$mroute_sip"
+               uci_set mcast "$add_gre_cfg" srcmask       "$mroute_smask"
+               uci_set mcast "$add_gre_cfg" grpip         "$mroute_gip"
+               /sbin/uci commit mcast
+               /etc/init.d/mconfread restart >/dev/null 2>&1
+         }
+    }
+    fi
+    fwfile="/etc/firewall.gre"
+    [ -f "$fwfile" ] && rm -f $fwfile 
+    
+    fnum=$(ls -l /etc/config/gre-tunnels | wc -l)
+
+    if [ "$fnum" -gt 0 ]; then
+        config_load gre-tunnels
+        config_foreach setup_firewall gretunnel
+        echo "/usr/sbin/iptables -A input_rule -p gre -j ACCEPT" >> $fwfile
+    fi
+
+    /etc/init.d/firewall restart  >/dev/null 2>&1
+;;
+
+del)
+    [ -f /var/run/ipsecfirewall/firewall.$cfg ] && rm -f /var/run/ipsecfirewall/firewall.$cfg
+    ip link "$escape_set" "$cfg" down
+    ip tunnel del "$cfg"
+    [ -f "/var/run/mipsec/${cfg}.status" ] && rm -f /var/run/mipsec/${cfg}.status
+    uci_load gre-tunnels
+    config_get mroutename   "$cfg" mroutename
+    config_get enablemroute "$cfg" enablemroute
+    config_get enableipsec "$cfg" enableipsec
+    [ "$enablemroute" == "Enable" ] && {
+             uci_remove "mcast" "mcast_$mroutename"
+             uci_commit "mcast"
+             /etc/init.d/mconfread restart >/dev/null 2>&1
+     }
+     uci_remove "gre-tunnels" "$cfg"
+     uci_commit "gre-tunnels"
+     [ "$enableipsec" = "Disable" ] || {
+            ipsec auto --down $cfg
+            ipsec auto --delete $cfg
+            /etc/init.d/ipsec_vpn start >/dev/null 2>&1
+     }
+    fwfile="/etc/firewall.gre"
+    [ -f "$fwfile" ] && rm -f $fwfile 
+    
+    fnum=$(ls -l /etc/config/gre-tunnels | wc -l)
+
+    if [ "$fnum" -gt 0 ]; then
+        config_load gre-tunnels
+        config_foreach setup_firewall gretunnel
+        echo "/usr/sbin/iptables -A input_rule -p gre -j ACCEPT" >> $fwfile
+    fi
+
+    /etc/init.d/firewall restart  >/dev/null 2>&1
+;;
+
+shutdown)
+    [ -f /var/run/ipsecfirewall/firewall.$cfg ] && rm -f /var/run/ipsecfirewall/firewall.$cfg
+    ip link "$escape_set" "$cfg" down
+    ip tunnel del "$cfg"
+    [ -f "/var/run/mipsec/${cfg}.status" ] && rm -f /var/run/mipsec/${cfg}.status
+
+    fwfile="/etc/firewall.gre"
+    [ -f "$fwfile" ] && rm -f $fwfile 
+    
+    /etc/init.d/firewall restart  >/dev/null 2>&1
+;;
+
+*)
+   echo "Usage: /bin/gre {|add|enable|disable|del|dpd} gre_tunnel_name"
+   exit 1
+;;
+esac
+exit 0

@@ -1,0 +1,13 @@
+TIMEOUT     5
+ABORT     'BUSY'
+ABORT     'Error'
+ABORT     'NO ANSWER'
+ABORT     'NO DIALTONE'
+''     '+++'
+''     'ATE1'
+''     'ATE1'
+TIMEOUT     12
+''     'AT'
+''     'AT'
+''     'AT'
+OK     AT

@@ -1,0 +1,45 @@
+#################################################################
+## fichier de configure pour CLI
+#
+#prompt
+prompt VIP2
+#
+#banner
+banner Command Line Interface
+
+#authentification
+enable_auth no
+user_name admin
+passwd admin 
+enable_pw
+
+#################################################################
+#### format: cmd [command] [descrpition du commande] #########
+
+#commande à exécuter
+#cmd main_menu:mainmenu desc:submenu:submenu desc:cmd:cmd dec
+
+#info
+cmd info:System info:system:system information:info.sh:
+#cmd info:System info:about:system information:info-about.sh:
+
+#status
+cmd status:Display the system status:diagnostic:Make Networking diagnostic:ping:send ping to destination:ping:
+cmd status:system status:diagnostic:Networking diagnostic:traceroute:the connection route:traceroute:
+cmd status:Display the system status:connection:Show connnection:status-connection.sh:
+
+#system
+cmd system:Setting system configurations:logout:Logout Command line Interface:exit.sh:
+cmd system:Setting system configurations:reboot:Reboot Command line interface:reboot.sh:
+
+###radio0 disable
+cmd wifi:Set or Get wifi config:on:turn on wifi:wifion.sh:
+cmd wifi:Set or Get wifi config:off:turn off wifi:wifioff.sh:
+
+###4G disable
+cmd lte:Set or Get lte config:on:turn on lte:lteon.sh:
+cmd lte:Set or Get lte config:off:turn off lte:lteoff.sh:
+
+#exit
+cmd exit:Logout Command line Interface:exit.sh:
+

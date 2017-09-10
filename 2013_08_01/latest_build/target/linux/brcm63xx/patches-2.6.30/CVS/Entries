@@ -1,0 +1,15 @@
+/001-add_broadcom_63xx_cpu_definitions.patch/1.1/Thu Apr  1 22:10:02 2010/-kkv/Tar71xx_4g
+/002-add_support_for_broadcom_63xx_cpus.patch/1.1/Thu Apr  1 22:10:02 2010/-kkv/Tar71xx_4g
+/003-add_serial_driver_for_bcm63xx_integr.patch/1.1/Thu Apr  1 22:10:02 2010/-kkv/Tar71xx_4g
+/004_add_pci_support.patch/1.1/Thu Apr  1 22:10:02 2010/-kkv/Tar71xx_4g
+/006-pcmcia_cardbus_support.patch/1.1/Thu Apr  1 22:10:02 2010/-kkv/Tar71xx_4g
+/007-usb_ohci_support.patch/1.1/Thu Apr  1 22:10:02 2010/-kkv/Tar71xx_4g
+/008-usb_ehci_support.patch/1.1/Thu Apr  1 22:10:02 2010/-kkv/Tar71xx_4g
+/009-add_integrated_ethernet_mac_support.patch/1.1/Thu Apr  1 22:10:02 2010/-kkv/Tar71xx_4g
+/010-add_integrated_ethernet_phy_support.patch/1.1/Thu Apr  1 22:10:02 2010/-kkv/Tar71xx_4g
+/020-watchdog.patch/1.1/Thu Apr  1 22:10:02 2010/-kkv/Tar71xx_4g
+/040-bcm963xx_flashmap.patch/1.1/Thu Apr  1 22:10:02 2010/-kkv/Tar71xx_4g
+/050-spi.patch/1.1/Thu Apr  1 22:10:02 2010/-kkv/Tar71xx_4g
+/060-bcm63xx_enet_upstream_fixes.patch/1.1/Thu Apr  1 22:10:02 2010/-kkv/Tar71xx_4g
+/070_bcm63xx_enet_vlan_incoming_fixed.patch/1.1/Thu Apr  1 22:10:02 2010/-kkv/Tar71xx_4g
+D

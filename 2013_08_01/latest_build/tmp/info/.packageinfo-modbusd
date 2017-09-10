@@ -1,0 +1,15 @@
+Source-Makefile: package/modbusd/Makefile
+Package: modbusd
+Version: 1
+Depends: +libuci +libpthread 
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Microhard modbus service
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  This package contains the microhard home grown serial/net daemon
+@@
+
+

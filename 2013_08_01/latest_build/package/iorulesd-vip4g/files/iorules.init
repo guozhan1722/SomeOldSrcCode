@@ -1,0 +1,27 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+. /etc/version
+START=90
+STOP=90
+
+
+start() {
+    if [ "$HARDWARE" = "v2.0.0" ]; then
+            logger "VIP4G /etc/init.d/iorules started..."
+            killall -9 iorulesd
+            /sbin/iorulesd & 
+    fi
+}
+
+stop() {
+    if [ "$HARDWARE" = "v2.0.0" ]; then
+            logger "VIP4G /etc/init.d/iorules stopped..."
+            killall -9 iorulesd
+    fi
+}
+
+restart() {
+	stop
+	start
+}

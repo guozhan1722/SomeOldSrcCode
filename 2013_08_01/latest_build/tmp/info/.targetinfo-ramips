@@ -1,0 +1,50 @@
+Source-Makefile: target/linux/ramips/Makefile
+Target: ramips
+Target-Board: ramips
+Target-Kernel: 2.6
+Target-Name: Ralink RT288x/RT305x
+Target-Path: /home/zguo/project/2013_08_01/latest_build
+Target-Arch: mipsel
+Target-Features: broken squashfs
+Target-Depends: 
+Target-Optimization: -Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time
+Linux-Version: 2.6.32.9
+Linux-Release: 1
+Linux-Kernel-Arch: mips
+Target-Description:
+	Build firmware images for Ralink RT288x/RT305x based boards.
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall kmod-leds-gpio
+Target: ramips/rt288x
+Target-Board: ramips
+Target-Kernel: 2.6
+Target-Name: RT288x based boards
+Target-Path: target/linux/ramips
+Target-Arch: mipsel
+Target-Features: broken gpio pci squashfs usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time
+Linux-Version: 2.6.32.9
+Linux-Release: 1
+Linux-Kernel-Arch: mips
+Target-Description:
+	Build firmware images for Ralink RT288x/RT305x based boards.
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall kmod-leds-gpio
+Target: ramips/rt305x
+Target-Board: ramips
+Target-Kernel: 2.6
+Target-Name: RT305x based boards
+Target-Path: target/linux/ramips
+Target-Arch: mipsel
+Target-Features: broken gpio pci squashfs usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time
+Linux-Version: 2.6.32.9
+Linux-Release: 1
+Linux-Kernel-Arch: mips
+Target-Description:
+	Build firmware images for Ralink RT288x/RT305x based boards.
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall kmod-leds-gpio
+

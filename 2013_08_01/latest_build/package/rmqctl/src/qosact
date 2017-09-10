@@ -1,0 +1,23 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=50
+
+start() {
+        sysmode=$(uci get system.@system[0].systemmode)
+
+        if [ "$sysmode" = "router" -o "$sysmode" = "gateway" ] ; then
+            /lib/qos/generate.sh start
+        fi
+}
+
+stop() {
+        /lib/qos/generate.sh stop
+}
+
+restart() {
+        stop
+        start        
+}
+
+

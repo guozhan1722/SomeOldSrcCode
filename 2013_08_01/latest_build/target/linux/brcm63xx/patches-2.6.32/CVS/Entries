@@ -1,0 +1,21 @@
+/007-usb-ohci-support.patch/1.1/Thu Apr  1 22:08:36 2010/-kkv/Tar71xx_4g
+/008-usb-ehci-support.patch/1.1/Thu Apr  1 22:08:36 2010/-kkv/Tar71xx_4g
+/009-fix-double-gpio-registration.patch/1.1/Thu Apr  1 22:08:36 2010/-kkv/Tar71xx_4g
+/010-add_bcm63xx_ohci_controller.patch/1.1/Thu Apr  1 22:08:36 2010/-kkv/Tar71xx_4g
+/011-add_bcm63xx_ehci_controller.patch/1.1/Thu Apr  1 22:08:36 2010/-kkv/Tar71xx_4g
+/012-mips_add_readl_writel_be_accessors.patch/1.1/Thu Apr  1 22:08:36 2010/-kkv/Tar71xx_4g
+/020-watchdog.patch/1.1/Thu Apr  1 22:08:36 2010/-kkv/Tar71xx_4g
+/040-bcm963xx_flashmap.patch/1.1/Thu Apr  1 22:08:36 2010/-kkv/Tar71xx_4g
+/070_bcm63xx_enet_vlan_incoming_fixed.patch/1.1/Thu Apr  1 22:08:36 2010/-kkv/Tar71xx_4g
+/100-reset_buttons.patch/1.1/Thu Apr  1 22:08:36 2010/-kkv/Tar71xx_4g
+/110-gpiodev.patch/1.1/Thu Apr  1 22:08:36 2010/-kkv/Tar71xx_4g
+/120-board_rta1025w_16.patch/1.1/Thu Apr  1 22:08:36 2010/-kkv/Tar71xx_4g
+/130-board_DWVS0.patch/1.1/Thu Apr  1 22:08:36 2010/-kkv/Tar71xx_4g
+/140-new_bcm96348gw_leds.patch/1.1/Thu Apr  1 22:08:36 2010/-kkv/Tar71xx_4g
+/150-alice_gate2_leds.patch/1.1/Thu Apr  1 22:08:36 2010/-kkv/Tar71xx_4g
+/160-fix_gpio_count.patch/1.1/Thu Apr  1 22:08:36 2010/-kkv/Tar71xx_4g
+/170-board_livebox.patch/1.1/Thu Apr  1 22:08:36 2010/-kkv/Tar71xx_4g
+/180-udc_preliminary_support.patch/1.1/Thu Apr  1 22:08:36 2010/-kkv/Tar71xx_4g
+/190-typo_cpu_features_override.patch/1.1/Thu Apr  1 22:08:36 2010/-kkv/Tar71xx_4g
+/210-init_gpio_out_low_high_current_value_at_boot.patch/1.1/Thu Apr  1 22:08:36 2010/-kkv/Tar71xx_4g
+D

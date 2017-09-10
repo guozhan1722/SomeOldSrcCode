@@ -1,0 +1,157 @@
+#!/bin/sh
+
+my_lockfile ()
+{
+        TEMPFILE="$1.$$"
+        LOCKFILE="$1.lock"
+        echo $$ > $TEMPFILE || {
+                echo "You don't have permission to access `dirname $TEMPFILE`"
+                return 1
+        }
+        ln $TEMPFILE $LOCKFILE && {
+                rm -f $TEMPFILE
+                return 0
+        }
+        kill -0 `cat $LOCKFILE` && {
+                rm -f $TEMPFILE
+                return 1
+        }
+        echo "Removing stale lock file"
+        rm -f $LOCKFILE
+        ln $TEMPFILE $LOCKFILE && {
+                rm -f $TEMPFILE
+                return 0
+        }
+        rm -f $TEMPFILE
+        return 1
+}
+ 
+me="mifupdown[$$]" 
+logger -p local0.error -t "$me" "$@"
+ 
+case "$1" in 
+
+down)
+    [ -d /var/lock/mipsec ] || mkdir -p /var/lock/mipsec
+    my_lockfile /var/lock/mipsec/ifdown && {
+    if [ -S "/var/run/pluto/pluto.ctl" ]; then
+         ipsec setup stop >/dev/null 2>&1
+    fi
+    case "$2" in
+    wan)
+    [ -p /var/run/xl2tpd/wan-control ] && /etc/init.d/xl2tpd-wan stop >/dev/null 2>&1
+    [ -p /var/run/xl2tpd/nwan-control ] && /etc/init.d/nxl2tpd-wan stop >/dev/null 2>&1
+    ;;
+    wan2)
+    [ -p /var/run/xl2tpd/wan2-control ] && /etc/init.d/xl2tpd-wan2 stop >/dev/null 2>&1
+    [ -p /var/run/xl2tpd/nwan2-control ] && /etc/init.d/nxl2tpd-wan2 stop >/dev/null 2>&1
+    ;;
+    esac
+    /etc/init.d/gred stop
+    rm -f /var/lock/mipsec/ifdown.lock
+    }
+    ;;
+
+up)
+    while [ -f /var/lock/mipsec/ifdown.lock ]; do
+            sleep 1
+    done
+    interface=$2
+    if [ $interface = "wan2" ]
+    then
+         wan_ip=$(/sbin/uci -P /var/state get network.wan2.up)
+         if [ $wan_ip = "1" ]; then
+           wan_ip=$(/sbin/uci -P /var/state get network.wan2.ipaddr)
+           [ -z $wan_ip -o $wan_ip = "0.0.0.0" ] && {
+               logger -p local0.error -t "$me" "$@ wan_ip=$wan_ip so exit"
+               exit 0
+           }
+         else
+               logger -p local0.error -t "$me" "$@ but wan is not up yet so exit"
+               exit 0
+         fi
+    else
+         wan_ip=$(/sbin/uci -P /var/state get network.wan.up)
+         if [ $wan_ip = "1" ]; then
+           wan_ip=$(/sbin/uci -P /var/state get network.wan.ipaddr)
+           [ -z $wan_ip -o $wan_ip = "0.0.0.0" ] && {
+               logger -p local0.error -t "$me" "$@ wan_ip=$wan_ip so exit"
+               exit 0
+           }
+         else
+               logger -p local0.error -t "$me" "$@ but wan is not up yet so exit"
+               exit 0
+         fi
+    fi
+
+    [ -d /var/lock/mipsec ] || mkdir -p /var/lock/mipsec
+
+    my_lockfile /var/lock/mipsec/ifup${interface} && {
+    /etc/init.d/gred start
+    cnt="0"
+    xcnt="0"
+    /etc/init.d/ipsec_vpn start >/dev/null 2>&1
+    /etc/init.d/firewall restart  >/dev/null 2>&1
+    if [ $interface = "wan2" ]
+    then
+         ws2scnt=$(cat /var/run/mipsec/cfgcnt|grep w2s2scnt|cut -d '=' -f 2)
+         wx2scnt=$(cat /var/run/mipsec/cfgcnt|grep w2x2scnt|cut -d '=' -f 2)
+         wx2ccnt=$(cat /var/run/mipsec/cfgcnt|grep w2x2ccnt|cut -d '=' -f 2)
+         wgrecnt=$(cat /var/run/mipsec/cfgcnt|grep w2grecnt|cut -d '=' -f 2)
+         xinitd="/etc/init.d/xl2tpd-wan2"
+         nx2scnt=$(cat /var/run/mipsec/cfgcnt|grep n2x2scnt|cut -d '=' -f 2)
+         nx2ccnt=$(cat /var/run/mipsec/cfgcnt|grep n2x2ccnt|cut -d '=' -f 2)
+         nxinitd="/etc/init.d/nxl2tpd-wan2"
+    else
+         ws2scnt=$(cat /var/run/mipsec/cfgcnt|grep ws2scnt|cut -d '=' -f 2)
+         wx2scnt=$(cat /var/run/mipsec/cfgcnt|grep wx2scnt|cut -d '=' -f 2)
+         wx2ccnt=$(cat /var/run/mipsec/cfgcnt|grep wx2ccnt|cut -d '=' -f 2)
+         wgrecnt=$(cat /var/run/mipsec/cfgcnt|grep wgrecnt|cut -d '=' -f 2)
+         xinitd="/etc/init.d/xl2tpd-wan"
+         nx2scnt=$(cat /var/run/mipsec/cfgcnt|grep nx2scnt|cut -d '=' -f 2)
+         nx2ccnt=$(cat /var/run/mipsec/cfgcnt|grep nx2ccnt|cut -d '=' -f 2)
+         nxinitd="/etc/init.d/nxl2tpd-wan2"
+    fi      
+    let xcnt=nx2scnt+nx2ccnt
+    [ $xcnt -gt 0 ] && {
+             $nxinitd restart
+             logger -p local0.error -t "$me" "$@ $nxinitd restart return=$?"
+    }       
+    let cnt=wx2scnt+wx2ccnt+ws2scnt+wgrecnt
+    let xcnt=wx2scnt+wx2ccnt
+    [ $cnt = "0" ] && {
+             logger -p local0.error -t "$me" "$@ vpn_config=$cnt so exit"
+             rm -f /var/lock/mipsec/ifup${interface}.lock
+             exit 0
+    }
+    [ $xcnt -gt 0 ] && {
+             $xinitd restart
+             logger -p local0.error -t "$me" "$@ $xinitd restart return=$?"
+    }
+    ipsec setup restart >/dev/null 2>&1
+    rm -f /var/lock/mipsec/ifup${interface}.lock
+    }
+    ;;
+
+restart)
+    [ -d /var/lock/mipsec ] || mkdir -p /var/lock/mipsec
+    my_lockfile /var/lock/mipsec/mirestart && {
+    if [ -S "/var/run/pluto/pluto.ctl" ]; then
+         ipsec setup stop >/dev/null 2>&1
+    fi
+    [ -p /var/run/xl2tpd/wan-control ] && /etc/init.d/xl2tpd-wan stop >/dev/null 2>&1
+    [ -p /var/run/xl2tpd/wan2-control ] && /etc/init.d/xl2tpd-wan2 stop >/dev/null 2>&1
+    /etc/init.d/ipsec_vpn start >/dev/null 2>&1
+    /etc/init.d/firewall restart  >/dev/null 2>&1
+    /etc/init.d/xl2tpd-wan restart >/dev/null 2>&1
+    /etc/init.d/xl2tpd-wan2 restart >/dev/null 2>&1
+    ipsec setup restart >/dev/null 2>&1
+    rm -f /var/lock/mipsec/mirestart.lock
+    }
+    ;;
+
+*)
+   ;;
+esac 
+exit 0
+

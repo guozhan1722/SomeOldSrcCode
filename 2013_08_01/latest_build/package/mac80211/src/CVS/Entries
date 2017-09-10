@@ -1,0 +1,15 @@
+/50-compat_firmware.rules/1.1/Fri Dec 17 20:13:56 2010//Tar71xx_4g
+/COPYRIGHT/1.1/Fri Dec 17 20:13:56 2010//Tar71xx_4g
+/LICENSE/1.1/Fri Dec 17 20:13:56 2010//Tar71xx_4g
+/Makefile/1.1/Fri Dec 17 20:13:56 2010//Tar71xx_4g
+/README/1.1/Fri Dec 17 20:13:56 2010//Tar71xx_4g
+D/compat////
+/compat-release/1.1/Fri Dec 17 20:13:56 2010//Tar71xx_4g
+/compat_firmware.sh/1.1/Fri Dec 17 20:13:56 2010//Tar71xx_4g
+/config.mk/1.7/Tue Mar  1 16:33:41 2011//Tar71xx_4g
+D/drivers////
+/git-describe/1.1/Fri Dec 17 20:13:56 2010//Tar71xx_4g
+D/include////
+D/net////
+D/patches////
+D/scripts////

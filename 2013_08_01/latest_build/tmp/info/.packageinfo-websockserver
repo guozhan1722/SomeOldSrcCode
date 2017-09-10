@@ -1,0 +1,15 @@
+Source-Makefile: package/websockserver/Makefile
+Package: websockserver
+Version: 1
+Depends: +libuci +libpthread +libmserial
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Microhard websocket service
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:   C Websockets Server Library and service, this package only installs the library and a test application.
+@@
+
+

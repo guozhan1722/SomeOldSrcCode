@@ -1,0 +1,37 @@
+#wireless
+
+## wireless status
+cmd status:Display the system status:wireless:Show wireless status:status-wireless.sh:
+
+###radio0 disable
+cmd wireless:Set or Get wireless config:radio0:device radio0:power:power for device:set:setting the value for device:off:set device power off:set-wireless-radio0-disabled-1:
+cmd wireless:Set or Get wireless config:radio0:device radio0:power:power for device:set:setting the value for device:on:set device power on:set-wireless-radio0-disabled-0:
+cmd wireless:Set or Get wireless config:radio0:device radio0:power:power for device:get:getting the value for device:get-wireless-radio0-disabled:
+
+###radio channel
+cmd wireless:Set or Get wireless config:radio0:device radio0:channel:channel for device:set:setting the value for device:set-wireless-radio0-channel:
+cmd wireless:Set or Get wireless config:radio0:device radio0:channel:channel for device:get:getting the value for device:get-wireless-radio0-channel:
+
+###wlan0 mode
+cmd wireless:Set or Get wireless config:wlan0:wireless interface wlan0:mode:mode for interface:set:setting the value for interface:ap:set ap mode for interface:set-wireless-wlan0-mode-ap:
+cmd wireless:Set or Get wireless config:wlan0:wireless interface wlan0:mode:mode for interface:set:setting the value for interface:station:set station mode for interface:set-wireless-wlan0-mode-sta:
+cmd wireless:Set or Get wireless config:wlan0:wireless interface wlan0:mode:mode for interface:set:setting the value for interface:mesh:set mesh mode for interface:mesh_id:set mesh id:set-wireless-wlan0-mesh_id:
+cmd wireless:Set or Get wireless config:wlan0:wireless interface wlan0:mode:mode for interface:get:getting the value for interface:get-wireless-wlan0-mode:
+
+###wlan0 ssid
+cmd wireless:Set or Get wireless config:wlan0:wireless interface wlan0:ssid:ssid for interface:set:setting the value for interface:set-wireless-wlan0-ssid:
+cmd wireless:Set or Get wireless config:wlan0:wireless interface wlan0:ssid:ssid for interface:get:getting the value for interface:get-wireless-wlan0-ssid:
+
+###wlan0 encryption
+cmd wireless:Set or Get wireless config:wlan0:wireless interface wlan0:encryption:encryption for interface:set:setting the value for interface:none:set none encrypton for interface:set-wireless-wlan0-encryption-none:
+cmd wireless:Set or Get wireless config:wlan0:wireless interface wlan0:encryption:encryption for interface:set:setting the value for interface:wep:set wep encrypton for interface:set-wireless-wlan0-encryption-wep:
+cmd wireless:Set or Get wireless config:wlan0:wireless interface wlan0:encryption:encryption for interface:set:setting the value for interface:psk:set psk encrypton for interface:set-wireless-wlan0-encryption-psk:
+cmd wireless:Set or Get wireless config:wlan0:wireless interface wlan0:encryption:encryption for interface:set:setting the value for interface:psk2:set psk2 encrypton for interface:set-wireless-wlan0-encryption-psk2:
+cmd wireless:Set or Get wireless config:wlan0:wireless interface wlan0:encryption:encryption for interface:get:getting the value for interface:get-wireless-wlan0-encryption:
+
+###wlan0 key key1
+cmd wireless:Set or Get wireless config:wlan0:wireless interface wlan0:key:key for interface:set:setting the value for interface:set-wireless-wlan0-key:
+cmd wireless:Set or Get wireless config:wlan0:wireless interface wlan0:key:key for interface:get:getting the value for interface:get-wireless-wlan0-key:
+cmd wireless:Set or Get wireless config:wlan0:wireless interface wlan0:key1:key1 for interface:set:setting the value for interface:set-wireless-wlan0-key1:
+cmd wireless:Set or Get wireless config:wlan0:wireless interface wlan0:key1:key1 for interface:get:getting the value for interface:get-wireless-wlan0-key1:
+

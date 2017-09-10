@@ -1,0 +1,275 @@
+#MagicID;confile;section;item;val;OID1;OID2;OID3;OID4;type;access;validation
+#if type = none, validation do nothing
+#if type = string, validation to string ;do nothing
+#if type = string, validation to IP ;do validate IP
+#if type = string, validation to int ; do validate int and compare min and max value
+#if type = int , validation first is num will get status followed up you can split it using 'val|name'
+#OID GROUP 6000,1,1,x
+1;system;@system[0];hostname;VIP4G;6000;1;1;1;str;rw;string;
+2;system;datetime;mode;1;6000;1;1;2;int;rw;2;sync|Sync;local|Local;
+3;httpd;@httpd[0];port;80;6000;1;1;10;str;rw;int;0;65535;
+4;webif;general;ssl_port;443;6000;1;1;11;str;rw;int;0;65535;
+5;webif;general;ssl;1;6000;1;1;12;int;rw;2;0|Disable;1|Enable;
+6;system;system;ACTION;0;6000;1;1;15;int;rw;3;ResetORSubmit;Submit;Reset;
+#Network IP OID GROUP 6000,2,1,x
+100;network;lan;proto;0;6000;2;1;1;int;rw;2;static|Static;dhcp|DHCP;
+101;network;lan;ipaddr;192.168.168.1;6000;2;1;2;str;rw;ip;
+102;network;lan;netmask;0;6000;2;1;3;str;rw;ip;
+103;network;lan;gateway;0;6000;2;1;4;str;rw;ip;
+104;network;lan;dns;0;6000;2;1;5;str;rw;ip;
+#Network NTP OID GROUP 6000,2,2,x
+111;ntpclient;@ntpserver[0];hostname;pool.ntp.org;6000;2;2;1;str;rw;string;
+112;ntpclient;@ntpserver[0];port;123;6000;2;2;2;str;rw;int;0;65535;
+#Network DHCP OID GROUP 6000,2,3,x
+131;dhcp;lan;ignore;0;6000;2;3;1;int;rw;2;0|Enable;1|Disable;
+132;dhcp;lan;start;192.168.168.100;6000;2;3;2;str;rw;ip;
+133;dhcp;lan;limit;150;6000;2;3;3;str;rw;int;1;253;
+134;dhcp;lan;leasetime;720;6000;2;3;4;str;rw;int;1;65535;
+#Network SNMP OID GROUP 6000,2,4,x
+141;snmpd;snmpd;NetWork_SNMP_MODE;A;6000;2;4;1;int;rw;2;A|Disable;B|Enable;
+142;snmpd;snmpd;NetWork_SNMP_Read_Community_Name;public;6000;2;4;2;str;rw;string;
+143;snmpd;snmpd;NetWork_SNMP_Write_Community_Name;private;6000;2;4;3;str;rw;string;
+144;snmpd;snmpd;NetWork_SNMP_V3_User_Name;V3user;6000;2;4;4;str;rw;string;
+145;snmpd;snmpd;NetWork_SNMP_V3_User_ReadWrite_Limit;A;6000;2;4;5;int;rw;2;A|ReadOnly;B|ReadWrite;
+146;snmpd;snmpd;NetWork_SNMP_V3_User_Auth_Level;B;6000;2;4;6;int;rw;3;A|NoAuthNoPriv;B|AuthNoPriv;C|AuthPriv;
+147;snmpd;snmpd;NetWork_SNMP_V3_Auth_Password;00000000;6000;2;4;7;str;rw;string;
+148;snmpd;snmpd;NetWork_SNMP_V3_Privacy_Password;00000000;6000;2;4;8;str;rw;string;
+149;snmpd;snmpd;NetWork_SNMP_Trap_Version;A;6000;2;4;9;int;rw;5;A|V1_Traps;B|V2_Traps;C|V3_Traps;D|V1V2_Traps;E|V1V2V3_Traps;
+150;snmpd;snmpd;NetWork_SNMP_Auth_Traps_Status;A;6000;2;4;10;int;rw;2;A|Disable;B|Enable;
+151;snmpd;snmpd;NetWork_SNMP_Trap_Community_Name;TrapUser;6000;2;4;11;str;rw;string;
+152;snmpd;snmpd;NetWork_SNMP_Trap_Manage_Host;TrapUser;6000;2;4;12;str;rw;ip;
+#Network ACTION OID GROUP 6000,2,5,x
+160;network;ACTION;ACTION;0;6000;2;6;1;int;rw;3;ResetORSubmit;Submit;Reset;
+#Wireless radio OID GROUP 6000,3,1,x
+200;wireless;radio0;disabled;0;6000;3;1;1;int;rw;2;0|Enable;1|Disable;
+201;wireless;@wifi-iface[0];mode;ap;6000;3;1;2;int;rw;4;ap|AP;sta|STA;mesh|MESH;repeater|Repeater;
+202;wireless;radio0;hwmode;11bg;6000;3;1;3;int;rw;6;11b;11bg;11g;11ng;11a;11na;
+203;wireless;@wifi-iface[0];ssid;VIP4G;6000;3;1;4;str;rw;string;
+204;wireless;radio0;channel;11;6000;3;1;5;int;rw;20;11|Default;1;2;3;4;5;6;7;8;9;10;11;12;13;14;149;153;157;161;165;
+205;wireless;@wifi-iface[0];txpower;17;6000;3;1;6;int;rw;21;10|10dBm;11|11dBm;12|12dBm;13|13dBm;14|14dBm;15|15dBm;16|16dBm;17|17dBm;18|18dBm;19|19dBm;20|20dBm;21|21dBm;22|22dBm;23|23dBm;24|24dBm;25|25dBm;26|26dBm;27|27dBm;28|28dBm;29|29dBm;30|30dBm;
+206;wireless;@wifi-iface[0];rate;auto;6000;3;1;7;int;rw;13;auto;1M;2M;5.5M;6M;11M;9M;12M;18M;24M;36M;48M;54M;
+207;wireless;radio0;distance;3000;6000;3;1;8;str;rw;int;1;50000;
+208;wireless;@wifi-iface[0];wds;1;6000;3;1;9;int;rw;2;1|On;0|Off;
+209;wireless;@wifi-iface[0];key; ;6000;3;1;10;str;rw;string;
+210;wireless;@wifi-iface[0];key1; ;6000;3;1;11;str;rw;string;
+211;wireless;@wifi-iface[0];key2; ;6000;3;1;12;str;rw;string;
+212;wireless;@wifi-iface[0];key3; ;6000;3;1;13;str;rw;string;
+213;wireless;@wifi-iface[0];key4; ;6000;3;1;14;str;rw;string;
+214;wireless;@wifi-iface[0];encryption;none;6000;3;1;15;int;rw;5;none|None;wep|WEP;wpa|WPA;wpa2|WPA2;psk-mixed/tkip+aes|WPA_WPA2;
+215;wireless;radio0;bwmode;20mHz;6000;3;1;16;str;ro;string;
+290;wireless;ACTION;ACTION;0;6000;3;1;200;int;rw;3;ResetORSubmit;Submit;Reset;
+#Carrier OID GROUP 6000,4,1,x
+300;lte;connect;disabled;0;6000;4;1;1;int;rw;2;0|Enable;1|Disable;
+301;lte;connect;tech;;6000;4;1;2;int;rw;3; |ALL;0|3GPP;1|3GPP2;
+302;lte;connect;call_para;;6000;4;1;3;str;rw;int;0;65535;
+303;lte;connect;apn;internet.com;6000;4;1;4;str;rw;string;
+304;lte;connect;pdns;;6000;4;1;5;str;rw;string;
+305;lte;connect;sdns;;6000;4;1;6;str;rw;string;
+306;lte;connect;pnbns;;6000;4;1;7;str;rw;string;
+307;lte;connect;snbns;;6000;4;1;8;str;rw;string;
+308;lte;connect;ip;;6000;4;1;9;str;rw;ip;
+309;lte;connect;authentication;3;6000;4;1;10;int;rw;3;3|Device_Decide;1|PAP;2|CHAP;
+310;lte;connect;username;;6000;4;1;11;str;rw;string;
+311;lte;connect;passwd;;6000;4;1;12;str;rw;string;
+312;lte;connect;time;;6000;4;1;13;str;rw;int;0;65536;
+313;lte;connect;simcardpin;;6000;4;1;14;str;rw;string;
+314;lte;connect;tech_mode;auto;6000;4;1;15;int;rw;4;auto|AUTO;4g|LTE_Only;3g|WCDMA_Only;2g|GSM_Only;
+315;lte;connect;ippassthrough;Disable;6000;4;1;16;int;rw;2;Disable;Ethernet|Enable;
+#keepalive OID GROUP 6000,4,2,x
+330;keepalive;vip4g;enable;0;6000;4;2;1;int;rw;2;0|Disable;1|Enable;
+331;keepalive;vip4g;type;ICMP;6000;4;2;2;int;rw;2;ICMP;HTTP;
+332;keepalive;vip4g;hostname;8.8.8.8;6000;4;2;3;str;rw;string;
+333;keepalive;vip4g;port;80;6000;4;2;4;str;rw;int;1;65535;
+334;keepalive;vip4g;interval;300;6000;4;2;5;str;rw;int;60;60000;
+335;keepalive;vip4g;count;10;6000;4;2;6;str;rw;int;1;65535;
+#Traffic watchdog OID GROUP 6000,4,3,x
+340;twatchdog;vip4g;enable;0;6000;4;3;1;int;rw;2;0|Disable;1|Enable;
+341;twatchdog;vip4g;reset_timer;1;6000;4;3;2;str;rw;int;0;65535;
+342;twatchdog;vip4g;reboot_timer;600;6000;4;3;3;str;rw;int;0;65535;
+#Dynamic DNS OID GROUP 6000,4,4,x
+350;updatedd;ddns;update;0;6000;4;4;1;int;rw;2;0|Disable;1|Enable;
+351;updatedd;ddns;service;0;6000;4;4;2;int;rw;10;changeip;dyndns;eurodyndns;hn;noip;ods;ovh;regfish;tzo;zoneedit;
+352;updatedd;ddns;username;0;6000;4;4;3;str;rw;string;
+353;updatedd;ddns;password;0;6000;4;4;4;str;rw;string;
+354;updatedd;ddns;host;0;6000;4;4;5;str;rw;string;
+#carrier ACTION OID GROUP 6000,4,10,x
+390;lte;ACTION;ACTION;0;6000;4;10;1;int;rw;3;ResetORSubmit;Submit;Reset;
+##Com1 OID GROUP 6000,5,1,x
+#400;comport;com1;COM1_Port_Status;A;6000;5;1;1;int;rw;2;A|Disable;B|Enable;
+#401;comport;com1;COM1_Chanel_Mode;A;6000;5;1;2;int;rw;3;A|RS232;B|RS485;C|RS422;
+#402;comport;com1;COM1_Data_Baud_Rate;N;6000;5;1;3;int;rw;17;A|B300;B|B600;C|B1200;D|B2400;E|B3600;F|B4800;G|B7200;H|B9600;I|B14400;J|B19200;K|B28800;L|B38400;M|B57600;N|B115200;O|B230400;P|B460800;Q|B921600;
+#403;comport;com1;COM1_Data_Format;A;6000;5;1;4;int;rw;10;A|_8N1;B|_8N2;C|_8E1;D|_8O1;E|_7N1;F|_7N2;G|_7E1;H|_7O1;I|_7E2;J|_7O2;
+#404;comport;com1;COM1_Flow_Control;A;6000;5;1;5;int;rw;3;A|None;B|Hardware;C|CTSFraming;
+#405;comport;com1;COM1_Pre_Data_Delay;100;6000;5;1;6;str;rw;int;1;65535;
+#406;comport;com1;COM1_Post_Data_Delay;100;6000;5;1;7;str;rw;int;1;65535;
+#407;comport;com1;COM1_Data_Mode;B;6000;5;1;8;int;rw;2;A|Seamless;B|Transparent;
+#408;comport;com1;COM1_Character_Timeout;20;6000;5;1;9;str;rw;int;1;65535;
+#409;comport;com1;COM1_Max_Packet_Len;1020;6000;5;1;10;str;rw;int;1;65535;
+#410;comport;com1;COM1_QoS;A;6000;5;1;11;int;rw;3;A|Normal;B|Medium;C|High;
+#411;comport;com1;COM1_NoConnect_Data_Intake;A;6000;5;1;12;int;rw;2;A|Disable;B|Enable;
+#412;comport;com1;COM1_Modbus_Mode;A;6000;5;1;13;int;rw;2;A|Disable;B|Enable;
+#413;comport;com1;COM1_Modbus_Protect_Status;A;6000;5;1;14;int;rw;2;A|Disable;B|Enable;
+#414;comport;com1;COM1_Modbus_Protect_Key;1234;6000;5;1;15;str;rw;string;
+#415;comport;com1;COM1_IP_Protocol;F;6000;5;1;16;int;rw;9;A|TCPClient;B|TCPServer;C|TCPClientServer;D|UDPPointtoPoint;E|UDPP2MP_as_P;F|UDPP2MP_as_MP;G|UDPMP2MP;H|SMTP;I|SMS;
+##Com1 as TCPClient OID GROUP 6000,5,2,x
+#420;comport;com1;COM1_T_Client_Server_Addr;0.0.0.0;6000;5;2;1;str;rw;ip;
+#421;comport;com1;COM1_T_Client_Server_Port;20002;6000;5;2;2;str;rw;int;1;65535;
+#422;comport;com1;COM1_T_Client_Timeout;60;6000;5;2;3;str;rw;int;1;65535;
+##Com1 as TCPServer OID GROUP 6000,5,3,x
+#423;comport;com1;COM1_T_Server_Listen_Port;20002;6000;5;3;1;str;rw;int;1;65535;
+#424;comport;com1;COM1_T_Server_Timeout;300;6000;5;3;2;str;rw;int;1;65535;
+##Com1 as UDPP2P OID GROUP 6000,5,4,x
+#425;comport;com1;COM1_U_PtoP_Remote_Addr;0.0.0.0;6000;5;4;1;str;rw;ip;
+#426;comport;com1;COM1_U_PtoP_Remote_Port;20001;6000;5;4;2;str;rw;int;1;65535;
+#427;comport;com1;COM1_U_PtoP_Listen_Port;20001;6000;5;4;3;str;rw;int;1;65535;
+##Com1 as UDPP2MPasP OID GROUP 6000,5,5,x
+#431;comport;com1;COM1_UM_P_Multicast_Addr;224.1.1.1;6000;5;5;1;str;rw;ip;
+#432;comport;com1;COM1_UM_P_Multicast_Port;20001;6000;5;5;2;str;rw;int;1;65535;
+#433;comport;com1;COM1_UM_P_Listen_Port;20011;6000;5;5;3;str;rw;int;1;65535;
+#434;comport;com1;COM1_UM_P_TTL;1;6000;5;5;4;str;rw;int;1;65535;
+##Com1 as UDPP2MPasMP OID GROUP 6000,5,6,x
+#435;comport;com1;COM1_UM_M_Remote_Addr;0.0.0.0;6000;5;6;1;str;rw;ip;
+#436;comport;com1;COM1_UM_M_Remote_Port;20011;6000;5;6;2;str;rw;int;1;65535;
+#437;comport;com1;COM1_UM_M_Multicast_Addr;224.1.1.1;6000;5;6;3;str;rw;ip;
+#438;comport;com1;COM1_UM_M_Multicast_Port;20001;6000;5;6;4;str;rw;int;1;65535;
+##Com1 as UDPMP2MP OID GROUP 6000,5,7,x
+#440;comport;com1;COM1_UMtoM_Multicast_Addr;224.1.1.1;6000;5;7;1;str;rw;ip;
+#441;comport;com1;COM1_UMtoM_Multicast_Port;20011;6000;5;7;2;str;rw;int;1;65535;
+#442;comport;com1;COM1_UMtoM_Multicast_TTL;1;6000;5;7;3;str;rw;int;1;65535;
+#443;comport;com1;COM1_UMtoM_Listen_Multicast_Addr;224.1.1.1;6000;5;7;4;str;rw;ip;
+#444;comport;com1;COM1_UMtoM_Listen_Multicast_Port;20011;6000;5;7;5;str;rw;int;1;65535;
+##Com1 as SMTP OID GROUP 6000,5,8,x
+#450;comport;com1;COM1_SMTP_Mail_Subject;COM-Message;6000;5;8;1;str;rw;string;
+#451;comport;com1;COM1_SMTP_Server;smtp.gmail.com:465;6000;5;8;2;str;rw;string;
+#452;comport;com1;COM1_SMTP_Username;mailer.serial@gmail.com;6000;4;8;3;str;rw;string;
+#453;comport;com1;COM1_SMTP_Password;SerialPort;6000;5;8;4;str;rw;string;
+#454;comport;com1;COM1_SMTP_Recipient;host@;6000;5;8;5;str;rw;string;
+#455;comport;com1;COM1_SMTP_Buffer;1024;6000;5;8;6;str;rw;int;1;65535;
+#456;comport;com1;COM1_SMTP_Timeout;10;6000;5;8;7;str;rw;int;1;65535;
+#457;comport;com1;COM1_SMTP_Transfer_Mode;A;6000;5;8;8;int;rw;3;A|Text;B|Attached_File;C|Hex_Code;
+##Com1 as SMS OID GROUP 6000,5,9,x
+#460;comport;com1;COM1_SMS_Message_Max_Size;160;6000;5;9;1;str;rw;int;1;160;
+#461;comport;com1;COM1_SMS_Reply_Timeout;10;6000;5;9;2;str;rw;int;1;65535;
+#462;comport;com1;COM1_SMS_Access_Control;A;6000;5;9;3;int;rw;2;A|Anonymous;B|Control_Phone_List;
+#463;comport;com1;COM1_SMS_Read_SMS_Control;B;6000;5;9;4;int;rw;2;A|KeepInSimCard;B|Delete;
+#464;comport;com1;COM1_SMS_Phone_Number_1;+15878938644;6000;5;9;5;str;rw;string;
+#465;comport;com1;COM1_SMS_Phone_Number_2; ;6000;5;9;6;str;rw;string;
+#466;comport;com1;COM1_SMS_Phone_Number_3; ;6000;5;9;7;str;rw;string;
+#467;comport;com1;COM1_SMS_Phone_Number_4; ;6000;5;9;8;str;rw;string;
+#468;comport;com1;COM1_SMS_Phone_Number_5; ;6000;5;9;9;str;rw;string;
+##Com1 ACTION OID GROUP 6000,5,10,x
+#490;comport;ACTION;ACTION;0;6000;5;10;1;int;rw;3;ResetORSubmit;Submit;Reset;
+#Com2 OID GROUP 6000,6,1,x
+500;comport2;com2;COM2_Port_Status;A;6000;6;1;1;int;rw;2;A|Disable;B|Enable;
+501;comport2;com2;COM2_Chanel_Mode;A;6000;6;1;2;int;rw;3;A|RS232;B|RS485;C|RS422;
+502;comport2;com2;COM2_Data_Baud_Rate;N;6000;6;1;3;int;rw;17;A|B300;B|B600;C|B1200;D|B2400;E|B3600;F|B4800;G|B7200;H|B9600;I|B14400;J|B19200;K|B28800;L|B38400;M|B57600;N|B115200;O|B230400;P|B460800;Q|B921600;
+503;comport2;com2;COM2_Data_Format;A;6000;6;1;4;int;rw;10;A|_8N1;B|_8N2;C|_8E1;D|_8O1;E|_7N1;F|_7N2;G|_7E1;H|_7O1;I|_7E2;J|_7O2;
+504;comport2;com2;COM2_Flow_Control;A;6000;6;1;5;int;rw;3;A|None;B|Hardware;C|CTSFraming;
+505;comport2;com2;COM2_Pre_Data_Delay;100;6000;6;1;6;str;rw;int;1;65535;
+506;comport2;com2;COM2_Post_Data_Delay;100;6000;6;1;7;str;rw;int;1;65535;
+507;comport2;com2;COM2_Data_Mode;B;6000;6;1;8;int;rw;2;A|Seamless;B|Transparent;
+508;comport2;com2;COM2_Character_Timeout;20;6000;6;1;9;str;rw;int;1;65535;
+509;comport2;com2;COM2_Max_Packet_Len;1020;6000;6;1;10;str;rw;int;1;65535;
+510;comport2;com2;COM2_QoS;A;6000;6;1;11;int;rw;3;A|Normal;B|Medium;C|High;
+511;comport2;com2;COM2_NoConnect_Data_Intake;A;6000;6;1;12;int;rw;2;A|Disable;B|Enable;
+512;comport2;com2;COM2_Modbus_Mode;A;6000;6;1;13;int;rw;2;A|Disable;B|Enable;
+513;comport2;com2;COM2_Modbus_Protect_Status;A;6000;6;1;14;int;rw;2;A|Disable;B|Enable;
+514;comport2;com2;COM2_Modbus_Protect_Key;1234;6000;6;1;15;str;rw;string;
+515;comport2;com2;COM2_IP_Protocol;F;6000;6;1;16;int;rw;9;A|TCPClient;B|TCPServer;C|TCPClientServer;D|UDPPointtoPoint;E|UDPP2MP_as_P;F|UDPP2MP_as_MP;G|UDPMP2MP;H|SMTP;I|SMS;
+#Com2 as TCPClient OID GROUP 6000,6,2,x
+520;comport2;com2;COM2_T_Client_Server_Addr;0.0.0.0;6000;6;2;1;str;rw;ip;
+521;comport2;com2;COM2_T_Client_Server_Port;20002;6000;6;2;2;str;rw;int;1;65535;
+522;comport2;com2;COM2_T_Client_Timeout;60;6000;6;2;3;str;rw;int;1;65535;
+#Com2 as TCPServer OID GROUP 6000,6,3,x
+523;comport2;com2;COM2_T_Server_Listen_Port;20002;6000;6;3;1;str;rw;int;1;65535;
+524;comport2;com2;COM2_T_Server_Timeout;300;6000;6;3;2;str;rw;int;1;65535;
+#Com2 as UDPP2P OID GROUP 6000,6,4,x
+525;comport2;com2;COM2_U_PtoP_Remote_Addr;0.0.0.0;6000;6;4;1;str;rw;ip;
+526;comport2;com2;COM2_U_PtoP_Remote_Port;20001;6000;6;4;2;str;rw;int;1;65535;
+527;comport2;com2;COM2_U_PtoP_Listen_Port;20001;6000;6;4;3;str;rw;int;1;65535;
+#Com2 as UDPP2MPasP OID GROUP 6000,6,5,x
+531;comport2;com2;COM2_UM_P_Multicast_Addr;224.1.1.1;6000;6;5;1;str;rw;ip;
+532;comport2;com2;COM2_UM_P_Multicast_Port;20001;6000;6;5;2;str;rw;int;1;65535;
+533;comport2;com2;COM2_UM_P_Listen_Port;20011;6000;6;5;3;str;rw;int;1;65535;
+534;comport2;com2;COM2_UM_P_TTL;1;6000;6;5;4;str;rw;int;1;65535;
+#Com2 as UDPP2MPasMP OID GROUP 6000,6,6,x
+535;comport2;com2;COM2_UM_M_Remote_Addr;0.0.0.0;6000;6;6;1;str;rw;ip;
+536;comport2;com2;COM2_UM_M_Remote_Port;20011;6000;6;6;2;str;rw;int;1;65535;
+537;comport2;com2;COM2_UM_M_Multicast_Addr;224.1.1.1;6000;6;6;3;str;rw;ip;
+538;comport2;com2;COM2_UM_M_Multicast_Port;20001;6000;6;6;4;str;rw;int;1;65535;
+#Com2 as UDPMP2MP OID GROUP 6000,6,7,x
+540;comport2;com2;COM2_UMtoM_Multicast_Addr;224.1.1.1;6000;6;7;1;str;rw;ip;
+541;comport2;com2;COM2_UMtoM_Multicast_Port;20011;6000;6;7;2;str;rw;int;1;65535;
+542;comport2;com2;COM2_UMtoM_Multicast_TTL;1;6000;6;7;3;str;rw;int;1;65535;
+543;comport2;com2;COM2_UMtoM_Listen_Multicast_Addr;224.1.1.1;6000;6;7;4;str;rw;ip;
+544;comport2;com2;COM2_UMtoM_Listen_Multicast_Port;20011;6000;6;7;5;str;rw;int;1;65535;
+#Com2 as SMTP OID GROUP 6000,6,8,x
+550;comport2;com2;COM2_SMTP_Mail_Subject;COM-Message;6000;6;8;1;str;rw;string;
+551;comport2;com2;COM2_SMTP_Server;smtp.gmail.com:465;6000;6;8;2;str;rw;string;
+552;comport2;com2;COM2_SMTP_Username;mailer.serial@gmail.com;6000;6;8;3;str;rw;string;
+553;comport2;com2;COM2_SMTP_Password;SerialPort;6000;6;8;4;str;rw;string;
+554;comport2;com2;COM2_SMTP_Recipient;host@;6000;6;8;5;str;rw;string;
+555;comport2;com2;COM2_SMTP_Buffer;1024;6000;6;8;6;str;rw;int;1;65535;
+556;comport2;com2;COM2_SMTP_Timeout;10;6000;6;8;7;str;rw;int;1;65535;
+557;comport2;com2;COM2_SMTP_Transfer_Mode;A;6000;6;8;8;int;rw;3;A|Text;B|Attached_File;C|Hex_Code;
+#Com2 as SMS OID GROUP 6000,6,9,x
+560;comport2;com2;COM2_SMS_Message_Max_Size;160;6000;6;9;1;str;rw;int;1;160;
+561;comport2;com2;COM2_SMS_Reply_Timeout;10;6000;6;9;2;str;rw;int;1;65535;
+562;comport2;com2;COM2_SMS_Access_Control;A;6000;6;9;3;int;rw;2;A|Anonymous;B|Control_Phone_List;
+563;comport2;com2;COM2_SMS_Read_SMS_Control;B;6000;6;9;4;int;rw;2;A|KeepInSimCard;B|Delete;
+564;comport2;com2;COM2_SMS_Phone_Number_1;+15878938644;6000;6;9;5;str;rw;string;
+565;comport2;com2;COM2_SMS_Phone_Number_2; ;6000;6;9;6;str;rw;string;
+566;comport2;com2;COM2_SMS_Phone_Number_3; ;6000;6;9;7;str;rw;string;
+567;comport2;com2;COM2_SMS_Phone_Number_4; ;6000;6;9;8;str;rw;string;
+568;comport2;com2;COM2_SMS_Phone_Number_5; ;6000;6;9;9;str;rw;string;
+#Com2 ACTION OID GROUP 6000,6,10,x
+590;comport2;ACTION;ACTION;0;6000;6;10;1;int;rw;3;ResetORSubmit;Submit;Reset;
+#Set Lan info OID GROUP 6000,9,1,x
+800;tmpstatus;LAN;Ethernet0_Received_bytes;0;6000;9;1;1;str;ro;none;
+801;tmpstatus;LAN;Ethernet0_Received_packets;0;6000;9;1;2;str;ro;none;
+802;tmpstatus;LAN;Ethernet0_Transmitted_bytes;0;6000;9;1;3;str;ro;none;
+803;tmpstatus;LAN;Ethernet0_Transmitted_packets;0;6000;9;1;4;str;ro;none;
+#Set WAN info OID GROUP 6000,9,2,x
+810;tmpstatus;WAN;Ethernet1_Received_bytes;0;6000;9;2;1;str;ro;none;
+811;tmpstatus;WAN;Ethernet1_Received_packets;0;6000;9;2;2;str;ro;none;
+812;tmpstatus;WAN;Ethernet1_Transmitted_bytes;0;6000;9;2;3;str;ro;none;
+813;tmpstatus;WAN;Ethernet1_Transmitted_packets;0;6000;9;2;4;str;ro;none;
+#Set Wi-Fi0 info OID GROUP 6000,9,3,x
+820;tmpstatus;WiFi0;Radio_Received_bytes;0;6000;9;3;1;str;ro;none;
+821;tmpstatus;WiFi0;Radio_Received_packets;0;6000;9;3;2;str;ro;none;
+822;tmpstatus;WiFi0;Radio_Transmitted_bytes;0;6000;9;3;3;str;ro;none;
+823;tmpstatus;WiFi0;Radio_Transmitted_packets;0;6000;9;3;4;str;ro;none;
+#Set carrier info OID GROUP 6000,9,4,x
+825;tmpstatus;Carrier;Received_bytes;0;6000;9;4;1;str;ro;none;
+826;tmpstatus;Carrier;Received_packets;0;6000;9;4;2;str;ro;none;
+827;tmpstatus;Carrier;Transmitted_bytes;0;6000;9;4;3;str;ro;none;
+828;tmpstatus;Carrier;Transmitted_packets;0;6000;9;4;4;str;ro;none;
+829;tmpstatus;Carrier;RSSI;0;6000;9;4;5;str;ro;none;
+830;tmpstatus;Carrier;Core_Temperature;0;6000;9;4;6;str;ro;none;
+860;tmpstatus;Carrier;IP_Addr;N/A;6000;9;4;7;str;ro;none;
+861;tmpstatus;Carrier;Current_Tech;N/A;6000;9;4;8;str;ro;none;
+862;tmpstatus;Carrier;Connect_Status;Disconnected;6000;9;4;9;str;ro;none;
+863;tmpstatus;Carrier;Connect_Duration;0;6000;9;4;10;str;ro;none;
+864;tmpstatus;Carrier;IMEI;0;6000;9;4;11;str;ro;none;
+865;tmpstatus;Carrier;SIM_ID;0;6000;9;4;12;str;ro;none;
+866;tmpstatus;Carrier;Network;Unknown;6000;9;4;13;str;ro;none;
+867;tmpstatus;Carrier;IMSI;0;6000;9;4;14;str;ro;none;
+868;tmpstatus;Carrier;Phone_Number;0;6000;9;4;15;str;ro;none;
+#Set com1 info OID GROUP 6000,9,5,x
+#835;tmpstatus;com1;Com1_Received_bytes;0;6000;9;5;1;str;ro;none;
+#836;tmpstatus;com1;Com1_Received_packets;0;6000;9;5;2;str;ro;none;
+#837;tmpstatus;com1;Com1_Transmitted_bytes;0;6000;9;5;3;str;ro;none;
+#838;tmpstatus;com1;Com1_Transmitted_packets;0;6000;9;5;4;str;ro;none;
+#Set com2 info OID GROUP 6000,9,6,x
+840;tmpstatus;com2;Com2_Received_bytes;0;6000;9;6;1;str;ro;none;
+841;tmpstatus;com2;Com2_Received_packets;0;6000;9;6;2;str;ro;none;
+842;tmpstatus;com2;Com2_Transmitted_bytes;0;6000;9;6;3;str;ro;none;
+843;tmpstatus;com2;Com2_Transmitted_packets;0;6000;9;6;4;str;ro;none;
+#Set version info OID GROUP 6000,9,7,x
+850;tmpstatus;version;hdware_ver;0;6000;9;7;1;str;ro;none;
+851;tmpstatus;version;sfware_ver;0;6000;9;7;2;str;ro;none;
+#Set wifi asso info OID GROUP 6000,9,8,x
+890;tmpstatus;asso0;info;0;6000;9;8;1;str;ro;none;
+#set tools OID GROUP 6000,10.1.x
+900;tools;reboot;ACTION;0;6000;10;1;1;int;rw;2;None;Reboot;
+

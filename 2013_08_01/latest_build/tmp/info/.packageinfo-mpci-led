@@ -1,0 +1,15 @@
+Source-Makefile: package/mpci-led/Makefile
+Package: mpci-led
+Version: 1
+Depends: +kmod-mpci-bsp +libnl-tiny @(!(TARGET_avr32||TARGET_etrax)||BROKEN)
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Microhard mpci-led utility
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  This package contains the microhard home grown mpci-led utility.
+@@
+
+

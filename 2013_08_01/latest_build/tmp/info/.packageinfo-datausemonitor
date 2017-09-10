@@ -1,0 +1,15 @@
+Source-Makefile: package/datausemonitor/Makefile
+Package: datausemonitor
+Version: 1
+Depends: +libuci +libpthread +libmserial
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Microhard carrier data usage monitor
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  This package contains the microhard home grown serial/net daemon
+@@
+
+

@@ -1,0 +1,21 @@
+/Kconfig/1.1/Thu Apr  1 22:10:04 2010/-kkv/Tar71xx_4g
+/Makefile/1.1/Thu Apr  1 22:10:05 2010/-kkv/Tar71xx_4g
+/clk.c/1.1/Thu Apr  1 22:10:04 2010/-kkv/Tar71xx_4g
+/cpu.c/1.1/Thu Apr  1 22:10:04 2010/-kkv/Tar71xx_4g
+/cs.c/1.1/Thu Apr  1 22:10:04 2010/-kkv/Tar71xx_4g
+/dev-dsp.c/1.1/Thu Apr  1 22:10:04 2010/-kkv/Tar71xx_4g
+/dev-enet.c/1.1/Thu Apr  1 22:10:04 2010/-kkv/Tar71xx_4g
+/dev-pcmcia.c/1.1/Thu Apr  1 22:10:04 2010/-kkv/Tar71xx_4g
+/dev-spi.c/1.1/Thu Apr  1 22:10:04 2010/-kkv/Tar71xx_4g
+/dev-uart.c/1.1/Thu Apr  1 22:10:04 2010/-kkv/Tar71xx_4g
+/dev-usb-ehci.c/1.1/Thu Apr  1 22:10:04 2010/-kkv/Tar71xx_4g
+/dev-usb-ohci.c/1.1/Thu Apr  1 22:10:05 2010/-kkv/Tar71xx_4g
+/dev-usb-udc.c/1.1/Thu Apr  1 22:10:04 2010/-kkv/Tar71xx_4g
+/dev-wdt.c/1.1/Thu Apr  1 22:10:05 2010/-kkv/Tar71xx_4g
+/early_printk.c/1.1/Thu Apr  1 22:10:04 2010/-kkv/Tar71xx_4g
+/gpio.c/1.1/Thu Apr  1 22:10:04 2010/-kkv/Tar71xx_4g
+/irq.c/1.1/Thu Apr  1 22:10:04 2010/-kkv/Tar71xx_4g
+/prom.c/1.1/Thu Apr  1 22:10:04 2010/-kkv/Tar71xx_4g
+/setup.c/1.1/Thu Apr  1 22:10:04 2010/-kkv/Tar71xx_4g
+/timer.c/1.1/Thu Apr  1 22:10:05 2010/-kkv/Tar71xx_4g
+D/boards////

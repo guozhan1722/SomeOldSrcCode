@@ -1,0 +1,199 @@
+#!/bin/sh
+
+#Sergey added i2c chip on VIP4G board
+#i2c address 0x30
+#register 4 for temperature
+#register 9 for voltage high byte
+#register 10 for voltage low byte
+#register 7 for shutdown board
+#register 8 for cancel shutdown
+
+tempCmd=0
+voltCmd=0
+shutdownCmd=0
+agentCmd=0
+cshutdownCmd=0
+udelay=0
+delay=0
+
+jobfile="/tmp/.i2c_chip/jobqueue"
+resultfile="/tmp/.i2c_chip/i2cchipresult"
+
+printUage()
+{
+	echo 
+	echo "Usage : i2c_chip <option> <command> <command_arguments>"
+	echo "Options:"
+	echo " -h|--help" $'\t' "Describes the usages"
+	echo "Commands:"
+	echo " --agent" $'\t' "start agent for test tempurature voltage and shutdown or cancel shutdown system "
+	echo " --temp" $'\t' "test temperature with <command arguments> -udelay"
+	echo " --volt" $'\t' "test voltage with <command arguments> -udelay"
+	echo " --shutdown" $'\t' "shutdown system with <command arguments> -delay"
+	echo " --cshutdown" $'\t' "cancel shutdown system"
+	echo "Examples:"
+	echo "	i2c_chip --agent"
+	echo "	i2c_chip --temp -udelay=100000 "
+	echo "	i2c_chip --volt -udelay=100000 "
+	echo "	i2c_chip --shutdown -udelay=100000 -delay=10 "
+	echo "	i2c_chip --cshutdown -udelay=100000"
+}
+
+test_temp()
+{
+	local interval="$1"
+	i2cset -y 0 0x30 4
+	usleep $interval
+	hex_temp=$(i2cget -y 0 0x30)
+	dec_temp=$(printf "%d\n" $hex_temp)
+	echo "I2C_temperature=$dec_temp" >> $resultfile
+}
+
+test_volt()
+{
+    local interval="$1"
+#    while true; do
+	i2cset -y 0 0x30 9
+	#usleep $interval
+	hi_vo=$(i2cget -y 0 0x30 )
+	#hi_vo=$(i2cget -y 0 0x30 9 c )
+	#usleep $interval
+	i2cset -y 0 0x30 10
+	#usleep $interval
+	lo_vo=$(i2cget -y 0 0x30)
+	#usleep $interval
+	
+	#lo_vo=$(i2cget -y 0 0x30 10 c)
+        #usleep $interval
+	hex_vo=$hi_vo$(echo $lo_vo|cut -c 3-4)
+	dec_mvo=$(printf "%d\n" $hex_vo)
+	dec_vo=$(echo $dec_mvo |awk '{printf("%0.2f",$1/1000)}')
+	echo "I2C_voltage=$dec_vo" >> $resultfile
+#    done
+}
+
+test_shutdown()
+{
+	local interval="$1"
+	i2cset -y 0 0x30 7 $interval
+	echo "I2C will shutdown system in $interval seconds">> $resultfile
+}
+
+test_cancelshd()
+{
+	i2cset -y 0 0x30 8
+	echo "I2C cancelled system shutdown command">> $resultfile
+}
+
+do_tasks() {
+    while :; do
+        #kick watchdog timer here
+        temp=$(i2cget -y 0 0x30 2>/dev/null)
+	if [ -f $jobfile ]; then
+
+	    mv $jobfile $jobfile.work
+            echo " " > $resultfile
+	    while read LINE; do 
+		execute_task() {
+		    case $1 in 
+			temp)  test_temp $2;;
+			volt)  test_volt $2;;
+			shutdown) test_shutdown $2;;
+			cshutdown) test_cancelshd;;
+			*) echo "## Unknown task command: $2 ##";;
+		    esac
+		}
+                #echo "#### start job $LINE ############ " >> $resultfile
+		queued_task=$(echo $LINE | awk -F "." '{print $1,$2}')
+		execute_task $queued_task
+	    done < $jobfile.work
+	    rm $jobfile.work
+	fi
+
+        break
+    done
+}
+
+
+
+while [ $# -gt 0 ];do
+	case $1 in
+	--agent)
+		agentCmd=1
+	;;
+	--temp)
+		tempCmd=1
+	;;
+	--volt)
+		voltCmd=1
+	;;
+	--shutdown)
+		shutdownCmd=1
+	;;
+	--cshutdown)
+		cshutdownCmd=1
+	;;
+	-h|--help)
+		printUage
+		exit 0
+		;;
+	-udelay*)
+		if echo $1 |grep '=' >/dev/null; then
+			udelay=`echo $1|sed 's/^.*=//'`
+		else
+			udelay="$2"
+			shift
+		fi
+		;;
+	-delay*)
+		if echo $1 |grep '=' >/dev/null; then
+			delay=`echo $1|sed 's/^.*=//'`
+		else
+			delay="$2"
+			shift
+		fi
+		;;
+	esac
+	shift
+done
+
+if [ $agentCmd -eq 1 ];then
+
+    temp=$(i2cset -y 0 0x30 9)
+    usleep 100000
+
+    if [ ! -f $jobfile ]; then
+        mkdir -p /tmp/.i2c_chip
+        echo "volt.100000" >$jobfile     
+    fi
+    while :; do
+	do_tasks
+    done
+
+elif [ $tempCmd -eq 1 ];then
+	while true; do
+		test_temp $udelay
+	done
+elif [ $voltCmd -eq 1 ];then
+	while true; do
+		test_volt $udelay
+	done
+
+elif [ $shutdownCmd -eq 1 ];then
+       	test_shutdown $delay
+	while true; do
+	    test_volt $udelay
+	done
+
+elif [ $cshutdownCmd -eq 1 ];then
+	test_volt $udelay
+	while true; do
+        	test_cancelshd
+	done
+else
+	echo "No command Specitied, try --help"
+fi
+
+
+
+

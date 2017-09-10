@@ -1,0 +1,7 @@
+#set TIMEOUT
+TIMEOUT 120
+
+#send CLIENT and delay one second 3 times
+CLIENT CLIENTSERVER\c
+
+

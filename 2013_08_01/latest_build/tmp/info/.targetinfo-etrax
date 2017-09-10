@@ -1,0 +1,38 @@
+Source-Makefile: target/linux/etrax/Makefile
+Target: etrax
+Target-Board: etrax
+Target-Kernel: 2.6
+Target-Name: Foxboard (ETRAX 100LX)
+Target-Path: /home/zguo/project/2013_08_01/latest_build
+Target-Arch: cris
+Target-Features: jffs2 squashfs usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -funit-at-a-time
+Linux-Version: 2.6.32.9
+Linux-Release: 1
+Linux-Kernel-Arch: cris
+Target-Description:
+	Build firmware images for the FOXBOARD made by acmesystems.it
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 
+Target-Profile: default
+Target-Profile-Name: Normal (default)
+Target-Profile-Packages: 
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Normal Foxboard setup
+@@
+
+Target-Profile: vhdl_no_fb
+Target-Profile-Name: FOXVHDL no fb
+Target-Profile-Packages: 
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Setup the Foxboard for FOXVHDL support with no framebuffer
+@@
+
+

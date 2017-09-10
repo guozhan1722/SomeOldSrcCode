@@ -1,0 +1,18 @@
+Source-Makefile: target/linux/sibyte/Makefile
+Target: sibyte
+Target-Board: sibyte
+Target-Kernel: 2.6
+Target-Name: Broadcom/SiByte SB-1
+Target-Path: /home/zguo/project/2013_08_01/latest_build
+Target-Arch: mips
+Target-Features: fpu pci
+Target-Depends: 
+Target-Optimization: -Os -pipe -march=sb1 -funit-at-a-time
+Linux-Version: 2.6.32.9
+Linux-Release: 1
+Linux-Kernel-Arch: mips
+Target-Description:
+	Build firmware images for Broadcom/SiByte SB-1 boards
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall
+

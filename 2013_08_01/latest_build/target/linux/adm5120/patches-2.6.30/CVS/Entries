@@ -1,0 +1,15 @@
+/001-adm5120.patch/1.1/Thu Apr  1 22:11:11 2010/-kkv/Tar71xx_4g
+/002-adm5120_flash.patch/1.1/Thu Apr  1 22:11:11 2010/-kkv/Tar71xx_4g
+/003-adm5120_switch.patch/1.1/Thu Apr  1 22:11:11 2010/-kkv/Tar71xx_4g
+/005-adm5120_usb.patch/1.1/Thu Apr  1 22:11:11 2010/-kkv/Tar71xx_4g
+/007-adm5120_pci.patch/1.1/Thu Apr  1 22:11:11 2010/-kkv/Tar71xx_4g
+/009-adm5120_leds_switch_trigger.patch/1.1/Thu Apr  1 22:11:11 2010/-kkv/Tar71xx_4g
+/101-cfi_fixup_macronix_bootloc.patch/1.1/Thu Apr  1 22:11:11 2010/-kkv/Tar71xx_4g
+/102-jedec_pmc_39lvxxx_chips.patch/1.1/Thu Apr  1 22:11:11 2010/-kkv/Tar71xx_4g
+/103-mtd_trxsplit.patch/1.1/Thu Apr  1 22:11:11 2010/-kkv/Tar71xx_4g
+/120-rb153_cf_driver.patch/1.1/Thu Apr  1 22:11:11 2010/-kkv/Tar71xx_4g
+/200-amba_pl010_hacks.patch/1.1/Thu Apr  1 22:11:11 2010/-kkv/Tar71xx_4g
+/201-amba_bus_hacks.patch/1.1/Thu Apr  1 22:11:11 2010/-kkv/Tar71xx_4g
+/203-gpio_leds_brightness.patch/1.1/Thu Apr  1 22:11:11 2010/-kkv/Tar71xx_4g
+/310-adm5120_wdt.patch/1.1/Thu Apr  1 22:11:11 2010/-kkv/Tar71xx_4g
+D

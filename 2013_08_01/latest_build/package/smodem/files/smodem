@@ -1,0 +1,8 @@
+# Copyright (C) 2010 Microhard Systems Inc.
+
+
+
+config s_port port
+	option Data_Port_Number	        	30000
+	option Diag_Port_Number	        	30001
+	option Enable		        	1

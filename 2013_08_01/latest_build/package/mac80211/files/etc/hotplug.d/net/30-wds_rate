@@ -1,0 +1,19 @@
+######################################################################
+# Bob Sheng
+# Copyright Microhard Systems Inc
+######################################################################
+is_wlan=$(echo $INTERFACE | grep wlan)
+if [ -n "$is_wlan" ] ; then
+	if [ "$ACTION" = "add" -o "$ACTION" = "register" ] ; then
+		wds_link=$(echo $INTERFACE | grep "sta")
+		if [ -n "$wds_link" ] ; then
+			main_if=$(echo "$INTERFACE" | awk  -F [.] ' { print $1 } ')
+			sta_section=$(uci show wireless | grep "ifname=$main_if" | sed 's/\.ifname=[a-z 0-9]*//g' )
+			 if [ -n "$sta_section" ] ; then
+                            rate_setting=$(uci get "$sta_section.rate")
+			                                                                 
+			    [ -n "$rate_setting" ] && iwconfig $INTERFACE rate $rate_setting
+			 fi
+		fi
+	fi
+fi

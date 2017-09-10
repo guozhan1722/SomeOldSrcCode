@@ -1,0 +1,1 @@
+exec ifconfig wlan0

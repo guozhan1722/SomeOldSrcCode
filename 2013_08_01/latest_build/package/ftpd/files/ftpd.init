@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=50
+
+PIDFILE="/var/run/ftpd.pid"
+PROG="/bin/ftpd"
+
+start() {
+	stop
+
+        "$PROG" --daemon --no-version --pidfile "$PIDFILE"
+}
+
+stop() {
+	[ -f "$PIDFILE" ] && kill $(cat "$PIDFILE") 2>/dev/null >/dev/null
+}

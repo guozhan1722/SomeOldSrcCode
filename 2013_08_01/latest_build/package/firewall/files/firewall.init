@@ -1,0 +1,141 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008 OpenWrt.org
+
+START=45
+
+config_cb() {
+	local cfg_type="$1"
+	local cfg_name="$2"
+
+	case "$cfg_type" in
+		rule)
+			append rule_cfgs "$cfg_name" "$N"
+		;;
+	esac
+}
+
+local IP_PASSTHROUGH
+config_load lte
+config_get IP_PASSTHROUGH connect  ippassthrough Disable
+
+mk_order() {
+    rules=$(echo $rule_cfgs)
+    for rule in $rule_cfgs; do
+        config_get FORM_pri $rule pri
+        config_get FORM_src "$rule" src 
+        config_get FORM_dest "$rule" dest
+        config_get FORM_protocol "$rule" proto
+        config_get FORM_src_ip "$rule" src_ip
+        config_get FORM_dest_ip "$rule" dest_ip
+        config_get FORM_dest_port "$rule" dest_port 
+        config_get FORM_target "$rule" target "ACCEPT"
+        
+        left_rule_cfg=$(echo $rules | sed 's/'$rule'//g')
+        rules=$(echo $left_rule_cfg)    
+
+        for rule_sub in $left_rule_cfg; do
+            config_get FORM_pri_sub "$rule_sub" pri
+            if [ "$FORM_pri" != "" ];then
+                if [ "$FORM_pri_sub" -lt "$FORM_pri" ];then
+                    uci_remove "firewall" "$rule"
+                    uci_add firewall rule "$rule"; add_rule_cfg="$CONFIG_SECTION"
+
+                    uci_set firewall "$add_rule_cfg" proto "$FORM_protocol"
+                    uci_set firewall "$add_rule_cfg" src "$FORM_src"
+                    uci_set firewall "$add_rule_cfg" dest "$FORM_dest"
+                    uci_set firewall "$add_rule_cfg" src_ip "$FORM_src_ip"
+                    uci_set firewall "$add_rule_cfg" dest_ip "$FORM_dest_ip"
+                    uci_set firewall "$add_rule_cfg" dest_port "$FORM_dest_port"
+                    uci_set firewall "$add_rule_cfg" target "$FORM_target"
+                    uci_set firewall "$add_rule_cfg" pri "$FORM_pri"
+
+                    uci_commit firewall
+                fi
+            fi
+        done
+    done
+}
+
+start() {
+	local disabled_firewall
+	config_load firewall
+        config_get_bool disabled_firewall normal disabled_firewall 0
+
+	if [ "$disabled_firewall" = "1" ];then
+            [ -e /etc/config/enfirewall.conf ] || {
+                uci_set firewall normal disabled_firewall "0"
+                uci_commit firewall
+                mv -f /etc/config/firewall /etc/config/enfirewall.conf
+            }
+
+            rm -rf /etc/config/firewall
+            config_clear
+            config_load firewall
+            [ "$?" != "0" ] && {
+uci_set_default firewall <<EOF
+config 'defaults' 
+    	option 'syn_flood' '1'
+	option 'input' 'ACCEPT'
+	option 'output' 'ACCEPT' 
+	option 'forward' 'ACCEPT'
+
+config 'zone' 
+        option 'name' 'lan'
+        option 'input' 'ACCEPT'
+        option 'output' 'ACCEPT'
+        option 'forward' 'ACCEPT'
+
+config 'zone' 
+        option 'name' 'wan'
+        option 'input' 'ACCEPT'
+        option 'output' 'ACCEPT'
+        option 'forward' 'ACCEPT'
+        option 'masq' '1'
+
+config 'zone' 
+        option 'name' 'wan2'
+        option 'input' 'ACCEPT'
+        option 'output' 'ACCEPT'
+        option 'forward' 'ACCEPT'
+        option 'masq' '1'
+
+config include
+	option path /etc/firewall.user
+
+config include
+	option path /etc/mcast.fw
+
+config include
+	option path /etc/firewall.gre
+
+config include
+	option path /etc/firewall.ipsecwan
+
+config include
+	option path /etc/firewall.ipsec4g
+
+config 'general' 'normal'
+        option 'disabled_firewall' '1'
+EOF
+        }
+
+        else
+            [ -e /etc/config/enfirewall.conf ] &&  mv -f /etc/config/enfirewall.conf /etc/config/firewall 
+            #mk_order
+        fi
+
+        [ "$IP_PASSTHROUGH" = "Ethernet" -o "$IP_PASSTHROUGH" = "WANport" ] && {
+            . /lib/firewall/uci_firewall.sh	
+            fw_stop
+        } || {
+            [ -f "/etc/firewall_stop/ippassthrough" ] && rm -rf /etc/firewall_stop/ippassthrough
+            . /lib/firewall/uci_firewall.sh	
+            fw_init
+        }            
+}
+
+stop() {
+        [ "$IP_PASSTHROUGH" = "Disable" -a -f "/etc/firewall_stop/ippassthrough" ] &&  rm -rf /etc/firewall_stop/ippassthrough
+	. /lib/firewall/uci_firewall.sh
+	fw_stop	
+}

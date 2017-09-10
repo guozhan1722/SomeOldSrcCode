@@ -1,0 +1,18 @@
+#
+# Copyright (C) 2009 OpenWrt.org
+#
+
+. /lib/ar71xx.sh
+
+
+preinit_enable_reset_button() {
+	insmod i2c_dev
+	insmod i2c-gpio
+	insmod input-core
+	insmod input-polldev
+	insmod gpio_buttons
+	insmod button-hotplug
+}
+
+boot_hook_add preinit_main preinit_enable_reset_button
+

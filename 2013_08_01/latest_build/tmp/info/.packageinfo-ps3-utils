@@ -1,0 +1,18 @@
+Source-Makefile: package/ps3-utils/Makefile
+Package: ps3-utils
+Version: 6488134e48cf2d6f2d6471ced8346ac8cb1b855a-1
+Depends: @TARGET_ps3||TARGET_ps3chk||TARGET_powerpc
+Provides: 
+Build-Depends: libtool
+Section: utils
+Category: Utilities
+Title: PS3 Linux Utilities
+Maintainer: Geoff Levand <geoffrey.levand@am.sony.com>
+Source: ps3-utils-6488134e48cf2d6f2d6471ced8346ac8cb1b855a.tar.bz2
+Type: ipkg
+Description:      The ps3-utils package is a set of system administration utilites for the
+     PS3 game console.
+http://kernel.org/pub/linux/kernel/people/geoff/cell/ps3-utils/
+@@
+
+

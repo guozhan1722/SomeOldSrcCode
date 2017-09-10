@@ -1,0 +1,11 @@
+/110-optimize-for-size.patch/1.1/Thu Apr  1 22:11:26 2010/-kkv/Tar71xx_4g
+/120-makedepend.patch/1.1/Thu Apr  1 22:11:26 2010/-kkv/Tar71xx_4g
+/130-perl-path.patch/1.1/Thu Apr  1 22:11:26 2010/-kkv/Tar71xx_4g
+/140-makefile-dirs.patch/1.1/Thu Apr  1 22:11:26 2010/-kkv/Tar71xx_4g
+/150-no_engines.patch/1.1/Thu Apr  1 22:11:26 2010/-kkv/Tar71xx_4g
+/160-disable_doc_tests.patch/1.1/Thu Apr  1 22:11:26 2010/-kkv/Tar71xx_4g
+/170-bash_path.patch/1.1/Thu Apr  1 22:11:26 2010/-kkv/Tar71xx_4g
+/180-fix_link_segfault.patch/1.1/Thu Apr  1 22:11:26 2010/-kkv/Tar71xx_4g
+/200-ocf-20080917.patch/1.1/Thu Apr  1 22:11:26 2010/-kkv/Tar71xx_4g
+/300-etrax_support.patch/1.1/Thu Apr  1 22:11:26 2010/-kkv/Tar71xx_4g
+D

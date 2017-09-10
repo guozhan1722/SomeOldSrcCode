@@ -1,0 +1,178 @@
+. /etc/functions.sh
+. /etc/version
+
+button_run_file=/var/run/button_count
+double_click_button_file=/var/run/double_click_button
+
+
+
+do_button_config () {
+
+	[ "$ACTION" = "pressed" ] && {
+                # stop led scan
+		/etc/init.d/ledcon stop
+
+		if [ "$HARDWARE" = "5.0.0" ]; then
+			phys="phy0 phy1 phy2 phy3"
+			for phy in $phys; do
+			   echo "heartbeat" > /sys/class/leds/${phy}_rssi1/trigger
+			   echo "heartbeat" > /sys/class/leds/${phy}_rssi2/trigger
+			   echo "heartbeat" > /sys/class/leds/${phy}_rssi3/trigger
+                        done
+		elif [ "$HARDWARE" = "3.0.0" ]; then
+                   echo "heartbeat" > /sys/class/leds/phy0_rssi1/trigger
+                   echo "heartbeat" > /sys/class/leds/phy0_rssi2/trigger
+                   echo "heartbeat" > /sys/class/leds/phy0_rssi3/trigger
+                elif [ "$HARDWARE" = "v1.0.0" ]; then
+                           echo "0" > /sys/class/leds/ledrx/brightness
+                           echo "0" > /sys/class/leds/ledtx/brightness
+                           mpci-led -s 4 -t 400 &
+                elif [ "$HARDWARE" = "v2.0.0" ]; then
+			   logger "<00-button do_button> VIP4G button $BUTTON pressed"
+                           killall -9  mpci-led
+			   killall -9 ledcon.sh 
+			   /etc/ledcon.sh reset 2>/dev/null &
+		else
+                   echo "heartbeat" > /sys/class/leds/phy0_rssi1/trigger
+                   echo "heartbeat" > /sys/class/leds/phy0_rssi2/trigger
+                   echo "heartbeat" > /sys/class/leds/phy0_rssi3/trigger
+                   echo "heartbeat" > /sys/class/leds/phy0_rssi4/trigger
+                   echo "heartbeat" > /sys/class/leds/phy0_rssi5/trigger
+                   echo "heartbeat" > /sys/class/leds/phy0_rssi6/trigger
+        	fi
+
+                echo "count=0" > $button_run_file                      
+                /bin/cfgcon.sh &           
+	}
+
+        [ "$ACTION" = "released" ] && {
+                if [ "$HARDWARE" = "5.0.0" ]; then
+                        phys="phy0 phy1 phy2 phy3"
+                        for phy in $phys; do
+                           echo "none" > /sys/class/leds/${phy}_rssi1/trigger
+                           echo "none" > /sys/class/leds/${phy}_rssi2/trigger
+                           echo "none" > /sys/class/leds/${phy}_rssi3/trigger
+                        done
+		elif [ "$HARDWARE" = "3.0.0" ]; then
+                           echo "none" > /sys/class/leds/phy0_rssi1/trigger
+                           echo "none" > /sys/class/leds/phy0_rssi2/trigger
+                           echo "none" > /sys/class/leds/phy0_rssi3/trigger
+                elif [ "$HARDWARE" = "v1.0.0" ]; then
+                        killall mpci-led
+		elif [ "$HARDWARE" = "v2.0.0" ]; then
+			logger "<00-button do_button> VP4G button $BUTTON released"
+                        killall -9  mpci-led
+			killall -9 ledcon.sh
+			/etc/ledcon.sh lte_rssi 2>/dev/null &
+                else
+                           echo "none" > /sys/class/leds/phy0_rssi1/trigger
+                           echo "none" > /sys/class/leds/phy0_rssi2/trigger
+                           echo "none" > /sys/class/leds/phy0_rssi3/trigger
+                           echo "none" > /sys/class/leds/phy0_rssi4/trigger
+                           echo "none" > /sys/class/leds/phy0_rssi5/trigger
+                           echo "none" > /sys/class/leds/phy0_rssi6/trigger
+                fi
+
+		
+		[ -f $double_click_button_file ] && {
+			. $double_click_button_file 
+			if [ "$dcount" -le 4 ]; then
+				sdpClient br-lan 1 131 
+				logger "sending message..." 
+			fi
+			rm $double_click_button_file 
+		}||{  
+		 	echo "dcount=0" > $double_click_button_file
+		 	/etc/dbcbut.sh &
+		}
+
+                rm -f $button_run_file
+
+		# resume the led scan (VIP-4G resume by other way )
+		if [ "$HARDWARE" != "v2.0.0" ]; then
+			/etc/init.d/ledcon start
+		fi
+        }
+}
+
+do_button_sim()
+{
+	config_load lte                                                              
+	[ "$ACTION" = "pressed" ] && {
+		logger "sim card inserted"
+		/etc/init.d/dhcp_client stop
+		killall -9 udhcpc
+		ifconfig eth2 down
+		ifdown wan2
+		sleep 3
+	        mpci -gpio set 8 0
+		sleep 1
+	        mpci -gpio set 8 1
+		#uci_set "lte" "connect" "req_state" "3"
+		#uci_commit lte     
+	}
+	
+	[ "$ACTION" = "released" ] && {
+		logger "sim card removed"
+		#/etc/init.d/lte stop
+		ifconfig eth2 down
+		ifdown wan2
+		#uci_set "lte" "connect" "req_state" "4"
+		#uci_commit lte     
+	}
+	
+}
+
+do_button_input()
+{   
+	config_load ioports 							
+	[ "$ACTION" = "pressed" ] && {
+		logger "INPUT$1 OPEN"
+		uci_set "ioports" "input" "input$1" "0"
+	}
+	
+	[ "$ACTION" = "released" ] && {
+		logger "INPUT$1 CLOSE"
+		uci_set "ioports" "input" "input$1" "1"			
+	}
+	uci commit ioports
+}
+
+#config_load system                                                              
+#config_foreach do_button button
+
+logger  "ACTION=$ACTION" "BUTTON=$BUTTON"
+
+case "$BUTTON" in
+         "BTN_0")
+		logger  "CPU_CONFIG"				
+		do_button_config 
+         ;;
+         "BTN_1")
+		logger  "SIM_STAT"
+		do_button_sim 
+	 ;;
+         "BTN_2")
+		logger  "INPUT1"
+		do_button_input 1
+         ;;
+         "BTN_3")
+		logger  "INPUT2"
+		do_button_input 2
+         ;;
+         "BTN_4")
+		logger  "INPUT3"
+		do_button_input 3
+         ;;
+         "BTN_5")
+		logger  "INPUT4"
+		do_button_input 4
+         ;;
+	 "BTN_6")
+		logger  "INPUT6"		
+         ;;
+         *)
+    	   logger  "<etc/hotplug.d/00-button> What is $BUTTON ??? something wrong???"
+         ;;
+esac
+

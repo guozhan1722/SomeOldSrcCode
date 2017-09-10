@@ -1,0 +1,15 @@
+Source-Makefile: package/checksync/Makefile
+Package: checksync
+Version: 1
+Depends: +libuci
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Microhard checksync utility
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  This package contains the microhard home grown checksync utility.
+@@
+
+

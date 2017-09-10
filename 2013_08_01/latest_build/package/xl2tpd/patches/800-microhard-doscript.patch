@@ -1,0 +1,837 @@
+diff -Nuar org/aaa.c microhard/aaa.c
+--- org/aaa.c	2013-05-09 13:27:49.279279784 -0600
++++ microhard/aaa.c	2013-05-09 13:53:15.130216246 -0600
+@@ -313,6 +313,13 @@
+         lns = deflns;
+         checkdefault = -1;
+     }
++#ifdef MICROHARD_MAST
++    if (!lns->active) {
++         l2tp_log (LOG_WARNING, "%s: 'LNS %s active=%d' so return NULL.\n", __FUNCTION__,
++                         lns->entname[0] ? lns->entname : "(unnamed)", lns->active);
++         return NULL;
++    }
++#endif
+     while (lns)
+     {
+         ipr = lns->lacs;
+diff -Nuar org/call.c microhard/call.c
+--- org/call.c	2013-05-14 11:23:15.081481312 -0600
++++ microhard/call.c	2013-05-14 11:37:43.039529662 -0600
+@@ -332,6 +332,11 @@
+             tmp2 = tmp->next;
+             tmp->needclose = 0;
+             tmp->closing = -1;
++                        #ifdef MICROHARD_MAST
++        l2tp_log (LOG_INFO, "%s: call_close Tunnel %s, ID = %d ref=%u/refhim=%u\n",__FUNCTION__,
++                 (c->container->lac ? c->container->lac->entname : (c->container->lns ? c->container->lns->entname : "")),
++                 c->container->ourtid, c->container->refme, c->container->refhim);
++                        #endif
+             call_close (tmp);
+             tmp = tmp2;
+         }
+diff -Nuar org/control.c microhard/control.c
+--- org/control.c	2013-05-14 11:22:28.075281568 -0600
++++ microhard/control.c	2013-06-10 15:59:04.056246537 -0600
+@@ -697,6 +697,11 @@
+         if (!p->lns)
+         {
+             set_error (p, ERROR_INVALID, "This tunnel cannot accept calls\n");
++                        #ifdef MICROHARD_MAST
++        l2tp_log (LOG_INFO, "%s: call_close ICRQ Tunnel %s, ID = %d ref=%u/refhim=%u\n",__FUNCTION__,
++                 (t->lac ? t->lac->entname : (t->lns ? t->lns->entname : "")),
++                 t->ourtid, t->refme, t->refhim);
++                        #endif
+             call_close (p);
+             return -EINVAL;
+         }
+@@ -711,6 +716,11 @@
+                      __FUNCTION__);
+             /* Here it doesn't make sense to use the needclose flag because 
+                the call p did not receive any packets */
++                        #ifdef MICROHARD_MAST
++        l2tp_log (LOG_INFO, "%s: call_close ICRQ cid<0 Tunnel %s, ID = %d ref=%u/refhim=%u\n",__FUNCTION__,
++                 (t->lac ? t->lac->entname : (t->lns ? t->lns->entname : "")),
++                 t->ourtid, t->refme, t->refhim);
++                        #endif
+             call_close (p);
+             return -EINVAL;
+         }
+@@ -749,6 +759,11 @@
+             if (!p->addr)
+             {
+                 set_error (p, ERROR_NORES, "No available IP address");
++                        #ifdef MICROHARD_MAST
++        l2tp_log (LOG_INFO, "%s: call_close IP_ALLOCATION Tunnel %s, ID = %d ref=%u/refhim=%u\n",__FUNCTION__,
++                 (t->lac ? t->lac->entname : (t->lns ? t->lns->entname : "")),
++                 t->ourtid, t->refme, t->refhim);
++                        #endif
+                 call_close (p);
+                 l2tp_log (LOG_DEBUG, "%s: Out of IP addresses on tunnel %d!\n",
+                      __FUNCTION__, t->tid);
+@@ -1104,11 +1119,20 @@
+                      __FUNCTION__);
+             return -EINVAL;
+         }
+-        l2tp_log (LOG_INFO,
+-             "%s: Connection closed to %s, serial %d (%s)\n", __FUNCTION__,
+-             IPADDY (t->peer.sin_addr), c->serno, c->errormsg);
+-        c->needclose = 0;
+-        c->closing = -1;
++        #ifdef MICROHARD_MAST
++        if (c->errormsg[0] == 0) {
++            l2tp_log (LOG_INFO,
++                 "%s: Connection to %s, serial %d, errormsg(%s), do nothing\n", __FUNCTION__,
++                 IPADDY (t->peer.sin_addr), c->serno, c->errormsg);
++        } else 
++        #endif
++        {
++            l2tp_log (LOG_INFO,
++                 "%s: Connection closed to %s, serial %d (%s)\n", __FUNCTION__,
++                 IPADDY (t->peer.sin_addr), c->serno, c->errormsg);
++            c->needclose = 0;
++            c->closing = -1;
++        }
+         break;
+     case Hello:
+         break;
+@@ -1161,10 +1185,12 @@
+ #endif
+     if (h->Ns != t->control_rec_seq_num)
+     {
++        #ifndef MICROHARD_MAST
+         if (DEBUG)
+             l2tp_log (LOG_DEBUG,
+                  "%s: Received out of order control packet on tunnel %d (got %d, expected %d)\n",
+                  __FUNCTION__, t->tid, h->Ns, t->control_rec_seq_num);
++        #endif
+         if (((h->Ns < t->control_rec_seq_num) && 
+             ((t->control_rec_seq_num - h->Ns) < 32768)) ||
+             ((h->Ns > t->control_rec_seq_num) &&
+@@ -1774,7 +1800,9 @@
+         }
+         else
+         {
++            #ifndef MICROHARD_MAST
+             l2tp_log (LOG_DEBUG, "%s: bad control packet!\n", __FUNCTION__);
++            #endif
+             return -EINVAL;
+         }
+     }
+diff -Nuar org/file.c microhard/file.c
+--- org/file.c	2013-05-09 09:53:24.334340862 -0600
++++ microhard/file.c	2013-05-15 16:22:33.660216196 -0600
+@@ -120,6 +120,9 @@
+     tmp->challenge = 0;
+     tmp->debug = 0;
+     tmp->pppoptfile[0] = 0;
++#ifdef MICROHARD_MAST
++    tmp->active = 0;  /* IPsec SA particulars */
++#endif
+     tmp->t = NULL;
+     return tmp;
+ }
+@@ -164,6 +167,10 @@
+     tmp->debug = 0;
+     tmp->pppoptfile[0] = 0;
+     tmp->defaultroute = 0;
++#ifdef MICROHARD_MAST
++    tmp->refme = 0;  /* IPsec SA particulars */
++    tmp->refhim = 0; /* IPsec SA particulars */
++#endif
+     return tmp;
+ }
+ 
+@@ -414,6 +421,74 @@
+     return 0;
+ }
+ 
++#ifdef MICROHARD_MAST
++int set_lnsactive (char *word, char *value, int context, void *item)
++{
++    switch (context & ~CONTEXT_DEFAULT)
++    {
++    case CONTEXT_LNS:
++        if (set_boolean (word, value, &(((struct lns *) item)->active))){
++            l2tp_log(LOG_WARNING, "Set LNS %s value %s error\n", word, value);
++            return -1;
++        }
++        l2tp_log(LOG_INFO, "Set LNS %s value %s\n", word, value);
++        break;
++    default:
++        snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
++                  word);
++        return -1;
++    }
++    return 0;
++}
++int set_uint (char *word, char *value, uint32_t *ptr)
++{
++    uint32_t val;
++#ifdef DEBUG_FILE
++    l2tp_log (LOG_DEBUG, "set_%s: %s  flag to '%s'\n", word, word, value);
++#endif /* ; */
++    if ((val = atoi (value)) < 0)
++    {
++        snprintf (filerr, sizeof (filerr), "%s must be a number\n", word);
++        return -1;
++    }
++    *ptr = val;
++    return 0;
++}
++/* IPsec SA particulars */
++int set_refme (char *word, char *value, int context, void *item)
++{
++    switch (context & ~CONTEXT_DEFAULT)
++    {
++    case CONTEXT_LAC:
++        if (set_uint (word, value, &(((struct lac *) item)->refme)))
++            return -1;
++        break;
++    default:
++        snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
++                  word);
++        return -1;
++    }
++    return 0;
++}
++
++/* IPsec SA particulars */
++int set_refhim (char *word, char *value, int context, void *item)
++{
++    switch (context & ~CONTEXT_DEFAULT)
++    {
++    case CONTEXT_LAC:
++        if (set_uint (word, value, &(((struct lac *) item)->refhim)))
++            return -1;
++        break;
++    default:
++        snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
++                  word);
++        return -1;
++    }
++    return 0;
++}
++#endif
++
+ int set_flow (char *word, char *value, int context, void *item)
+ {
+     int v;
+@@ -1502,5 +1577,10 @@
+     {"tx bps", &set_speed},
+     {"rx bps", &set_speed},
+     {"bps", &set_speed},
++#ifdef MICROHARD_MAST
++    {"refhim", &set_refhim},  
++    {"refme", &set_refme},
++    {"lns active", &set_lnsactive},
++#endif
+     {NULL, NULL}
+ };
+diff -Nuar org/file.h microhard/file.h
+--- org/file.h	2013-05-09 13:16:36.116240300 -0600
++++ microhard/file.h	2013-05-14 10:31:21.118216792 -0600
+@@ -134,6 +134,10 @@
+     int rtimeout;               /* Redial every this many # of seconds */
+     char pppoptfile[STRLEN];    /* File containing PPP options */
+     int debug;
++#ifdef MICROHARD_MAST
++    uint32_t refme;             /* IPsec SA particulars */
++    uint32_t refhim;            /* IPsec SA particulars */
++#endif
+     struct tunnel *t;           /* Our tunnel */
+     struct call *c;             /* Our call */
+ };
+@@ -174,4 +178,8 @@
+ extern int parse_one_option (char *word, char *value, int context, void *item);
+ /* Allocate memory and filled up new lac */
+ extern struct lac *new_lac ();
++#ifdef MICROHARD_MAST
++extern struct lns *new_lns ();
++#endif
++
+ #endif
+diff -Nuar org/l2tp.h microhard/l2tp.h
+--- org/l2tp.h	2013-05-16 11:20:28.843222087 -0600
++++ microhard/l2tp.h	2013-05-16 11:25:16.675216417 -0600
+@@ -94,7 +94,11 @@
+                                    so we can "decompress" the
+                                    payloads and simplify coding */
+ #if 1
++#ifdef MICROHARD_MAST
++#define DEFAULT_MAX_RETRIES 16
++#else
+ #define DEFAULT_MAX_RETRIES 5    /* Recommended value from spec */
++#endif
+ #else
+ #define DEFAULT_MAX_RETRIES 95   /* give us more time to debug */
+ #endif
+diff -Nuar org/network.c microhard/network.c
+--- org/network.c	2013-05-08 15:35:40.935218771 -0600
++++ microhard/network.c	2013-05-14 11:42:53.241231252 -0600
+@@ -198,8 +198,8 @@
+ #ifdef DEBUG_CONTROL_XMIT
+     if(t) {
+ 	    l2tp_log (LOG_DEBUG,
+-		      "trying to send control packet to %d\n",
+-		      t->ourtid);
++		      "trying to send control packet to %d with refhim=%d\n",
++		      t->ourtid,t->refhim);
+     }
+ #endif
+ 
+@@ -227,7 +227,7 @@
+         {
+             if (t->self->needclose)
+             {
+-                l2tp_log (LOG_DEBUG,
++                l2tp_log (LOG_INFO,
+                      "Unable to deliver closing message for tunnel %d. Destroying anyway.\n",
+                      t->ourtid);
+                 t->self->needclose = 0;
+@@ -273,6 +273,13 @@
+     /*
+      * OKAY, now send a packet with the right SAref values.
+      */
++#ifdef MICROHARD_MAST
++if(gconfig.debug_network){
++    l2tp_log(LOG_DEBUG,"%s sending with refme=%d refhim=%d using sarefnum=%d\n", 
++             (t->lac ? t->lac->entname : (t->lns ? t->lns->entname : "")),
++             t->refme, t->refhim, gconfig.sarefnum);
++}
++#endif
+     memset(&msgh, 0, sizeof(struct msghdr));
+ 
+     msgh.msg_control = cbuf;
+@@ -336,6 +343,11 @@
+ 		{
+ 			if (call->needclose ^ call->closing)
+ 			{
++                        #ifdef MICROHARD_MAST
++        l2tp_log (LOG_INFO, "%s: call_close1 Tunnel %s, ID = %d ref=%u/refhim=%u\n",__FUNCTION__,
++                 (tun->lac ? tun->lac->entname : (tun->lns ? tun->lns->entname : "")),
++                 tun->ourtid, tun->refme, tun->refhim);
++                        #endif
+ 				call_close (call);
+ 				call = tun->call_head;
+ 				if (!call)
+@@ -361,6 +373,11 @@
+ 			if (gconfig.debug_tunnel)
+ 				l2tp_log (LOG_DEBUG, "%s: closing down tunnel %d\n",
+ 						__FUNCTION__, tun->ourtid);
++                        #ifdef MICROHARD_MAST
++        l2tp_log (LOG_INFO, "%s: call_close2 Tunnel %s, ID = %d ref=%u/refhim=%u\n",__FUNCTION__,
++                 (tun->lac ? tun->lac->entname : (tun->lns ? tun->lns->entname : "")),
++                 tun->ourtid, tun->refme, tun->refhim);
++                        #endif
+ 			call_close (tun->self);
+ 			/* Reset the while loop
+ 			 * and check for NULL */
+diff -Nuar org/xl2tpd.c microhard/xl2tpd.c
+--- org/xl2tpd.c	2013-05-06 10:47:44.964277000 -0600
++++ microhard/xl2tpd.c	2013-05-16 11:22:36.993216663 -0600
+@@ -76,7 +76,97 @@
+     t->calls = 0;
+ }
+ 
++void write_res (FILE* res_file, const char *fmt, ...)
++{
++    if (!res_file || ferror (res_file) || feof (res_file))
++        return;
++    va_list args;
++    va_start (args, fmt);
++    vfprintf (res_file, fmt, args);
++    va_end (args);
++}
++
+ /* Now sends to syslog instead - MvO */
++#ifdef MICROHARD_MAST
++void show_status (void)
++{
++    struct tunnel *t;
++    struct call *c;
++    struct lns *tlns;
++    struct lac *tlac;
++    struct host *h;
++
++    FILE *logf = fopen ("/var/log/xl2tpd.log", "w");
++    if (!logf) {
++         l2tp_log (LOG_DEBUG, "%s: Can't open result file /var/log/xl2tpd.log\n",
++                      __FUNCTION__);
++         return;
++    }
++    write_res (logf, "====== xl2tpd statistics ========\n");
++    write_res (logf, "Number of tunnels open: %d\n", tunnels.count);
++
++    t = tunnels.head;
++    while (t)
++    {
++        write_res (logf, "Tunnel %s, ID = %d (local), %d (remote) to %s:%d,"
++                 " control_seq_num = %d, control_rec_seq_num = %d,"
++                 " cLr = %d, call count = %d ref=%u/refhim=%u\n",
++                 (t->lac ? t->lac->entname : (t->lns ? t->lns->entname : "")),
++                 t->ourtid, t->tid, IPADDY (t->peer.sin_addr),
++                 ntohs (t->peer.sin_port), t->control_seq_num,
++                  t->control_rec_seq_num, t->cLr, t->count,
++                  t->refme, t->refhim);
++        
++        c = t->call_head;
++        while (c)
++        {
++            write_res (logf, 
++                     "Call %s, ID = %d (local), %d (remote), serno = %u,"
++                     " data_seq_num = %d, data_rec_seq_num = %d,"
++                     " pLr = %d, tx = %u bytes (%u), rx= %u bytes (%u)\n",
++                     (c->lac ? c->lac->
++                      entname : (c->lns ? c->lns->entname : "")),
++                     c->ourcid,
++                     c->cid, c->serno, c->data_seq_num, c->data_rec_seq_num,
++                     c->pLr, c->tx_bytes, c->tx_pkts, c->rx_bytes, c->rx_pkts);
++            c = c->next;
++        }
++        t = t->next;
++    }
++    write_res (logf, "==========Config File===========\n");
++
++    tlns = deflns;
++    while (tlns)
++    {
++        write_res (logf, "LNS entry %s active=%s\n",
++                 (tlns->entname[0] ? tlns->entname : "(unnamed)"),
++                 (tlns->active ? "yes" : "no"));
++        tlns = tlns->next;
++    }
++    tlac = laclist;
++    while (tlac)
++    {
++        write_res (logf, "LAC entry %s, LNS is/are:",
++                 tlac->entname[0] ? tlac->entname : "(unnamed)");
++        h = tlac->lns;
++        if (h)
++        {
++            while (h)
++            {
++                write_res (logf, " %s", h->hostname);
++                h = h->next;
++            }
++        }
++        else
++            write_res (logf, " [none]");
++        tlac = tlac->next;
++        write_res (logf, "\n");
++    }
++    write_res (logf, "\n");
++    write_res (logf, "================================\n");
++    fclose(logf);
++}
++#else
+ void show_status (void)
+ {
+     struct schedule_entry *se;
+@@ -136,6 +226,7 @@
+                  ntohs (t->peer.sin_port), t->control_seq_num,
+                   t->control_rec_seq_num, t->cLr, t->count,
+                   t->refme, t->refhim);
++        
+         c = t->call_head;
+         while (c)
+         {
+@@ -181,7 +272,7 @@
+     };
+     l2tp_log (LOG_WARNING, "================================\n");
+ }
+-
++#endif
+ void null_handler(int sig)
+ {
+        /* FIXME 
+@@ -262,11 +353,12 @@
+                     break;
+                 }
+                 c = c->next;
+-            }
++                    }
+         }
+     }
+ }
+ 
++
+ void death_handler (int signal)
+ {
+     /*
+@@ -291,10 +383,20 @@
+                         sec = st->self->closing;
+                         if (st->lac)
+                                 st->lac->redial = 0;
++                        #ifdef MICROHARD_MAST
++        l2tp_log (LOG_INFO, "%s: call_close1 Tunnel %s, ID = %d ref=%u/refhim=%u\n",__FUNCTION__,
++                 (st->lac ? st->lac->entname : (st->lns ? st->lns->entname : "")),
++                 st->ourtid, st->refme, st->refhim);
++                        #endif
+                         call_close (st->self);
+                         if (!sec)
+                         {
+                                 st->self->closing = -1;
++                        #ifdef MICROHARD_MAST
++        l2tp_log (LOG_INFO, "%s: call_close sec=%d Tunnel %s, ID = %d ref=%u/refhim=%u\n",__FUNCTION__,sec,
++                 (st->lac ? st->lac->entname : (st->lns ? st->lns->entname : "")),
++                 st->ourtid, st->refme, st->refhim);
++                        #endif
+                                 call_close (st->self);
+                         }
+                         st = st2;
+@@ -659,7 +761,19 @@
+      * to do IPsec properly here, we need to set a socket policy,
+      * and/or communicate with pluto.
+      */
+-    tmp = get_call (0, 0, addr, port, IPSEC_SAREF_NULL, IPSEC_SAREF_NULL);
++#ifdef MICROHARD_MAST
++    if (lac && !lns) {
++        l2tp_log (LOG_INFO, "%s: LAC %s get_call with refme=%d refhim=%d\n",__FUNCTION__,
++             lac->entname, lac->refme, lac->refhim);
++        tmp = get_call (0, 0, addr, port, lac->refme, lac->refhim);
++    } else {
++        l2tp_log (LOG_INFO, "%s: %s get_call with refme=0 refhim=0\n",__FUNCTION__,
++                  (lac ? lac->entname : (lns ? lns->entname : "")));
++#endif
++        tmp = get_call (0, 0, addr, port, IPSEC_SAREF_NULL, IPSEC_SAREF_NULL);
++#ifdef MICROHARD_MAST
++    }
++#endif
+     if (!tmp)
+     {
+         l2tp_log (LOG_WARNING, "%s: Unable to create tunnel to %s.\n", __FUNCTION__,
+@@ -721,6 +835,14 @@
+     {
+         if (t->ourtid == tid)
+         {
++            #ifdef MICROHARD_MAST
++            /* limitation there is only one call on a tunnel */
++            if (t->count >= 1) {
++                l2tp_log (LOG_INFO, "%s: unable to make one more new call on tunnel %d\n",
++                     __FUNCTION__, tid);
++                return NULL;
++            }
++            #endif
+             tmp = new_call (t);
+             if (!tmp)
+             {
+@@ -747,10 +869,52 @@
+          tid);
+     return NULL;
+ }
++#ifdef MICROHARD_MAST
++static int do_script(char *pszPathName, char *pszArguments)
++	{
++	char * pArgs[16];
++	unsigned long ulNumArgs = 1;
++	char tmpArgs[256];
++	 char *pArg = NULL;
++	int pid = 0;    
++		
++	 pArgs[0]=pszPathName;
++	if (pszArguments != NULL)
++		{
++	   strcpy(tmpArgs, pszArguments);    
++		pArg = strtok(tmpArgs, " ");
++		while ((pArg != NULL) && (ulNumArgs < 16))
++			{         
++			pArgs[ulNumArgs] = pArg;
++			ulNumArgs++;          
++		    pArg = strtok(NULL, " ");
++			}
++		
++		}
++	  pArgs[ulNumArgs] = NULL; 
++      pid = vfork();
++      if (pid < 0) {
++        /* parent */
++        l2tp_log(LOG_WARNING,"%s: unable to fork(), abandoning!\n", __FUNCTION__);
++        return -EINVAL;
++      }
++	  else if (!pid)
++		{
++		/* We are the child! */            
++	  	execv(pszPathName, pArgs);
++		_exit (1);
++		}
++ 
++	return 0; 
++	}
++#endif
+ 
+ void magic_lac_dial (void *data)
+ {
+     struct lac *lac;
++#ifdef MICROHARD_MAST
++    char Args[256];
++#endif
+     lac = (struct lac *) data;
+     if (!lac)
+     {
+@@ -762,11 +926,22 @@
+         l2tp_log (LOG_DEBUG, "%s: LAC %s not active", __FUNCTION__, lac->entname);
+         return;
+     }
++#ifdef MICROHARD_MAST
++    if (lac->t && (lac->t->count >= 1)) {
++        l2tp_log (LOG_INFO, "%s: LAC %s can't make one more call because has had a call already.\n", __FUNCTION__, lac->entname);
++        return;
++    }
++#endif
+     lac->rsched = NULL;
+     lac->rtries++;
+     if (lac->rmax && (lac->rtries > lac->rmax))
+     {
+-        l2tp_log (LOG_INFO, "%s: maximum retries exceeded.\n", __FUNCTION__);
++        l2tp_log (LOG_INFO, "%s: LAC %s maximum retries exceeded.\n", __FUNCTION__, lac->entname);
++#ifdef MICROHARD_MAST
++        sprintf(Args,"mre_x2c %s",lac->entname);
++        do_script("/sbin/mipsec.sh",Args);
++        l2tp_log (LOG_INFO, "%s: LAC %s do_script return.\n", __FUNCTION__, lac->entname);
++#endif
+         return;
+     }
+     if (!lac->t)
+@@ -828,6 +1003,52 @@
+     return;
+ }
+ 
++#ifdef MICROHARD_MAST
++void diable_server (void)
++{
++    /*
++       * If we get here, somebody terminated us with a kill or a control-c.
++       * we call call_close on each tunnel twice to get a StopCCN out
++       * for each one (we can't pause to make sure it's received.
++       * Then we close the connections
++     */
++    struct tunnel *st, *st2;
++    int lnstid[256];
++    int lnstcon=0;
++    int i=0;
++    
++    st = tunnels.head;
++    while (st)
++    {
++        l2tp_log (LOG_INFO, "%s: Tunnel %s, ID = %d (local), %d (remote) to %s:%d,"
++                 " control_seq_num = %d, control_rec_seq_num = %d,"
++                 " cLr = %d, call count = %d ref=%u/refhim=%u",__FUNCTION__,
++                 (st->lac ? st->lac->entname : (st->lns ? st->lns->entname : "")),
++                 st->ourtid, st->tid, IPADDY (st->peer.sin_addr),
++                 ntohs (st->peer.sin_port), st->control_seq_num,
++                  st->control_rec_seq_num, st->cLr, st->count,
++                  st->refme, st->refhim);
++         st2 = st->next;
++         
++         if (st->lns && !st->lac) {
++             l2tp_log (LOG_INFO, "%s: Server will close LNS %s local %d pppd %d\n", __FUNCTION__,st->lns->entname,st->ourtid, st->call_head->pppd);
++             lnstid[lnstcon]=st->ourtid;
++             lnstcon++;
++         }
++
++         st = st2;
++    }
++    st=NULL;
++    st2=NULL;
++    if (lnstcon) {
++        for (i=0;i<lnstcon;i++) {
++            l2tp_log (LOG_INFO, "%s: Server actul closing tunnel %d\n", __FUNCTION__,lnstid[i]);
++            lac_disconnect(lnstid[i]);
++        }
++    }
++}
++#endif
++
+ struct tunnel *new_tunnel ()
+ {
+     struct tunnel *tmp = malloc (sizeof (struct tunnel));
+@@ -904,15 +1125,6 @@
+     return tmp;
+ }
+ 
+-void write_res (FILE* res_file, const char *fmt, ...)
+-{
+-    if (!res_file || ferror (res_file) || feof (res_file))
+-        return;
+-    va_list args;
+-    va_start (args, fmt);
+-    vfprintf (res_file, fmt, args);
+-    va_end (args);
+-}
+ 
+ int parse_one_line_lac (char* bufp, struct lac *tc)
+ {
+@@ -971,6 +1183,64 @@
+     return 0;
+ }
+ 
++#ifdef MICROHARD_MAST
++int parse_one_line_lns (char* bufp, struct lns *tc)
++{
++    /* FIXME: I should check for incompatible options */
++    char *s, *d, *t;
++    int linenum = 0;
++    
++    s = strtok (bufp, ";");
++    // parse options token by token    
++    while (s != NULL)
++    {
++        linenum++;
++        
++        while ((*s < 33) && *s)
++            s++;                /* Skip over beginning white space */
++        t = s + strlen (s);
++        while ((t >= s) && (*t < 33))
++            *(t--) = 0;         /* Ditch trailing white space */
++        if (!strlen (s))
++            continue;
++        if (!(t = strchr (s, '=')))
++        {
++            l2tp_log (LOG_WARNING, "%s: token %d: no '=' in data\n",
++                 __FUNCTION__, linenum);
++            return -1;
++        }
++        d = t;
++        d--;
++        t++;
++        while ((d >= s) && (*d < 33))
++            d--;
++        d++;
++        *d = 0;
++        while (*t && (*t < 33))
++            t++;
++
++        l2tp_log (LOG_INFO, "%s: field is %s, value is %s\n",
++            __FUNCTION__, s, t);
++
++        /* Okay, bit twidling is done.  Let's handle this */
++        
++        switch (parse_one_option (s, t, CONTEXT_LNS, tc))
++        {
++        case -1:
++            l2tp_log (LOG_WARNING, "%s: error token %d\n",
++                __FUNCTION__, linenum);
++            return -1;
++        case -2:
++            l2tp_log (LOG_CRIT, "%s: token %d: Unknown field '%s'\n",
++                __FUNCTION__, linenum, s);
++            return -1;
++        }
++
++        s = strtok (NULL, ";");
++    }
++    return 0;
++}
++#endif
+ void do_control ()
+ {
+     char buf[CONTROL_PIPE_MESSAGE_SIZE];
+@@ -1012,9 +1282,19 @@
+         if (buf[cnt - 1] == '\n')
+             buf[--cnt] = 0;
+ #ifdef DEBUG_CONTROL
+-        l2tp_log (LOG_DEBUG, "%s: Got message %s (%d bytes long)\n",
++        l2tp_log (LOG_DEBUG, "%s: Got message %s \n (%d bytes long)\n",
+                    __FUNCTION__, buf, cnt);
+ #endif
++
++#ifdef MICROHARD_MAST
++       int i=0;
++       char tmp[100];
++       memset(tmp,0,sizeof(tmp));
++       for(i=0; i<cnt; i+=80) {
++               strncpy(tmp,&buf[i],80);
++               l2tp_log (LOG_DEBUG, "%s: cmd(%4d):%s:", __FUNCTION__, i, tmp);
++       }
++#endif
+         bufp = buf;
+         /* check if caller want to get result */
+         if (bufp[0] == '@')
+@@ -1259,9 +1539,23 @@
+                 {
+                     lac->next = laclist;
+                     laclist = lac;
++                    l2tp_log (LOG_INFO, "%s: 'create a new lac %s with refme=%d refhim=%d'\n", __FUNCTION__,
++                         (lac->entname[0] ? lac->entname : "(unnamed)"), lac->refme, lac->refhim);
+                 }
+-                if (lac->autodial)
++#ifdef MICROHARD_MAST
++                else
+                 {
++                   l2tp_log (LOG_INFO, "%s: 'update lac %s with refme=%d refhim=%d'\n", __FUNCTION__,
++                         (lac->entname[0] ? lac->entname : "(unnamed)"), lac->refme, lac->refhim);
++                   if (lac->t) {
++                       l2tp_log (LOG_INFO, "%s: '%s modifies refme=%d refhim=%d'\n", __FUNCTION__,
++                         (lac->entname[0] ? lac->entname : "(unnamed)"), lac->refme, lac->refhim);
++                        lac->t->refhim=lac->refhim;
++                        lac->t->refme=lac->refme;
++                   }
++                }
++#endif
++                if (lac->autodial) {
+ #ifdef DEBUG_MAGIC
+                     l2tp_log (LOG_DEBUG, "%s: Autodialing '%s'\n", __FUNCTION__,
+                          lac->entname[0] ? lac->entname : "(unnamed)");
+@@ -1272,6 +1566,28 @@
+                     /* FIXME: Should I check magic_lac_dial result somehow? */
+                 }
+                 write_res (resf, "%02i OK\n", 0);
++
++#ifdef MICROHARD_MAST
++            switch_io = 1;  /* jz: Switch for Incoming - Outgoing Calls */
++
++            if(lac) {
++                lac->active = -1;
++                lac->rtries = 0;
++                if (!lac->c)
++                {
++                    l2tp_log (LOG_INFO,
++                              "Session '%s' calling...\n", lac->entname);
++                    magic_lac_dial (lac);
++                    write_res (resf, "%02i OK\n", 0);
++                } else {
++                    l2tp_log (LOG_DEBUG,
++                              "Session '%s' already active!\n", lac->entname);
++                    write_res (resf, "%02i Session '%s' already active!\n", 1, 
++                                 lac->entname);
++                }
++            }
++
++#endif
+             }
+             break;
+         case 'r':
+@@ -1307,6 +1623,32 @@
+             lac = NULL;
+             write_res (resf, "%02i OK\n", 0);            
+             break;
++#ifdef MICROHARD_MAST
++        case 'm':
++            /* update LNS setting */
++            diable_server();
++            if (!deflns)
++            {
++                 deflns = new_lns ();
++                 if (!deflns)
++                 {
++                        write_res (resf,
++                            "%02i Could't create deflns: no memory\n", 2);
++                        l2tp_log (LOG_CRIT,
++                            "%s: Couldn't create deflns\n", __FUNCTION__);
++                        break;
++                 }
++                 strncpy (deflns->entname, "default",
++                               sizeof (deflns->entname));
++            }
++            bufp = bufp + 1;
++            if (parse_one_line_lns (bufp, deflns))
++            {
++                    write_res (resf, "%02i Configuration parse error\n", 3);
++                    break;
++            }
++            break;
++#endif
+         default:
+             l2tp_log (LOG_DEBUG, "Unknown command %c\n", bufp[0]);
+             write_res (resf, "%02i Unknown command %c\n", 1, bufp[0]);

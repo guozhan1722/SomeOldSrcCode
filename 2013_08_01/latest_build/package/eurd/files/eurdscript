@@ -1,0 +1,35 @@
+#!/bin/ash
+#Dont put it into & background mode, we need it return then go next step.
+#SubProgram will wait until it come back.
+ 
+exec>/dev/null 2>&1
+ 
+case "$1" in 
+
+
+eurd_iw)
+	rm /tmp/run/eurd_iw_state$3
+	netdevs=$(ls /sys/class/ieee80211/phy$2/device/net)
+	for dev in $netdevs; do
+		ap_iw=$(iw dev "$dev" station dump 2>/dev/null)
+		echo -e $ap_iw"\n">>/tmp/run/eurd_iw_state$3
+	done
+    ;;
+
+IPlookup)
+	/usr/bin/nslookup  $2 > /tmp/run/u_s2ip$3
+    ;;
+
+wget_loc)
+   wget http://www.google.com/glm/mmap --post-file=/var/run/wget.location -O- > /var/run/nmap 
+   ;;
+
+	
+*)
+    echo "Usage: /bin/eurdscriptnone {|ip_restart|ntpd_restart|ntpd_stop|dhcpd_restart|dhcpd_stop|soipd1_restart|soipd1_stop||soipd2_restart|soipd2_stop||soipdusb_restart|soipdusb_stop|}"
+    exit 1
+   ;;
+esac 
+
+exit 0
+

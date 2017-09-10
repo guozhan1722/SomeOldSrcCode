@@ -1,0 +1,16 @@
+/001-lowlevel-config.patch/1.1/Thu Apr  1 22:11:17 2010/-kkv/Tar71xx_4g
+/002-dataflash_machine.patch/1.1/Thu Apr  1 22:11:17 2010/-kkv/Tar71xx_4g
+/003-mac_init.patch/1.1/Thu Apr  1 22:11:17 2010/-kkv/Tar71xx_4g
+/004-mac_config.patch/1.1/Thu Apr  1 22:11:17 2010/-kkv/Tar71xx_4g
+/005-remove_float.patch/1.1/Thu Apr  1 22:11:17 2010/-kkv/Tar71xx_4g
+/006-generate_params.patch/1.1/Thu Apr  1 22:11:17 2010/-kkv/Tar71xx_4g
+/007-ubparams_bugfix.patch/1.1/Thu Apr  1 22:11:17 2010/-kkv/Tar71xx_4g
+/008-ubparams_bugfix.patch/1.1/Thu Apr  1 22:11:17 2010/-kkv/Tar71xx_4g
+/009-mac_init_bugfix.patch/1.1/Thu Apr  1 22:11:17 2010/-kkv/Tar71xx_4g
+/010-irda-patch-remove.patch/1.1/Thu Apr  1 22:11:17 2010/-kkv/Tar71xx_4g
+/011-ubparams_update.patch/1.1/Thu Apr  1 22:11:17 2010/-kkv/Tar71xx_4g
+/012-make_3.81.patch/1.1/Thu Apr  1 22:11:17 2010/-kkv/Tar71xx_4g
+/013-params-in-config.patch/1.1/Thu Apr  1 22:11:17 2010/-kkv/Tar71xx_4g
+/014-ubparam-kernel.patch/1.1/Thu Apr  1 22:11:17 2010/-kkv/Tar71xx_4g
+/015-eabi_fixes.patch/1.1/Thu Apr  1 22:11:17 2010/-kkv/Tar71xx_4g
+D

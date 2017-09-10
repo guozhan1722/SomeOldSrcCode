@@ -1,0 +1,43 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2008 OpenWrt.org
+
+START=90
+RUN_D=/var
+PID_F=$RUN_D/stunnel.pid
+
+start() {
+       	config_load webif
+        config_get ssl_enable general ssl 0
+
+        if [ "$ssl_enable" = "1" ]; then
+        	if [ -s "/etc/stunnel/stunnel.pem" ]; then
+        		chmod og-rwx /etc/stunnel/stunnel.pem
+        		[ ! -f $PID_F ] && {
+                                config_get ssl_port general ssl_port 443
+                                config_load httpd
+                                cfg=$CONFIG_SECTION
+                                config_get http_port "$cfg" port "80"
+                                old_httpport=$(awk '$1=="[https]" {nc=1;} nc==1 {if($1=="connect") {print $0;}}' /etc/stunnel/stunnel.conf |head -n1)
+                                old_port=$(awk '$1=="[https]" {nc=1;} nc==1 {if($1=="accept") {print $0;}}' /etc/stunnel/stunnel.conf |head -n1)
+                                eval new_port='"accept = $ssl_port"'
+                                eval new_httpport='"connect = $http_port"'
+                                if [ "$old_port" != "" ];then
+                                    sed 's/'"$old_port"'/'"$new_port"'/g' /etc/stunnel/stunnel.conf >/tmp/tmp_stunnel.conf
+                                    sed 's/'"$old_httpport"'/'"$new_httpport"'/g' /tmp/tmp_stunnel.conf >/tmp/tmp_stunnel1.conf
+                                    cp /tmp/tmp_stunnel1.conf /etc/stunnel/stunnel.conf
+                                fi
+                                stunnel
+                                ps |grep "stunnel" | grep -v "grep"| awk '{print $1}' > "$PDI_F"
+                        }
+        	fi
+        fi
+}
+
+stop() {
+        echo -n "Stopping STUNNEL... "
+	[ -f $PID_F ] && {
+                killall -9 stunnel >/dev/null 2>&1
+		rm -f $PID_F
+                sleep 1
+        }                                                                                
+}

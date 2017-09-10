@@ -1,0 +1,47 @@
+#!/bin/sh /etc/rc.common
+
+START=99 
+
+boot() {
+    config_load twatchdog
+
+    local enable
+    local rstimer
+    local rbtimer
+    local iface
+
+    config_get  enable   vip4g  enable
+    config_get  rstimer   vip4g  reset_timer
+    config_get  rbtimer   vip4g  reboot_timer
+    config_get  iface    vip4g  iface  
+
+    if [ "$enable" = "1" ]; then
+        t_watchdog -t $rstimer -T $rbtimer -b 120 -i $iface &
+    fi
+}
+
+start() {
+
+    config_load twatchdog
+
+    local enable
+    local rstimer
+    local rbtimer
+    local iface
+
+    config_get  enable   vip4g  enable
+    config_get  rstimer   vip4g  reset_timer
+    config_get  rbtimer   vip4g  reboot_timer
+    config_get  iface    vip4g  iface  
+
+    if [ "$enable" = "1" ]; then
+        t_watchdog -t $rstimer -T $rbtimer -i $iface &
+    fi
+
+}
+
+stop() {
+    killall -9 S${START}twatchdog 2>&- >&-
+    killall -9 t_watchdog 2>&- >&-
+}
+

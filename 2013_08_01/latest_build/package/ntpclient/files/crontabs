@@ -1,0 +1,8 @@
+config 'crontab'
+    option 'minutes' '*/3'
+    option 'hours' '*'
+    option 'days' '*'
+    option 'months' '*'
+    option 'weekdays' '*'
+    option 'command' '/etc/init.d/ntpclient start'
+    option 'enabled' '1'

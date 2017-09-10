@@ -1,0 +1,15 @@
+#!/bin/sh /etc/rc.common
+
+START=99 
+STOP=99
+
+start(){
+  killall -9 salert
+  /bin/salert >/dev/null 2>&1 &
+}
+
+stop(){
+  killall -9 salert
+}
+
+

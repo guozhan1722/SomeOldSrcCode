@@ -1,0 +1,10 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: gnokii
+Description: Gnokii library interface
+Version: 0.6.21
+Libs: -L${libdir} -lgnokii  -lusb -lbluetooth   -lXpm -lX11 
+Cflags: -I${includedir} 

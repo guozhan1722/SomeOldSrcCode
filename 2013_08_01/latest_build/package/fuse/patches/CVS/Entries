@@ -1,0 +1,6 @@
+/100-cross_compile.patch/1.1/Thu Apr  1 22:11:12 2010/-kkv/Tar71xx_4g
+/102-no_depmod.patch/1.1/Thu Apr  1 22:11:12 2010/-kkv/Tar71xx_4g
+/112-no_break_on_mknod.patch/1.1/Thu Apr  1 22:11:12 2010/-kkv/Tar71xx_4g
+/200-disable_compat.patch/1.1/Thu Apr  1 22:11:12 2010/-kkv/Tar71xx_4g
+/300-workaround-uclibc-pthread-breakage.patch/1.1/Thu Apr  1 22:11:11 2010/-kkv/Tar71xx_4g
+D

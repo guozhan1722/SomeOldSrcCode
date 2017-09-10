@@ -1,0 +1,47 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+. /etc/version
+START=10
+STOP=90
+
+start_rssi_led_flashing() {
+            echo heartbeat > /sys/class/leds/RSSIMIN/trigger
+            echo heartbeat > /sys/class/leds/RSSIMID/trigger
+            echo heartbeat > /sys/class/leds/RSSIMAX/trigger
+}
+
+stop_rssi_led_flashing() {
+        echo "none" > /sys/class/leds/RSSIMIN/trigger
+        echo "none" > /sys/class/leds/RSSIMID/trigger
+        echo "none" > /sys/class/leds/RSSIMAX/trigger
+        echo 1 > /sys/class/leds/RSSIMIN/brightness
+        echo 1 > /sys/class/leds/RSSIMID/brightness
+        echo 1 > /sys/class/leds/RSSIMAX/brightness
+}
+
+start() {
+        logger "lte_rssi started"
+	#config_load lte
+        #havesim=$(cat /sys/class/button/SIM_STAT/status)        
+
+	#config_get disabled connect disabled "0"
+
+        #if [ "$disabled" = "0" ]; then       
+            /etc/ledcon.sh lte_rssi 2>/dev/null &
+        #fi
+
+}
+
+stop() {
+        logger "lte_rssi stopped" 
+        killall ledcon.sh
+        echo 1 > /sys/class/leds/RSSIMIN/brightness
+        echo 1 > /sys/class/leds/RSSIMID/brightness
+        echo 1 > /sys/class/leds/RSSIMAX/brightness  
+}
+
+restart() {
+	stop
+	start
+}

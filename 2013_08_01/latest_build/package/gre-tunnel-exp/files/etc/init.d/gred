@@ -1,0 +1,27 @@
+#!/bin/sh /etc/rc.common
+
+START=44
+. /etc/functions.sh
+
+setup_gre() {
+    local cfg="$1"
+    /bin/gre add_gre "$cfg" >/dev/null 2>&1
+}
+
+del_gre() {
+    local cfg="$1"
+    /bin/gre shutdown "$cfg" >/dev/null 2>&1
+}
+
+start(){
+    config_load gre-tunnels
+    config_foreach setup_gre gretunnel
+}
+
+stop(){
+    config_load gre-tunnels
+    config_foreach del_gre gretunnel
+}
+
+
+

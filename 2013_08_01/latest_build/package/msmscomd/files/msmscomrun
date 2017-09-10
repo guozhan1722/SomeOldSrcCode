@@ -1,0 +1,11 @@
+#!/bin/sh
+
+while true
+do
+    /bin/msmscom
+    sleep 10  
+done
+
+
+
+

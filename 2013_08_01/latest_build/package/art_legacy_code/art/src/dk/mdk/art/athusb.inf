@@ -1,0 +1,61 @@
+; Installation inf for Atheros Predator USB board
+;
+
+
+[Version]
+Signature="$CHICAGO$"
+Class=USB
+ClassGUID={36FC9E60-C465-11CF-8056-444553540000}
+provider=%ATHR%
+DriverVer=12/05/2003,1.00.001
+
+[SourceDisksNames]
+1=%Disk_Description%,,,
+
+[SourceDisksFiles]
+ATHUSB.sys = 1
+
+[Manufacturer]
+%MfgName%=Atheros
+
+[Atheros]
+%USB\VID_0CF3&PID_0001.DeviceDesc%=ATHUSB.Dev, USB\VID_0CF3&PID_0001
+%USB\VID_0CF3&PID_0001.DeviceDesc%=ATHUSB.Dev, USB\VID_168C&PID_0001
+
+[DestinationDirs]
+ATHUSB.Files.Ext = 10,System32\Drivers
+
+[ATHUSB.Dev.NT]
+CopyFiles=ATHUSB.Files.Ext
+
+[ATHUSB.Dev.NT.Services]
+Addservice = ATHUSB, 0x00000002, ATHUSB.AddService
+
+[ATHUSB.AddService]
+DisplayName    = %ATHUSB.SvcDesc%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 3                  ; SERVICE_DEMAND_START
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %10%\System32\Drivers\ATHUSB.sys
+AddReg         = ATHUSB.AddReg
+LoadOrderGroup = Base
+
+[ATHUSB.AddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,ATHUSB.sys
+HKR,"Parameters","MaximumTransferSize",0x10001,4096
+HKR,"Parameters","DebugLevel",0x10001,3
+HKR,"Parameters","AthUsbEnable",0x10001,0
+
+[ATHUSB.Files.Ext]
+ATHUSB.sys
+
+;---------------------------------------------------------------;
+
+[Strings]
+ATHR="Atheros"
+MfgName="Atheros"
+Disk_Description="Atheros USB Installation Disk"
+USB\VID_0CF3&PID_0001.DeviceDesc="Atheros AR5523 USB Board"
+ATHUSB.SvcDesc="Atheros AR5523 driver"
+

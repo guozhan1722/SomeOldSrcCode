@@ -1,0 +1,23 @@
+/01-netdev.patch/1.1/Fri Dec 17 20:14:01 2010/-kkv/Tar71xx_4g
+/02-ksize.patch/1.1/Fri Dec 17 20:14:01 2010/-kkv/Tar71xx_4g
+/03-rfkill.patch/1.1/Fri Dec 17 20:14:00 2010/-kkv/Tar71xx_4g
+/04-netns.patch/1.1/Fri Dec 17 20:14:01 2010/-kkv/Tar71xx_4g
+/05-usb.patch/1.1/Fri Dec 17 20:14:00 2010/-kkv/Tar71xx_4g
+/06-header-changes.patch/1.1/Fri Dec 17 20:14:00 2010/-kkv/Tar71xx_4g
+/07-change-default-rate-alg.patch/1.1/Fri Dec 17 20:14:01 2010/-kkv/Tar71xx_4g
+/09-threaded-irq.patch/1.1/Fri Dec 17 20:14:01 2010/-kkv/Tar71xx_4g
+/10-add-wext-handlers-to-netdev.patch/1.1/Fri Dec 17 20:14:00 2010/-kkv/Tar71xx_4g
+/11-dev-pm-ops.patch/1.1/Fri Dec 17 20:14:01 2010/-kkv/Tar71xx_4g
+/12-iw_handler-changes.patch/1.1/Fri Dec 17 20:14:01 2010/-kkv/Tar71xx_4g
+/13-trace.patch/1.1/Fri Dec 17 20:14:01 2010/-kkv/Tar71xx_4g
+/14-device-type.patch/1.1/Fri Dec 17 20:14:00 2010/-kkv/Tar71xx_4g
+/15-symbol-export-conflicts.patch/1.1/Fri Dec 17 20:14:01 2010/-kkv/Tar71xx_4g
+/17-netdev-queue.patch/1.1/Fri Dec 17 20:14:01 2010/-kkv/Tar71xx_4g
+/18-rename-usb-net-symbols.patch/1.1/Fri Dec 17 20:14:00 2010/-kkv/Tar71xx_4g
+/19-kfifo.patch/1.1/Fri Dec 17 20:14:01 2010/-kkv/Tar71xx_4g
+/20-pcidev.patch/1.1/Fri Dec 17 20:14:00 2010/-kkv/Tar71xx_4g
+/24-pcmcia.patch/1.1/Fri Dec 17 20:14:00 2010/-kkv/Tar71xx_4g
+/98-add-compat-wireless.patch/1.1/Fri Dec 17 20:14:00 2010/-kkv/Tar71xx_4g
+/99-change-makefiles.patch/1.1/Fri Dec 17 20:14:00 2010/-kkv/Tar71xx_4g
+/README/1.1/Fri Dec 17 20:14:01 2010/-kkv/Tar71xx_4g
+D

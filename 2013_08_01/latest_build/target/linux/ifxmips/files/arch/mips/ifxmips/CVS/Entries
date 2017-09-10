@@ -1,0 +1,13 @@
+/Kconfig/1.1/Thu Apr  1 22:09:27 2010/-kkv/Tar71xx_4g
+/Makefile/1.1/Thu Apr  1 22:09:28 2010/-kkv/Tar71xx_4g
+/board.c/1.1/Thu Apr  1 22:09:27 2010/-kkv/Tar71xx_4g
+/clock.c/1.1/Thu Apr  1 22:09:27 2010/-kkv/Tar71xx_4g
+/dma-core.c/1.1/Thu Apr  1 22:09:28 2010/-kkv/Tar71xx_4g
+/gpio.c/1.1/Thu Apr  1 22:09:28 2010/-kkv/Tar71xx_4g
+/irq.c/1.1/Thu Apr  1 22:09:28 2010/-kkv/Tar71xx_4g
+/pmu.c/1.1/Thu Apr  1 22:09:27 2010/-kkv/Tar71xx_4g
+/prom.c/1.1/Thu Apr  1 22:09:28 2010/-kkv/Tar71xx_4g
+/reset.c/1.1/Thu Apr  1 22:09:28 2010/-kkv/Tar71xx_4g
+/setup.c/1.1/Thu Apr  1 22:09:28 2010/-kkv/Tar71xx_4g
+/timer.c/1.1/Thu Apr  1 22:09:27 2010/-kkv/Tar71xx_4g
+D

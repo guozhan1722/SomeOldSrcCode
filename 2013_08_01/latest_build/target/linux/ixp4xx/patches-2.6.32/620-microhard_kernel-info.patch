@@ -1,0 +1,188 @@
+diff -Nuar linux_old/arch/arm/kernel/setup.c linux_new/arch/arm/kernel/setup.c
+--- linux_old/arch/arm/kernel/setup.c	2010-07-05 09:25:45.000000000 -0600
++++ linux_new/arch/arm/kernel/setup.c	2010-07-05 12:50:55.000000000 -0600
+@@ -87,6 +87,11 @@
+ unsigned int elf_hwcap;
+ EXPORT_SYMBOL(elf_hwcap);
+ 
++unsigned int console_quiet=2;
++EXPORT_SYMBOL(console_quiet);
++
++unsigned int super_user=0;
++EXPORT_SYMBOL(super_user);
+ 
+ #ifdef MULTI_CPU
+ struct processor processor;
+@@ -298,9 +303,9 @@
+ 	cpu_cache = *list->cache;
+ #endif
+ 
+-	printk("CPU: %s [%08x] revision %d (ARMv%s), cr=%08lx\n",
+-	       cpu_name, read_cpuid_id(), read_cpuid_id() & 15,
+-	       proc_arch[cpu_architecture()], cr_alignment);
++//	printk("CPU: %s [%08x] revision %d (ARMv%s), cr=%08lx\n",
++//	       cpu_name, read_cpuid_id(), read_cpuid_id() & 15,
++//	       proc_arch[cpu_architecture()], cr_alignment);
+ 
+ 	sprintf(init_utsname()->machine, "%s%c", list->arch_name, ENDIANNESS);
+ 	sprintf(elf_platform, "%s%c", list->elf_name, ENDIANNESS);
+@@ -378,11 +383,17 @@
+ 		while (1);
+ 	}
+ 
+-	printk("Machine: %s\n", list->name);
++//	printk("Machine: %s\n", list->name);
+ 
+ 	return list;
+ }
+ 
++static void __init con_quiet(char **p)
++{
++	console_quiet = memparse(*p, p);
++}
++__early_param("console_quiet=", con_quiet);
++
+ static int __init arm_add_memory(unsigned long start, unsigned long size)
+ {
+ 	struct membank *bank = &meminfo.bank[meminfo.nr_banks];
+diff -Nuar linux_old/arch/arm/mach-ixp4xx/include/mach/uncompress.h linux_new/arch/arm/mach-ixp4xx/include/mach/uncompress.h
+--- linux_old/arch/arm/mach-ixp4xx/include/mach/uncompress.h	2010-07-05 09:32:16.000000000 -0600
++++ linux_new/arch/arm/mach-ixp4xx/include/mach/uncompress.h	2010-07-05 12:51:32.000000000 -0600
+@@ -25,10 +25,12 @@
+ {
+ 	/* Check THRE and TEMT bits before we transmit the character.
+ 	 */
+-	while ((uart_base[UART_LSR] & TX_DONE) != TX_DONE)
++#if 0
++    while ((uart_base[UART_LSR] & TX_DONE) != TX_DONE)
+ 		barrier();
+ 
+ 	*uart_base = c;
++#endif
+ }
+ 
+ static void flush(void)
+diff -Nuar linux_old/fs/mini_fo/main.c linux_new/fs/mini_fo/main.c
+--- linux_old/fs/mini_fo/main.c	2010-07-05 13:25:00.000000000 -0600
++++ linux_new/fs/mini_fo/main.c	2010-07-05 13:50:49.000000000 -0600
+@@ -179,7 +179,7 @@
+ 		*tmp = '\0';
+ 		if (!strncmp("base=", options, 5)) {
+ 			name = options + 5;
+-			printk(KERN_INFO "mini_fo: using base directory: %s\n", name);
++		//	printk(KERN_INFO "mini_fo: using base directory: %s\n", name);
+ 
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+ 			if (path_init(name, LOOKUP_FOLLOW, &nd))
+@@ -199,7 +199,7 @@
+ 		} else if(!strncmp("sto=", options, 4)) {
+ 			/* parse the storage dir */
+ 			name = options + 4;
+-			printk(KERN_INFO "mini_fo: using storage directory: %s\n", name);
++		//	printk(KERN_INFO "mini_fo: using storage directory: %s\n", name);
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+ 			if(path_init(name, LOOKUP_FOLLOW, &nd2))
+ 				err = path_walk(name, &nd2);
+diff -Nuar linux_old/init/main.c linux_new/init/main.c
+--- linux_old/init/main.c	2010-07-05 09:26:56.000000000 -0600
++++ linux_new/init/main.c	2010-07-05 12:52:04.000000000 -0600
+@@ -81,6 +81,8 @@
+ #include <asm/smp.h>
+ #endif
+ 
++extern int console_quiet;
++
+ static int kernel_init(void *);
+ 
+ extern void init_IRQ(void);
+@@ -547,7 +549,7 @@
+ 	tick_init();
+ 	boot_cpu_init();
+ 	page_address_init();
+-	printk(KERN_NOTICE "%s", linux_banner);
++//	printk(KERN_NOTICE "%s", linux_banner);
+ 	setup_arch(&command_line);
+ 	mm_init_owner(&init_mm, &init_task);
+ 	setup_command_line(command_line);
+@@ -814,6 +816,8 @@
+ 	if (sys_open((const char __user *) "/dev/console", O_RDWR, 0) < 0)
+ 		printk(KERN_WARNING "System Loading ...\n");
+ 
++	console_quiet=0;
++
+ 	(void) sys_dup(0);
+ 	(void) sys_dup(0);
+ 
+diff -Nuar linux_old/kernel/printk.c linux_new/kernel/printk.c
+--- linux_old/kernel/printk.c	2010-07-05 09:27:55.000000000 -0600
++++ linux_new/kernel/printk.c	2010-07-05 12:52:28.000000000 -0600
+@@ -36,6 +36,9 @@
+ 
+ #include <asm/uaccess.h>
+ 
++extern int console_quiet;
++extern int super_user;
++
+ /*
+  * for_each_console() allows you to iterate on each console
+  */
+@@ -591,11 +594,27 @@
+ 	va_list args;
+ 	int r;
+ 
+-	va_start(args, fmt);
+-	r = vprintk(fmt, args);
+-	va_end(args);
++//	va_start(args, fmt);
++//	r = vprintk(fmt, args);
++//	va_end(args);
++
++//	return r;
++
++	if((console_quiet==0)||(super_user ==1)) {
++		va_start(args, fmt);
++		r = vprintk(fmt, args);
++		va_end(args);
++  
++		return r;
++	}else if (console_quiet==2) {
++		fmt=".";
++		va_start(args, fmt);
++		r = vprintk(fmt, args);
++		va_end(args);
++		return r;
++	}else
++		return 0;
+ 
+-	return r;
+ }
+ 
+ /* cpu currently holding logbuf_lock */
+@@ -745,9 +764,24 @@
+ 	for ( ; *p; p++) {
+ 		if (new_text_line) {
+ 			/* Always output the token */
+-			emit_log_char('<');
+-			emit_log_char(current_log_level + '0');
+-			emit_log_char('>');
++//			emit_log_char('<');
++//			emit_log_char(current_log_level + '0');
++//			emit_log_char('>');
++
++			if(console_quiet==0) {
++				emit_log_char('<');
++				emit_log_char(current_log_level + '0');
++				emit_log_char('>');
++			} else if(console_quiet==2) {
++				emit_log_char('.');
++				emit_log_char('.');
++				emit_log_char('.');
++			} else {
++				emit_log_char(' ');
++				emit_log_char(' ');
++				emit_log_char(' ');
++			}
++
+ 			printed_len += 3;
+ 			new_text_line = 0;
+ 

@@ -1,0 +1,291 @@
+diff -Nuar linux_old/arch/mips/ar71xx/prom.c linux_new/arch/mips/ar71xx/prom.c
+--- linux_old/arch/mips/ar71xx/prom.c	2010-10-14 14:54:56.000000000 -0600
++++ linux_new/arch/mips/ar71xx/prom.c	2010-10-15 10:27:45.000000000 -0600
+@@ -20,6 +20,11 @@
+ 
+ #include <asm/mach-ar71xx/ar71xx.h>
+ 
++#define MICROHARD 1
++#ifdef MICROHARD
++extern unsigned int console_quiet;
++#endif
++
+ static inline int is_valid_ram_addr(void *addr)
+ {
+ 	if (((u32) addr > KSEG0) &&
+@@ -127,11 +132,13 @@
+ {
+ 	int i;
+ 
++#ifndef MICROHARD
+ 	if (ar71xx_use__image_cmdline())
+ 		return;
+ 
+ 	if (!is_valid_ram_addr(argv))
+ 		return;
++#endif
+ 
+ 	for (i = 0; i < argc; i++)
+ 		if (is_valid_ram_addr(argv[i])) {
+@@ -148,10 +155,12 @@
+ 			"fw_arg2=%08x, fw_arg3=%08x\n",
+ 			(unsigned int)fw_arg0, (unsigned int)fw_arg1,
+ 			(unsigned int)fw_arg2, (unsigned int)fw_arg3);
++	//printk("prom: console_quiet = %d\n",console_quiet);
+ 
+-
++#ifndef MICROHARD
+ 	if (ar71xx_prom_init_myloader())
+ 		return;
++#endif
+ 
+ 	ar71xx_prom_init_cmdline(fw_arg0, (char **)fw_arg1);
+ 
+diff -Nuar linux_old/arch/mips/ar71xx/setup.c linux_new/arch/mips/ar71xx/setup.c
+--- linux_old/arch/mips/ar71xx/setup.c	2010-10-15 09:57:22.000000000 -0600
++++ linux_new/arch/mips/ar71xx/setup.c	2010-10-15 10:11:13.000000000 -0600
+@@ -255,7 +255,7 @@
+ 	ar71xx_detect_sys_type();
+ 	detect_sys_frequency();
+ 
+-	printk(KERN_INFO
++	printk(KERN_DEBUG
+ 		"%s, CPU:%u.%03u MHz, AHB:%u.%03u MHz, DDR:%u.%03u MHz\n",
+ 		ar71xx_sys_type,
+ 		ar71xx_cpu_freq / 1000000, (ar71xx_cpu_freq / 1000) % 1000,
+diff -Nuar linux_old/arch/mips/kernel/cpu-probe.c linux_new/arch/mips/kernel/cpu-probe.c
+--- linux_old/arch/mips/kernel/cpu-probe.c	2010-10-14 16:47:42.000000000 -0600
++++ linux_new/arch/mips/kernel/cpu-probe.c	2010-10-15 10:11:49.000000000 -0600
+@@ -973,7 +973,7 @@
+ {
+ 	struct cpuinfo_mips *c = &current_cpu_data;
+ 
+-	printk(KERN_INFO "CPU revision is: %08x (%s)\n",
++	printk(KERN_DEBUG "CPU revision is: %08x (%s)\n",
+ 	       c->processor_id, cpu_name_string());
+ 	if (c->options & MIPS_CPU_FPU)
+ 		printk(KERN_INFO "FPU revision is: %08x\n", c->fpu_id);
+diff -Nuar linux_old/arch/mips/kernel/early_printk.c linux_new/arch/mips/kernel/early_printk.c
+--- linux_old/arch/mips/kernel/early_printk.c	2010-10-14 16:51:38.000000000 -0600
++++ linux_new/arch/mips/kernel/early_printk.c	2010-10-15 10:41:09.000000000 -0600
+@@ -14,15 +14,40 @@
+ 
+ extern void prom_putchar(char);
+ 
++#define MICROHARD 1
++#ifdef MICROHARD
++	 extern unsigned int console_quiet;
++	 extern unsigned int super_user;
++#endif
++
+ static void __init
+ early_console_write(struct console *con, const char *s, unsigned n)
+ {
++#ifndef MICROHARD
+ 	while (n-- && *s) {
+ 		if (*s == '\n')
+ 			prom_putchar('\r');
+ 		prom_putchar(*s);
+ 		s++;
+ 	}
++#else
++	if((console_quiet==0)||(super_user ==1)) {
++		while (n-- && *s) {
++			if (*s == '\n')
++				prom_putchar('\r');
++			prom_putchar(*s);
++			s++;
++		}
++	}else if (console_quiet==2) {
++		while (n-- && *s) {
++			if (*s == '\n')
++				prom_putchar('\r');
++			prom_putchar('.');
++			s++;
++		}
++	}else
++		;
++#endif
+ }
+ 
+ static struct console early_console __initdata = {
+diff -Nuar linux_old/arch/mips/kernel/setup.c linux_new/arch/mips/kernel/setup.c
+--- linux_old/arch/mips/kernel/setup.c	2010-10-14 14:42:24.000000000 -0600
++++ linux_new/arch/mips/kernel/setup.c	2010-10-15 10:12:04.000000000 -0600
+@@ -32,6 +32,16 @@
+ #include <asm/smp-ops.h>
+ #include <asm/system.h>
+ 
++#define MICROHARD 1
++
++#ifdef MICROHARD
++unsigned int console_quiet=0;
++EXPORT_SYMBOL(console_quiet);
++
++unsigned int super_user=0;
++EXPORT_SYMBOL(super_user);
++#endif
++
+ struct cpuinfo_mips cpu_data[NR_CPUS] __read_mostly;
+ 
+ EXPORT_SYMBOL(cpu_data);
+@@ -108,13 +118,13 @@
+ 	const int field = 2 * sizeof(unsigned long);
+ 
+ 	for (i = 0; i < boot_mem_map.nr_map; i++) {
+-		printk(KERN_INFO " memory: %0*Lx @ %0*Lx ",
++		printk(KERN_DEBUG " memory: %0*Lx @ %0*Lx ",
+ 		       field, (unsigned long long) boot_mem_map.map[i].size,
+ 		       field, (unsigned long long) boot_mem_map.map[i].addr);
+ 
+ 		switch (boot_mem_map.map[i].type) {
+ 		case BOOT_MEM_RAM:
+-			printk(KERN_CONT "(usable)\n");
++			printk(KERN_DEBUG "(usable)\n");
+ 			break;
+ 		case BOOT_MEM_ROM_DATA:
+ 			printk(KERN_CONT "(ROM data)\n");
+@@ -132,6 +142,18 @@
+ /*
+  * Manage initrd
+  */
++
++#ifdef MICROHARD
++
++static int __init con_quiet(char *p)
++{
++	console_quiet = memparse(p, &p);
++	return 0;
++}
++early_param("console_quiet", con_quiet);
++
++#endif
++
+ #ifdef CONFIG_BLK_DEV_INITRD
+ 
+ static int __init rd_start_early(char *p)
+@@ -473,7 +495,7 @@
+ 	/* call board setup routine */
+ 	plat_mem_setup();
+ 
+-	pr_info("Determined physical RAM map:\n");
++	//pr_info("Determined physical RAM map:\n");
+ 	print_memory_map();
+ 
+ 	strlcpy(command_line, arcs_cmdline, sizeof(command_line));
+diff -Nuar linux_old/init/main.c linux_new/init/main.c
+--- linux_old/init/main.c	2010-10-14 14:41:15.000000000 -0600
++++ linux_new/init/main.c	2010-10-15 10:12:48.000000000 -0600
+@@ -81,6 +81,12 @@
+ #include <asm/smp.h>
+ #endif
+ 
++#define MICROHARD 1
++
++#ifdef MICROHARD
++extern unsigned int console_quiet;
++#endif
++
+ static int kernel_init(void *);
+ 
+ extern void init_IRQ(void);
+@@ -547,7 +553,7 @@
+ 	tick_init();
+ 	boot_cpu_init();
+ 	page_address_init();
+-	printk(KERN_NOTICE "%s", linux_banner);
++	printk(KERN_DEBUG "%s", linux_banner);
+ 	setup_arch(&command_line);
+ 	mm_init_owner(&init_mm, &init_task);
+ 	setup_command_line(command_line);
+@@ -814,6 +820,10 @@
+ 	if (sys_open((const char __user *) "/dev/console", O_RDWR, 0) < 0)
+ 		printk(KERN_WARNING "System Loading ...\n");
+ 
++#ifdef MICROHARD
++	console_quiet=0;
++#endif
++
+ 	(void) sys_dup(0);
+ 	(void) sys_dup(0);
+ 
+diff -Nuar linux_old/kernel/printk.c linux_new/kernel/printk.c
+--- linux_old/kernel/printk.c	2010-10-14 14:46:40.000000000 -0600
++++ linux_new/kernel/printk.c	2010-10-15 10:34:37.000000000 -0600
+@@ -36,6 +36,12 @@
+ 
+ #include <asm/uaccess.h>
+ 
++#define MICROHARD 1
++#ifdef MICROHARD
++	 extern unsigned int console_quiet;
++	 extern unsigned int super_user;
++#endif
++
+ /*
+  * for_each_console() allows you to iterate on each console
+  */
+@@ -591,11 +597,28 @@
+ 	va_list args;
+ 	int r;
+ 
++#ifndef MICROHARD
+ 	va_start(args, fmt);
+ 	r = vprintk(fmt, args);
+ 	va_end(args);
+ 
+ 	return r;
++#else
++	if((console_quiet==0)||(super_user ==1)) {
++		va_start(args, fmt);
++		r = vprintk(fmt, args);
++		va_end(args);
++	
++		return r;
++	}else if (console_quiet==2) {
++		fmt=".";
++		va_start(args, fmt);
++		r = vprintk(fmt, args);
++		va_end(args);
++		return r;
++	}else
++		return 0;
++#endif
+ }
+ 
+ /* cpu currently holding logbuf_lock */
+@@ -745,9 +768,25 @@
+ 	for ( ; *p; p++) {
+ 		if (new_text_line) {
+ 			/* Always output the token */
++#ifndef MICROHARD
+ 			emit_log_char('<');
+ 			emit_log_char(current_log_level + '0');
+ 			emit_log_char('>');
++#else
++			if(console_quiet==0) {
++				emit_log_char('<');
++				emit_log_char(current_log_level + '0');
++				emit_log_char('>');
++			} else if(console_quiet==2) {
++				emit_log_char('.');
++				emit_log_char('.');
++				emit_log_char('.');
++			} else {
++				emit_log_char(' ');
++				emit_log_char(' ');
++				emit_log_char(' ');
++			}
++#endif
+ 			printed_len += 3;
+ 			new_text_line = 0;
+ 
+@@ -1307,7 +1346,7 @@
+ 			if (bcon->flags & CON_BOOT)
+ 				unregister_console(bcon);
+ 	} else {
+-		printk(KERN_INFO "%sconsole [%s%d] enabled\n",
++		printk(KERN_DEBUG "%sconsole [%s%d] enabled\n",
+ 			(newcon->flags & CON_BOOT) ? "boot" : "" ,
+ 			newcon->name, newcon->index);
+ 	}

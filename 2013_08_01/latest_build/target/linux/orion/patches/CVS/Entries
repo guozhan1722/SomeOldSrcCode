@@ -1,0 +1,8 @@
+/010-ignore_atag_cmdline.patch/1.1/Thu Apr  1 22:11:05 2010/-kkv/Tar71xx_4g
+/050-wrt350nv2_cfi_workaround.patch/1.1/Thu Apr  1 22:11:05 2010/-kkv/Tar71xx_4g
+/090-wrt350nv2_gpio_leds_buttons.patch/1.1/Thu Apr  1 22:11:05 2010/-kkv/Tar71xx_4g
+/100-openwrt_partition_map.patch/1.1/Thu Apr  1 22:11:05 2010/-kkv/Tar71xx_4g
+/101-wnr854t_partition_map.patch/1.1/Thu Apr  1 22:11:05 2010/-kkv/Tar71xx_4g
+/200-dt2_board_support.patch/1.1/Thu Apr  1 22:11:05 2010/-kkv/Tar71xx_4g
+/300-skb_cb_align.patch/1.1/Thu Apr  1 22:11:05 2010/-kkv/Tar71xx_4g
+D

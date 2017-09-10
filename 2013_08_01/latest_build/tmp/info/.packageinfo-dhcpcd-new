@@ -1,0 +1,15 @@
+Source-Makefile: package/dhcpcd-new/Makefile
+Package: dhcpcd-new
+Version: 1
+Depends: 
+Provides: 
+Section: net
+Category: Network
+Title: DHCP client for automatically configuring IPv4 networking
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description: 	This version of dhcpcd is based on version 1.3.20 and modified by Microhard Inc.
+@@
+
+

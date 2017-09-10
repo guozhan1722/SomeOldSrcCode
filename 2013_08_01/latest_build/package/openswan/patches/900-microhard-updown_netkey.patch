@@ -1,0 +1,207 @@
+--- a/programs/_updown.netkey/_updown.netkey.in	2012-08-02 14:30:06.164072536 -0600
++++ b/programs/_updown.netkey/_updown.netkey.in	2013-03-11 13:57:20.535301980 -0600
+@@ -373,6 +373,7 @@
+ 
+ 
+ doroute() {
++    logger -t "ipsec updown.netkey doroute $1" "verb=$PLUTO_VERB sourceip=$PLUTO_MY_SOURCEIP peer-client=$PLUTO_PEER_CLIENT peer=$PLUTO_PEER interface=$PLUTO_INTERFACE" 
+     if [ -z "$PLUTO_MY_SOURCEIP" ] && [ -n "$DEFAULTSOURCE" ]
+     then
+ 	PLUTO_MY_SOURCEIP="${DEFAULTSOURCE%/*}"
+@@ -398,11 +399,12 @@
+     else
+ 	PLUTO_PEER_INTERFACE=`ip -o route get $PLUTO_PEER | sed "s/^.*dev \([^ ]*\) .*/\1/"`
+     fi
+-    if [ -z "$PLUTO_PEER_INTERFACE" ]; then
++    if [ -z "$PLUTO_PEER_INTERFACE" -o "$PLUTO_PEER_INTERFACE" != "$PLUTO_INTERFACE" ]; then
+ 	PLUTO_PEER_INTERFACE=$PLUTO_INTERFACE
+     fi
+     parms2="$parms2 dev ${PLUTO_PEER_INTERFACE%:*}${PLUTO_MTU:+ mtu ${PLUTO_MTU}}${PLUTO_METRIC:+ metric ${PLUTO_METRIC}} $IPROUTEARGS"
+ 
++    logger -t "ipsec updown.netkey doroute $1" "interface=$PLUTO_INTERFACE peer-interface=$PLUTO_PEER_INTERFACE parms=$parms parms2=$parms2" 
+     # make sure whe have sourceip locally in this machine
+     if [ "$1" = "replace" -a -n "$PLUTO_MY_SOURCEIP" ]; then
+ 	addsource
+@@ -433,6 +435,7 @@
+     if [ " $oops" != " " -o " $st" != " 0" ]; then
+ 	echo "$0: doroute \`$it' failed ($oops)" >&2
+     fi
++    logger -t "ipsec updown.netkey doroute $1" "$it"
+     return $st
+ }
+  
+@@ -454,16 +457,174 @@
+     up-host)
+ 	# connection to me coming up
+ 	# If you are doing a custom version, firewall commands go here.
++        logger -t "ipsec updown.netkey" "up-host PLUTO_PEER=$PLUTO_PEER PLUTO_INTERFACE=$PLUTO_INTERFACE PLUTO_CONNECTION=$PLUTO_CONNECTION"
++        if [ "$PLUTO_CONNECTION" = "roadwarrior-l2tp-updatedwin" -o "$PLUTO_CONNECTION" = "roadwarrior-l2tp" -o "$PLUTO_CONNECTION" = "macintosh-l2tp" ]; then
++             if [ ! -p /var/run/xl2tpd/l2tp-control ]; then
++	          /etc/init.d/xl2tpd restart >/dev/null 2>&1
++                  logger -t "ipsec updown.netkey" "up-host $PLUTO_CONNECTION restart xl2tpd"
++             fi
++        else
++             ttype=$(uci get ipsec.${PLUTO_CONNECTION})
++        
++             if [ "$ttype" = "x2ctunnel" ]; then
++                 ip route replace $PLUTO_PEER dev $PLUTO_INTERFACE
++                 ip route flush cache
++                 [ -d /var/run/mipsec ] || mkdir /var/run/mipsec
++                 echo "action=checked" > /var/run/mipsec/$PLUTO_CONNECTION
++                 echo "status=waiting for l2tp connection" >> /var/run/mipsec/$PLUTO_CONNECTION
++                 echo "constat=Disconnect" >> /var/run/mipsec/$PLUTO_CONNECTION
++                 /sbin/mipsec.sh call_xl2tp "$PLUTO_CONNECTION" > /dev/null 2>&1 &
++                 logger -t "ipsec updown.netkey" "call_xl2tp $PLUTO_CONNECTION"
++             else
++                 ttype=$(uci get gre-tunnels.${PLUTO_CONNECTION}.ipsec_mode)
++                 if [ "$ttype" = "transport" ]; then
++                     ttype=$(uci get gre-tunnels.${PLUTO_CONNECTION}.enableipsec)
++                     if [ "$ttype" = "ags" ]; then
++                          [ -d /var/run/mipsec ] || mkdir /var/run/mipsec
++                          echo "action=checked" > /var/run/mipsec/${PLUTO_CONNECTION}.status
++                          echo "status=connected" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++                          echo "constat=Disconnect" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++                          logger -t "ipsec updown.netkey" "gre transport mode $ttype $PLUTO_CONNECTION peer=$PLUTO_PEER peer_client=$PLUTO_PEER_CLIENT up done"
++                     else
++                          /bin/gre ipsec_gre_trans "$PLUTO_CONNECTION" > /dev/null 2>&1 &
++                     fi
++                 fi
++             fi
++        fi
+ 	;;
+     down-host)
+ 	# connection to me going down
+ 	# If you are doing a custom version, firewall commands go here.
++        logger -t "ipsec updown.netkey" "down-host $PLUTO_CONNECTION PLUTO_PEER=$PLUTO_PEER PLUTO_INTERFACE=$PLUTO_INTERFACE"
++        if [ "$PLUTO_CONNECTION" = "roadwarrior-l2tp-updatedwin" -o "$PLUTO_CONNECTION" = "roadwarrior-l2tp" -o "$PLUTO_CONNECTION" = "macintosh-l2tp" ]; then
++                 logger -t "ipsec updown.netkey" "down-host $PLUTO_CONNECTION"
++        else
++                 ip route del $PLUTO_PEER dev $PLUTO_INTERFACE
++                 ip route flush cache
++                 logger -t "ipsec updown.netkey" "down-host $PLUTO_CONNECTION and del route"
++                 ttype=$(uci get gre-tunnels.${PLUTO_CONNECTION}.ipsec_mode)
++                 if [ "$ttype" = "transport" ]; then
++                     [ -d /var/run/mipsec ] || mkdir /var/run/mipsec
++                     echo "action=checked" > /var/run/mipsec/${PLUTO_CONNECTION}.status
++                     echo "status=waiting for connection" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++                     echo "constat=Connect" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++                     logger -t "ipsec updown.netkey" "gre transport mode $PLUTO_CONNECTION peer=$PLUTO_PEER peer_client=$PLUTO_PEER_CLIENT down done"
++                     ttype=$(uci get gre-tunnels.${PLUTO_CONNECTION}.enableipsec)
++                     [ "$ttype" = "bgs" ] && {
++                        logger -t "ipsec updown.netkey" "gre transport mode $ttype del gre $PLUTO_CONNECTION"
++                        ip link set "$PLUTO_CONNECTION" down
++                        ip tunnel del "$PLUTO_CONNECTION"
++                     }
++                 fi
++        fi
+ 	;;
+     up-client)
+ 	# connection to my client subnet coming up
+ 	# If you are doing a custom version, firewall commands go here.
++        ttype=$(uci get ipsec.${PLUTO_CONNECTION})
++        if [ "$ttype" = "s2stunnel" ]; then
++             [ -d /var/run/mipsec ] || mkdir /var/run/mipsec
++             echo "action=checked" > /var/run/mipsec/${PLUTO_CONNECTION}.status
++             echo "status=connected" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++             echo "constat=Disconnect" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++             cmd="/usr/sbin/iptables -t nat -S | grep -c 'POSTROUTING -s $PLUTO_MY_CLIENT -d $PLUTO_PEER_CLIENT -o $PLUTO_INTERFACE -j ACCEPT'"
++             fws=`eval $cmd`
++             if [ "$fws" -gt 0 ]; then
++                  logger -t "ipsec updown.netkey" "s2stunnel $PLUTO_CONNECTION the firewall rule1 exists"
++             else
++                  /usr/sbin/iptables -t nat -I POSTROUTING 1 -o $PLUTO_INTERFACE -s $PLUTO_MY_CLIENT -d $PLUTO_PEER_CLIENT -j ACCEPT > /dev/null 2>&1
++             fi
++             cmd="/usr/sbin/iptables -S | grep -c 'forwarding_rule -s $PLUTO_PEER_CLIENT -j ACCEPT'"
++             fws=`eval $cmd`
++             if [ "$fws" -gt 0 ]; then
++                  logger -t "ipsec updown.netkey" "s2stunnel $PLUTO_CONNECTION the firewall rule4 exists"
++             else
++                  /usr/sbin/iptables -A forwarding_rule -s $PLUTO_PEER_CLIENT -j ACCEPT > /dev/null 2>&1
++             fi
++             [ "$PLUTO_INTERFACE" = "br-wan" ] && zone="zone_wan"               
++             [ "$PLUTO_INTERFACE" = "br-wan2" ] && zone="zone_wan2"  
++             cmd="/usr/sbin/iptables -S | grep -c '$zone -s $PLUTO_PEER -j ACCEPT'"
++             fws=`eval $cmd`
++             if [ "$fws" -gt 0 ]; then
++                  logger -t "ipsec updown.netkey" "s2stunnel $PLUTO_CONNECTION the firewall rule2 exists"
++             else
++                  /usr/sbin/iptables -I $zone 1 -s $PLUTO_PEER -j ACCEPT > /dev/null 2>&1
++             fi
++             cmd="/usr/sbin/iptables -S | grep -c '$zone -s $PLUTO_PEER_CLIENT -j ACCEPT'"
++             fws=`eval $cmd`
++             if [ "$fws" -gt 0 ]; then
++                  logger -t "ipsec updown.netkey" "s2stunnel $PLUTO_CONNECTION the firewall rule3 exists"
++             else
++                  /usr/sbin/iptables -I $zone 1 -s $PLUTO_PEER_CLIENT -j ACCEPT > /dev/null 2>&1
++             fi
++             [ -d /var/run/ipsecfirewall ] || mkdir /var/run/ipsecfirewall
++             echo "/usr/sbin/iptables -t nat -I POSTROUTING 1 -o $PLUTO_INTERFACE -s $PLUTO_MY_CLIENT -d $PLUTO_PEER_CLIENT -j ACCEPT" > /var/run/ipsecfirewall/firewall.$PLUTO_CONNECTION
++             echo "/usr/sbin/iptables -A forwarding_rule -s $PLUTO_PEER_CLIENT -j ACCEPT" >> //var/run/ipsecfirewall/firewall.$PLUTO_CONNECTION
++             echo "/usr/sbin/iptables -I $zone 1 -s $PLUTO_PEER -j ACCEPT" >> /var/run/ipsecfirewall/firewall.$PLUTO_CONNECTION
++             echo "/usr/sbin/iptables -I $zone 1 -s $PLUTO_PEER_CLIENT -j ACCEPT" >> /var/run/ipsecfirewall/firewall.$PLUTO_CONNECTION
++             
++             echo "/usr/sbin/iptables -t nat -D POSTROUTING -o $PLUTO_INTERFACE -s $PLUTO_MY_CLIENT -d $PLUTO_PEER_CLIENT -j ACCEPT" > /var/run/ipsecfirewall/dfirewall.$PLUTO_CONNECTION
++             echo "/usr/sbin/iptables -D $zone -s $PLUTO_PEER_CLIENT -j ACCEPT" >> /var/run/ipsecfirewall/dfirewall.$PLUTO_CONNECTION
++             echo "/usr/sbin/iptables -D $zone -s $PLUTO_PEER -j ACCEPT" >> /var/run/ipsecfirewall/dfirewall.$PLUTO_CONNECTION
++             echo "/usr/sbin/iptables -D forwarding_rule -s $PLUTO_PEER_CLIENT -j ACCEPT" >> /var/run/ipsecfirewall/dfirewall.$PLUTO_CONNECTION
++             logger -t "ipsec updown.netkey" "s2stunnel $PLUTO_CONNECTION peer=$PLUTO_PEER peer_client=$PLUTO_PEER_CLIENT up done"
++        else
++             ttype=$(uci get gre-tunnels.${PLUTO_CONNECTION}.enableipsec)
++             if [ "$ttype" = "ags" ]; then
++                  ttype=$(uci get gre-tunnels.${PLUTO_CONNECTION}.ipsec_mode)
++                  if [ "$ttype" = "tunnel" ]; then
++                       echo "action=checked" > /var/run/mipsec/${PLUTO_CONNECTION}.status
++                       echo "status=connected" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++                       echo "constat=Disconnect" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++                       logger -t "ipsec updown.netkey" "gre tunnel mode $PLUTO_CONNECTION peer=$PLUTO_PEER peer_client=$PLUTO_PEER_CLIENT up done"
++                       #uproute
++                  fi
++             else
++                  if [ "$ttype" = "bgs" ]; then 
++                       ttype=$(uci get gre-tunnels.${PLUTO_CONNECTION}.ipsec_mode)
++                       if [ "$ttype" = "tunnel" ]; then
++                            #echo "action=checked" > /var/run/mipsec/${PLUTO_CONNECTION}.status
++                            #echo "status=connected" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++                            #echo "constat=Disconnect" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++                            logger -t "ipsec updown.netkey" "gre tunnel mode $ttype $PLUTO_CONNECTION peer=$PLUTO_PEER peer_client=$PLUTO_PEER_CLIENT up done"
++                            #uproute
++                            logger -t "ipsec updown.netkey" "ipsec_gre $PLUTO_CONNECTION $PLUTO_MY_CLIENT $PLUTO_PEER_CLIENT $PLUTO_PEER $PLUTO_INTERFACE"
++                            /bin/gre ipsec_gre $PLUTO_CONNECTION $PLUTO_MY_CLIENT $PLUTO_PEER_CLIENT $PLUTO_PEER $PLUTO_INTERFACE > /dev/null 2>&1 &
++                       fi
++
++                  fi
++             fi
++
++        fi
+ 	;;
+     down-client)
++        ttype=$(uci get ipsec.${PLUTO_CONNECTION})
++        if [ "$ttype" = "s2stunnel" ]; then
++             [ -d /var/run/mipsec ] || mkdir /var/run/mipsec
++             echo "action=down" > /var/run/mipsec/${PLUTO_CONNECTION}.status
++             echo "status=waiting for connection" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++             echo "constat=Connect" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++             [ -f /var/run/ipsecfirewall/firewall.$PLUTO_CONNECTION ] && rm -f /var/run/ipsecfirewall/firewall.$PLUTO_CONNECTION
++             [ -f /var/run/ipsecfirewall/dfirewall.$PLUTO_CONNECTION ] && {
++                 sh /var/run/ipsecfirewall/dfirewall.$PLUTO_CONNECTION
++                 rm -f /var/run/ipsecfirewall/dfirewall.$PLUTO_CONNECTION
++             }
++             logger -t "ipsec updown.netkey" "s2stunnel $PLUTO_CONNECTION down"
++        else
++             ttype=$(uci get gre-tunnels.${PLUTO_CONNECTION}.ipsec_mode)
++             if [ "$ttype" = "tunnel" ]; then
++                  echo "action=checked" > /var/run/mipsec/${PLUTO_CONNECTION}.status
++                  echo "status=waiting for connection" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++                  echo "constat=Connect" >> /var/run/mipsec/${PLUTO_CONNECTION}.status
++                  logger -t "ipsec updown.netkey" "gre tunnel mode $PLUTO_CONNECTION peer=$PLUTO_PEER peer_client=$PLUTO_PEER_CLIENT down done"
++                  ttype=$(uci get gre-tunnels.${PLUTO_CONNECTION}.enableipsec)
++                  [ "$ttype" = "bgs" ] && {
++                        logger -t "ipsec updown.netkey" "gre tunnel mode $ttype del gre $PLUTO_CONNECTION"
++                        ip link set "$PLUTO_CONNECTION" down
++                        ip tunnel del "$PLUTO_CONNECTION"
++                  }
++             fi
++        fi
+ 	# connection to my client subnet going down
+ 	# If you are doing a custom version, firewall commands go here.
+ 	;;

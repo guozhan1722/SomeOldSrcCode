@@ -1,0 +1,23 @@
+/010-use_target_for_configure.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+/100-debian_ip-ip_option.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+/101-debian_close_dev_ppp.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+/102-debian_fix_close_fd0.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+/103-debian_fix_link_pidfile.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+/104-debian_fix_mschapv2_ppp.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+/105-debian_demand.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+/106-debian_stripMSdomain.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+/107-debian_pppatm_cleanup.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+/108-debian_pppatm_fix_mtu.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+/109-debian_pppoe_cleanup.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+/110-debian_defaultroute.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+/200-makefile.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+/201-mppe_mppc_1.1.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+/202-no_strip.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+/203-opt_flags.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+/204-radius_config.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+/205-no_exponential_timeout.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+/206-compensate_time_change.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+/207-lcp_mtu_max.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+/300-filter-pcap-includes-lib.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+/310-precompile_filter.patch/1.1/Thu Apr  1 22:10:39 2010/-kkv/Tar71xx_4g
+D

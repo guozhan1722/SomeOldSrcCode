@@ -1,0 +1,97 @@
+#!/bin/ash
+# Copyright (C) 2006 OpenWrt.org
+
+my_lockfile ()
+{
+        TEMPFILE="$1.$$"
+        LOCKFILE="$1.lock"
+        echo $$ > $TEMPFILE || {
+                echo "You don't have permission to access `dirname $TEMPFILE`"
+                return 1
+        }
+        ln $TEMPFILE $LOCKFILE && {
+                rm -f $TEMPFILE
+                return 0
+        }
+        kill -0 `cat $LOCKFILE` && {
+                rm -f $TEMPFILE
+                return 1
+        }
+        echo "Removing stale lock file"
+        rm -f $LOCKFILE
+        ln $TEMPFILE $LOCKFILE && {
+                rm -f $TEMPFILE
+                return 0
+        }
+        rm -f $TEMPFILE
+        return 1
+}
+
+[ -d /var/lock/mipsec ] || mkdir /var/lock/mipsec
+my_lockfile /var/lock/mipsec/${1} || {
+   logger -t "xlpconnect" "$1 $2 my_lockfile failed so exit"
+   exit 0
+}
+
+[ -f /var/run/${1}.ctl ] && {
+   rm -f /var/run/${1}.ctl
+   rm -f /var/lock/mipsec/${1}.lock
+   exit 0
+}
+
+cmd="uci get ipsec.${1}.enabled"
+ena=`eval $cmd`
+logger -t "xlpconnect" "$1 $2 ena=$ena"
+if [ $ena = "1" ]; then
+  sleep $2
+  while true; do
+      [ -f /var/run/${1}.ctl ] && {
+         rm -f /var/run/${1}.ctl
+	 logger -t "xlpconnect" "$1 $2 control file so exit"
+	 rm -f /var/lock/mipsec/${1}.lock
+         exit 0
+      }
+      cmd="ipsec auto --status|grep 'IPsec SA established'|grep -c '\"$1\":'"
+      status=`eval $cmd`
+      [ $status -eq 0 ] && {  
+         ipsec auto --add $1
+         ipsec auto --asynchronous --up $1
+      }
+          redial=$(uci get ipsec.${1}.redial)
+          if [ $redial = "yes" ]; then
+                maxredial=$(uci get ipsec.${1}.maxredial)
+                rtimeout=$(uci get ipsec.${1}.rtimeout)
+          else
+                maxredial=1
+                rtimeout=0
+          fi
+          let rtimeout=10+10*maxredial+rtimeout*maxredial
+          [ -f "/etc/debugipsec" ] && logger -t "xlpconnect" "sleep rtimeout=$rtimeout"
+      sleep $rtimeout
+      [ -f /var/run/${1}.ctl ] && {
+         rm -f /var/run/${1}.ctl
+	 logger -t "xlpconnect" "$1 $2 control file so exit"
+	 rm -f /var/lock/mipsec/${1}.lock
+         exit 0
+      } 
+
+      constat=$(cat /var/run/mipsec/$1 | grep -c 'status=connected')
+      coninf=$(cat /var/run/mipsec/$1 | grep -c 'inf=ppp')
+      [ "$constat" -gt 0 -a "$coninf" -gt 0 ] && {
+      rm -f /var/lock/mipsec/${1}.lock
+      exit 0
+      }
+      ipsec auto --delete $1
+      cmd="uci get ipsec.${1}.enabled"
+      ena=`eval $cmd`
+      logger -t "xlpconnect" "$1 $2 2ena=$ena"
+      [ $ena = "1" ] || {
+         logger -t "xlpconnect" "$1 $2 2ena=$ena so exit"
+	 rm -f /var/lock/mipsec/${1}.lock
+	 [ -f /var/run/${1}.ctl ] && rm -f /var/run/${1}.ctl
+         exit 0
+      }
+  done
+fi
+rm -f /var/lock/mipsec/${1}.lock
+exit 0

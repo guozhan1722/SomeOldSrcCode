@@ -1,0 +1,149 @@
+Source-Makefile: package/mac80211/Makefile
+Package: kmod-ath5k
+Submenu: Wireless Drivers
+Version: <LINUX_VERSION>+microhard-2
+Depends: @(!(TARGET_avr32||TARGET_ep93xx||TARGET_ps3||TARGET_pxcab)||BROKEN) +kmod-ath
+Provides: 
+Section: kernel
+Category: Kernel modules
+Title: Atheros 5xxx wireless cards support
+Maintainer: Felix Fietkau <nbd@openwrt.org>
+Source: 
+Type: ipkg
+Description:  This module adds support for wireless adapters based on
+ Atheros 5xxx chipset.
+http://linuxwireless.org/en/users/Drivers/ath5k
+@@
+
+Package: kmod-cfg80211
+Submenu: Wireless Drivers
+Version: <LINUX_VERSION>+microhard-2
+Depends: @(!(TARGET_avr32||TARGET_ep93xx||TARGET_ps3||TARGET_pxcab)||BROKEN) +wireless-tools +iw +crda
+Provides: 
+Section: kernel
+Category: Kernel modules
+Title: cfg80211 - wireless configuration API
+Maintainer: Felix Fietkau <nbd@openwrt.org>
+Source: 
+Type: ipkg
+Description: cfg80211 is the Linux wireless LAN (802.11) configuration API.
+http://linuxwireless.org/
+@@
+
+Package: kmod-mac80211
+Menu: 1
+Submenu: Wireless Drivers
+Version: <LINUX_VERSION>+microhard-2
+Depends: @(!(TARGET_avr32||TARGET_ep93xx||TARGET_ps3||TARGET_pxcab)||BROKEN) +kmod-crypto-core +kmod-crypto-arc4 +kmod-crypto-aes +kmod-cfg80211
+Provides: 
+Section: kernel
+Category: Kernel modules
+Title: Linux 802.11 Wireless Networking Stack
+Maintainer: Felix Fietkau <nbd@openwrt.org>
+Source: 
+Type: ipkg
+Description: Generic IEEE 802.11 Networking Stack (mac80211)
+http://linuxwireless.org/
+@@
+Config:
+	menu "Configuration"
+		depends on PACKAGE_kmod-mac80211
+
+	config PACKAGE_MAC80211_DEBUGFS
+		bool "Export mac80211 internals in DebugFS"
+		default y
+		help
+		  Select this to see extensive information about
+		  the internal state of mac80211 in debugfs.
+
+		  Say N unless you know you need this.
+
+	endmenu
+@@
+
+Package: kmod-mac80211-hwsim
+Submenu: Wireless Drivers
+Version: <LINUX_VERSION>+microhard-2
+Depends: @(!(TARGET_avr32||TARGET_ep93xx||TARGET_ps3||TARGET_pxcab)||BROKEN) +kmod-mac80211
+Provides: 
+Section: kernel
+Category: Kernel modules
+Title: mac80211 HW simulation device
+Maintainer: Felix Fietkau <nbd@openwrt.org>
+Source: 
+Type: ipkg
+Description: mac80211 HW simulation device
+http://linuxwireless.org/
+@@
+
+Package: kmod-ath9k
+Submenu: Wireless Drivers
+Version: <LINUX_VERSION>+microhard-2
+Depends: @(!(TARGET_avr32||TARGET_ep93xx||TARGET_ps3||TARGET_pxcab)||BROKEN) +kmod-ath
+Provides: 
+Section: kernel
+Category: Kernel modules
+Title: Atheros 802.11n wireless cards support
+Maintainer: Felix Fietkau <nbd@openwrt.org>
+Source: 
+Type: ipkg
+Description: This module adds support for wireless adapters based on
+Atheros IEEE 802.11n AR5008 and AR9001 family of chipsets.
+http://linuxwireless.org/en/users/Drivers/ath9k
+@@
+
+Package: kmod-ath
+Menu: 1
+Submenu: Wireless Drivers
+Version: <LINUX_VERSION>+microhard-2
+Depends: @(!(TARGET_avr32||TARGET_ep93xx||TARGET_ps3||TARGET_pxcab)||BROKEN) +kmod-mac80211
+Provides: 
+Section: kernel
+Category: Kernel modules
+Title: Atheros common driver part
+Maintainer: Felix Fietkau <nbd@openwrt.org>
+Source: 
+Type: ipkg
+Description:  This module contains some common parts needed by Atheros Wireless drivers.
+http://linuxwireless.org/
+@@
+Config:
+	menu "Configuration"
+		depends on PACKAGE_kmod-ath
+
+	config ATH_USER_REGD
+		bool "Force Atheros drivers to respect the user's regdomain settings"
+		help
+		  Atheros' idea of regulatory handling is that the EEPROM of the card defines
+		  the regulatory limits and the user is only allowed to restrict the settings
+		  even further, even if the country allows frequencies or power levels that
+		  are forbidden by the EEPROM settings.
+
+		  Select this option if you want the driver to respect the user's decision about
+		  regulatory settings.
+
+	config PACKAGE_ATH_DEBUG
+		bool "Atheros wireless debugging"
+		help
+		  Say Y, if you want to debug atheros wireless drivers.
+		  Right now only ath9k makes use of this.
+
+	endmenu
+@@
+
+Package: kmod-adf4350
+Submenu: Wireless Drivers
+Version: <LINUX_VERSION>+microhard-2
+Depends: @(!(TARGET_avr32||TARGET_ep93xx||TARGET_ps3||TARGET_pxcab)||BROKEN) +kmod-ath
+Provides: 
+Section: kernel
+Category: Kernel modules
+Title: ADF4350 chip support
+Maintainer: Felix Fietkau <nbd@openwrt.org>
+Source: 
+Type: ipkg
+Description:  control adf4350 chipset.
+http://linuxwireless.org/en/users/Drivers/ath5k
+@@
+
+

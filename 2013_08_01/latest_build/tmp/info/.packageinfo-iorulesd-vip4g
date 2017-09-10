@@ -1,0 +1,15 @@
+Source-Makefile: package/iorulesd-vip4g/Makefile
+Package: iorulesd-vip4g
+Version: 1
+Depends: +libuci +libpthread
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Microhard iorulesd-vip4g utility
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  This package contains the microhard home grown VIP4G I/O Application utility.
+@@
+
+

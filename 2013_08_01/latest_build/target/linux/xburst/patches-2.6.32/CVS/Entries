@@ -1,0 +1,20 @@
+/001-core.patch/1.1/Thu Apr  1 22:09:14 2010/-kkv/Tar71xx_4g
+/050-nand.patch/1.1/Thu Apr  1 22:09:10 2010/-kkv/Tar71xx_4g
+/051-fb.patch/1.1/Thu Apr  1 22:09:10 2010/-kkv/Tar71xx_4g
+/052-rtc.patch/1.1/Thu Apr  1 22:09:13 2010/-kkv/Tar71xx_4g
+/053-adc.patch/1.1/Thu Apr  1 22:09:14 2010/-kkv/Tar71xx_4g
+/100-battery.patch/1.1/Thu Apr  1 22:09:13 2010/-kkv/Tar71xx_4g
+/101-mmc.patch/1.1/Thu Apr  1 22:09:14 2010/-kkv/Tar71xx_4g
+/103-lcm.patch/1.1/Thu Apr  1 22:09:14 2010/-kkv/Tar71xx_4g
+/103-serial.patch/1.1/Thu Apr  1 22:09:14 2010/-kkv/Tar71xx_4g
+/104-usb.patch/1.1/Thu Apr  1 22:09:14 2010/-kkv/Tar71xx_4g
+/105-sound.patch/1.1/Thu Apr  1 22:09:14 2010/-kkv/Tar71xx_4g
+/106-gpio-charger.patch/1.1/Thu Apr  1 22:09:14 2010/-kkv/Tar71xx_4g
+/220-add-2gb-nand-support.patch/1.1/Thu Apr  1 22:09:14 2010/-kkv/Tar71xx_4g
+/300-jffs2-summery-vmalloc.patch/1.1/Thu Apr  1 22:09:14 2010/-kkv/Tar71xx_4g
+/400-spi-gpio-3wire.patch/1.1/Thu Apr  1 22:09:14 2010/-kkv/Tar71xx_4g
+/420-fb-notifier-pre-post.patch/1.1/Thu Apr  1 22:09:14 2010/-kkv/Tar71xx_4g
+/500-modifier-keys.patch/1.1/Thu Apr  1 22:09:14 2010/-kkv/Tar71xx_4g
+/800-n5x6-lpc.patch/1.1/Thu Apr  1 22:09:14 2010/-kkv/Tar71xx_4g
+/900-add-openwrt-logo.patch/1.1/Thu Apr  1 22:09:13 2010/-kkv/Tar71xx_4g
+D

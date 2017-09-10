@@ -1,0 +1,65 @@
+diff -Nuar linux_old/drivers/usb/serial/ftdi_sio.c linux_new/drivers/usb/serial/ftdi_sio.c
+--- linux_old/drivers/usb/serial/ftdi_sio.c	2011-03-04 10:08:04.000000000 -0700
++++ linux_new/drivers/usb/serial/ftdi_sio.c	2011-03-04 10:23:30.000000000 -0700
+@@ -44,6 +44,9 @@
+ #include <linux/serial.h>
+ #include <linux/usb/serial.h>
+ #include "ftdi_sio.h"
++#include <asm/mach-ar71xx/ar71xx.h>
++#include <asm/gpio.h>
++#include <linux/gpio.h>
+ 
+ /*
+  * Version Information
+@@ -51,6 +54,7 @@
+ #define DRIVER_VERSION "v1.5.0"
+ #define DRIVER_AUTHOR "Greg Kroah-Hartman <greg@kroah.com>, Bill Ryder <bryder@sgi.com>, Kuba Ober <kuba@mareimbrium.org>"
+ #define DRIVER_DESC "USB FTDI Serial Converters Driver"
++#define MICROHARD_485 		1
+ 
+ static int debug;
+ static __u16 vendor = FTDI_VID;
+@@ -1890,6 +1894,20 @@
+ 		memcpy(buffer, buf, count);
+ 	}
+ 
++#ifdef MICROHARD_485
++	int gpio0_value, gpio1_value;
++	void __iomem *base = ar71xx_gpio_base;
++
++	gpio0_value=(__raw_readl(base + GPIO_REG_IN) >>0)& 0x1 ;
++	gpio1_value=(__raw_readl(base + GPIO_REG_IN) >>1)& 0x1 ;
++
++	if(port->number == 0 && gpio0_value == 0 && gpio1_value == 0 ) {
++		__raw_writel(1 , base + GPIO_REG_SET);
++		__raw_writel(2 , base + GPIO_REG_SET);
++		dbg("%s gpio0 =%d gpio1 =%d  will set to high both \n ", __func__, gpio_get_value(0), gpio_get_value(1));
++	}
++#endif	
++
+ 	usb_serial_debug_data(debug, &port->dev, __func__,
+ 						transfer_size, buffer);
+ 
+@@ -2070,6 +2088,22 @@
+ 		dbg("FRAMING error");
+ 	}
+ 
++#ifdef MICROHARD_485
++	if ( ( packet[1] & FTDI_RS_TEMT ) && ( packet[1] & FTDI_RS_THRE ) ) {
++
++		int gpio0_value, gpio1_value;
++		void __iomem *base = ar71xx_gpio_base;
++
++		gpio0_value=(__raw_readl(base + GPIO_REG_IN) >>0)& 0x1 ;
++		gpio1_value=(__raw_readl(base + GPIO_REG_IN) >>1)& 0x1 ;
++
++		if(port->number == 0 && gpio0_value == 1 && gpio1_value ==1) {
++			__raw_writel(1, base + GPIO_REG_CLEAR);
++			__raw_writel(2, base + GPIO_REG_CLEAR);
++			dbg("%s gpio0 =%d gpio1 =%d  will set to low both \n ", __func__, gpio_get_value(0), gpio_get_value(1));
++		}
++	}
++#endif
+ 	len -= 2;
+ 	if (!len)
+ 		return 0;	/* status only */

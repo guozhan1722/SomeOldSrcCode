@@ -1,0 +1,23 @@
+#!/bin/sh /etc/rc.common
+# (C) 2008 openwrt.org
+
+START=70
+
+start() {
+	local enabled
+	config_load iperf
+	config_get enabled iperfserver enabled
+
+        [ -f "/usr/lib/libstdc++.so.6" ] || {
+                ln -s /usr/lib/libuClibc++.so.0 /usr/lib/libstdc++.so.6
+        }
+
+	[ "$enabled" = "1" ] &&	iperf -s -D
+}
+
+stop() {
+        iperfd_pid=`ps|grep "iperf -s" | grep -v "grep"| awk '{print $1}'`
+        if [ "$iperfd_pid" != "" ];then
+            kill $iperfd_pid || kill -9 $iperfd_pid
+        fi
+}

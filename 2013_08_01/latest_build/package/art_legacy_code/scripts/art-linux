@@ -1,0 +1,13 @@
+#!/bin/sh
+
+/usr/bin/art-legacy 1>>/dev/null 2>>/dev/null &
+sleep 2
+cd /usr/local/art_host
+
+if [ -n "$1" ] ;then
+    ./art_host "$1"  
+else  
+    ./art_host id=3002
+fi
+killall -9 mdk_client-legacy
+cd /

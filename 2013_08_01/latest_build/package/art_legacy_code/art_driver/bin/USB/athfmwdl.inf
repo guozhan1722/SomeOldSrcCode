@@ -1,0 +1,61 @@
+; Installation inf for Atheros Predator USB board
+;
+
+
+[Version]
+Signature="$CHICAGO$"
+Class=USB
+ClassGUID={36FC9E60-C465-11CF-8056-444553540000}
+provider=%ATHR%
+DriverVer=12/05/2003,1.00.001
+
+[SourceDisksNames]
+1=%Disk_Description%,,,
+
+[SourceDisksFiles]
+ATHFMWDL.sys = 1
+
+[Manufacturer]
+%MfgName%=Atheros
+
+[Atheros]
+%USB\VID_0CF3&PID_0002.DeviceDesc%=ATHFMWDL.Dev, USB\VID_0CF3&PID_0002
+%USB\VID_0CF3&PID_0002.DeviceDesc%=ATHFMWDL.Dev, USB\VID_168C&PID_0002
+
+[DestinationDirs]
+ATHFMWDL.Files.Ext = 10,System32\Drivers
+
+[ATHFMWDL.Dev.NT]
+CopyFiles=ATHFMWDL.Files.Ext
+
+[ATHFMWDL.Dev.NT.Services]
+Addservice = ATHFMWDL, 0x00000002, ATHFMWDL.AddService
+
+[ATHFMWDL.AddService]
+DisplayName    = %ATHFMWDL.SvcDesc%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 3                  ; SERVICE_DEMAND_START
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %10%\System32\Drivers\ATHFMWDL.sys
+AddReg         = ATHFMWDL.AddReg
+LoadOrderGroup = Base
+
+[ATHFMWDL.AddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,ATHFMWDL.sys
+HKR,"Parameters","MaximumTransferSize",0x10001,4096
+HKR,"Parameters","DebugLevel",0x10001,3
+HKR,"Parameters","AthUsbEnable",0x10001,0
+
+[ATHFMWDL.Files.Ext]
+Athfmwdl.sys
+ar5523.bin
+
+;---------------------------------------------------------------;
+
+[Strings]
+ATHR="Atheros"
+MfgName="Atheros"
+Disk_Description="AthUsb Installation Disk"
+USB\VID_0CF3&PID_0002.DeviceDesc="Atheros predator USB Bootloader Download"
+ATHFMWDL.SvcDesc="Atheros predator Bootloader driver"

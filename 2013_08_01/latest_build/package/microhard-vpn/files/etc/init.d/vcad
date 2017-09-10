@@ -1,0 +1,22 @@
+#!/bin/sh /etc/rc.common
+
+START=86
+. /etc/functions.sh
+
+setup_vca() {
+    local cfg="$1"
+    vca_pwd=$(uci get ipsec.${cfg}.pwd)
+    echo "$cfg * $vca_pwd *" >> /etc/ppp/chap-secrets
+    echo "$cfg * $vca_pwd *" >> /etc/ppp/pap-secrets
+    logger -t "vcad" "write $cfg * $vca_pwd *"
+}
+
+start(){
+    rm -f /etc/ppp/chap-secrets
+    rm -f /etc/ppp/pap-secrets
+    config_load ipsec
+    config_foreach setup_vca vca
+}
+
+
+

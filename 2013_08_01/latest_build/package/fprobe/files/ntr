@@ -1,0 +1,28 @@
+#!/bin/sh
+
+. /etc/functions.sh
+
+uci_load ntrd
+for i in 0 1 2
+do
+  j=`expr $i + 1`
+  config_get status report${i} status
+  
+  if [ $status = B ]; then
+     config_get interface report${i} interface
+     config_get ip report${i} ip
+     config_get port report${i} port
+     config_get exp report${i} express
+     config_get version report${i} version
+     config_get sip report${i} sip
+     logger -t "ntrd" "$interface $ip $port $exp"
+     if [ -z "$exp" ]; then
+         cmd="fprobe -p -$version -a'$sip' -v7 -l1:$j -i$interface $ip:$port"
+     else
+         cmd="fprobe -p -$version -a'$sip' -v7 -l1:$j -i$interface -f'$exp' $ip:$port"
+     fi
+     `eval $cmd`
+     sleep 1
+  fi   
+done
+

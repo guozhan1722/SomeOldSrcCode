@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common
+
+. /etc/version
+
+START=99
+STOP=99
+
+start(){
+        killall -9 websockserver
+        killall -9 websockscript
+        /bin/websockscript &
+}
+stop(){
+        killall -9 websockserver
+        killall -9 websockscript
+}
+

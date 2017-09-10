@@ -1,0 +1,165 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+. /etc/version
+
+START=62
+STOP=90
+COM2EnableFile="/etc/soipd2_runing"
+
+start() {
+
+        killall -9 soipdmpci2
+
+        logger "/etc/init.d/soip2 start"
+        rm -f /var/run/com2_packet
+        rm -f $COM2EnableFile
+
+
+        config_load comport2
+        config_get status com2 COM2_Port_Status
+        config_get Data_Baud_Rate com2 COM2_Data_Baud_Rate
+
+        case "$Data_Baud_Rate" in
+            "A")
+                FORM_COM12_Data_Baud_Rate="300"
+                ;;
+            "B")
+                FORM_COM12_Data_Baud_Rate="600"
+                ;;
+            "C")
+                FORM_COM12_Data_Baud_Rate="1200"
+                ;;
+            "D")
+                FORM_COM12_Data_Baud_Rate="2400"
+                ;;
+            "E")
+                FORM_COM12_Data_Baud_Rate="3600"
+                ;;
+            "F")
+                FORM_COM12_Data_Baud_Rate="4800"
+                ;;
+            "G")
+                FORM_COM12_Data_Baud_Rate="7200"
+                ;;
+            "H")
+                FORM_COM12_Data_Baud_Rate="9600"
+                ;;
+            "I")
+                FORM_COM12_Data_Baud_Rate="14400"
+                ;;
+            "J")
+                FORM_COM12_Data_Baud_Rate="19200"
+                ;;
+        
+            "K")
+                FORM_COM12_Data_Baud_Rate="28800"
+                ;;
+            "L")
+                FORM_COM12_Data_Baud_Rate="38400"
+                ;;
+            "M")
+                FORM_COM12_Data_Baud_Rate="57600"
+                ;;
+            "N")
+                FORM_COM12_Data_Baud_Rate="115200"
+                ;;
+        esac
+
+        if [ "A" == "$status" ]; then
+            logger "Com Port is disabled" 
+        fi
+
+        [ "A" == "$status" ] || {
+            logger "Enable Com Port"
+
+            # Create com2 enable file, will read by getty.c as a flag file
+            echo "$FORM_COM12_Data_Baud_Rate" > $COM2EnableFile
+           
+            # Kill getty, intend to respawn it with com_enable_process  
+            if [ "$HARDWARE" = "v2.0.0" ]; then
+                if [ -n "`ps aux | grep getty| grep ttyS0 | grep -v 'grep ttyS0'`" ]; then 
+                    _pid=`ps | grep "ttyS0" | grep -v "grep" | awk '{print $1}'` 
+                    kill $_pid
+                    logger "Kill getty" 
+                else
+                    if [ -n "`ps aux | grep clitest | grep -v 'grep clitest'`" ]; then 
+    	                killall clitest
+                    else
+                        /bin/soipdmpci2 &
+                    fi
+                fi
+
+            else
+                if [ -n "`ps aux | grep getty| grep ttyS1 | grep -v 'grep ttyS1'`" ]; then 
+                    _pid=`ps | grep "ttyS1" | grep -v "grep" | awk '{print $1}'` 
+                    kill $_pid 
+                else
+                    if [ -n "`ps aux | grep clitest | grep -v 'grep clitest'`" ]; then 
+    	                killall clitest
+                    else
+                        /bin/soipd2 &
+                    fi
+                fi
+            fi
+
+            #slepp 10
+            # Set up channel mode (232/485/422)
+            config_get mode com2 COM2_Chanel_Mode
+            logger "COM channel mode: $mode"
+
+            if [ "$HARDWARE" = "v2.0.0" ]; then
+                if [ "A" = "$mode" ];then
+                        #for 232 mode
+                        logger "COM channel mode: 232"
+                        mpci -gpio set 0 1
+                        mpci -gpio set 1 0
+                        echo 0 > /sys/class/leds/RS232_RS485/brightness
+                elif [ "B" = "$mode" ];then
+                        #for 485 RX-only mode
+                        logger "COM channel mode: 485"
+                        mpci -gpio set 0 0
+                        mpci -gpio set 1 0
+                        echo 255 > /sys/class/leds/RS232_RS485/brightness
+                elif [ "C" = "$mode" ];then
+                        #for 422 mode
+                        logger "COM channel mode: 422"
+                        mpci -gpio set 0 0
+                        mpci -gpio set 1 1
+                        echo 255 > /sys/class/leds/RS232_RS485/brightness
+                else
+                        #default mode for 232 mode
+                        logger "COM channel default mode: 232"
+                        mpci -gpio set 0 1
+                        mpci -gpio set 1 0
+                        echo 0 > /sys/class/leds/RS232_RS485/brightness
+                fi
+                RS232_RS485=`cat /sys/class/leds/RS232_RS485/brightness`
+                logger "cat /sys/class/leds/RS232_RS485/brightness : $RS232_RS485"
+                RE_485=`mpci -gpio get 0`
+                logger "mpci -gpio get 0 : $RE_485"
+                DE_485=`mpci -gpio get 1`
+                logger "mpci -gpio get 1 : $DE_485"
+            fi
+        }
+}
+
+stop() {
+        logger "/etc/init.d/soip2 stop"
+
+        if [ "$HARDWARE" != "v2.0.0" ]; then
+            killall soipd2 
+        else
+            #default mode for 232 mode
+            mpci -gpio set 0 1
+            mpci -gpio set 1 0
+            echo 0 > /sys/class/leds/RS232_RS485/brightness
+
+            killall soipdmpci2
+        fi
+
+	rm -f /var/run/com2_packet
+        rm -f $COM2EnableFile
+}
+
+

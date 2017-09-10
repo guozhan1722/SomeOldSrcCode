@@ -1,0 +1,23 @@
+/.gitignore/1.1/Thu Apr  1 22:11:34 2010/-kkv/Tar71xx_4g
+/Makefile/1.1/Thu Apr  1 22:11:35 2010/-kkv/Tar71xx_4g
+/README/1.1/Thu Apr  1 22:11:35 2010/-kkv/Tar71xx_4g
+/conf.c/1.1/Thu Apr  1 22:11:34 2010/-kkv/Tar71xx_4g
+/confdata.c/1.1/Thu Apr  1 22:11:35 2010/-kkv/Tar71xx_4g
+/expr.c/1.1/Thu Apr  1 22:11:34 2010/-kkv/Tar71xx_4g
+/expr.h/1.1/Thu Apr  1 22:11:34 2010/-kkv/Tar71xx_4g
+/kconfig_load.c/1.1/Thu Apr  1 22:11:34 2010/-kkv/Tar71xx_4g
+/lex.backup/1.1/Thu Apr  1 22:11:35 2010/-kkv/Tar71xx_4g
+/lex.zconf.c_shipped/1.1/Thu Apr  1 22:11:35 2010/-kkv/Tar71xx_4g
+/lkc.h/1.1/Thu Apr  1 22:11:35 2010/-kkv/Tar71xx_4g
+/lkc_proto.h/1.1/Thu Apr  1 22:11:35 2010/-kkv/Tar71xx_4g
+/mconf.c/1.1/Thu Apr  1 22:11:35 2010/-kkv/Tar71xx_4g
+/mconf_check/1.1/Thu Apr  1 22:11:35 2010/-kkv/Tar71xx_4g
+/menu.c/1.1/Thu Apr  1 22:11:34 2010/-kkv/Tar71xx_4g
+/symbol.c/1.1/Thu Apr  1 22:11:35 2010/-kkv/Tar71xx_4g
+/util.c/1.1/Thu Apr  1 22:11:35 2010/-kkv/Tar71xx_4g
+/zconf.gperf/1.1/Thu Apr  1 22:11:35 2010/-kkv/Tar71xx_4g
+/zconf.hash.c_shipped/1.1/Thu Apr  1 22:11:35 2010/-kkv/Tar71xx_4g
+/zconf.l/1.1/Thu Apr  1 22:11:35 2010/-kkv/Tar71xx_4g
+/zconf.tab.c_shipped/1.1/Thu Apr  1 22:11:35 2010/-kkv/Tar71xx_4g
+/zconf.y/1.1/Thu Apr  1 22:11:34 2010/-kkv/Tar71xx_4g
+D/lxdialog////

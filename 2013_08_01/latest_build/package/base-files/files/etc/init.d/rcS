@@ -1,0 +1,35 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+run_scripts() {
+	for i in /etc/rc.d/$1*; do
+		[ -x $i ] && $i $2 2>&1
+	done | $LOGGER
+}
+
+LOGGER="cat"
+[ -x /usr/bin/logger ] && LOGGER="logger -s -p 6 -t sysinit"
+
+#if [ "$1" = "S" ]; then
+#	run_scripts "$1" "$2" &
+#else
+#	run_scripts "$1" "$2"
+#fi
+
+stop_booting_led_flashing() {
+        echo "none" > /sys/class/leds/cpustatus/trigger
+        echo 1 > /sys/class/leds/cpustatus/brightness
+}
+
+
+if [ "$1" = "S" ]; then
+{
+	for i in /etc/rc.d/$1*; do
+		[ -x $i ] && $i $2 2>&1
+	done
+        stop_booting_led_flashing         
+} | logger -s -p 6 -t '' &
+else
+	run_scripts "$1" "$2"
+fi
+

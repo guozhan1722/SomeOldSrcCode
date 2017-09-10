@@ -1,0 +1,9 @@
+/100-debian_shared_lib.patch/1.1/Thu Apr  1 22:10:38 2010/-kkv/Tar71xx_4g
+/101-makefile_create_bindir.patch/1.1/Thu Apr  1 22:10:38 2010/-kkv/Tar71xx_4g
+/102-makefile_disable_manpages.patch/1.1/Thu Apr  1 22:10:38 2010/-kkv/Tar71xx_4g
+/103-makefile_flex_workaround.patch/1.1/Thu Apr  1 22:10:38 2010/-kkv/Tar71xx_4g
+/200-debian_fix_any_intf.patch/1.1/Thu Apr  1 22:10:38 2010/-kkv/Tar71xx_4g
+/201-space_optimization.patch/1.1/Thu Apr  1 22:10:38 2010/-kkv/Tar71xx_4g
+/202-protocol_api.patch/1.1/Thu Apr  1 22:10:37 2010/-kkv/Tar71xx_4g
+/203-undef_iw_mode_monitor.patch/1.1/Thu Apr  1 22:10:38 2010/-kkv/Tar71xx_4g
+D

@@ -1,0 +1,33 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+. /etc/version
+START=50
+STOP=90
+i2c_auto_detect(){
+   I2CADDRESS=30
+   p_vin=$(i2cdetect -y 0 0x$I2CADDRESS 0x$I2CADDRESS|awk -F ':' '{print $2}'|grep $I2CADDRESS)
+   if [ -n "$p_vin" ]; then
+      stm8_exist=1
+   else
+      stm8_exist=0
+   fi
+}
+
+start() {
+   #auto detect stm8 chip first
+   i2c_auto_detect
+   [ "${stm8_exist}" != "0" ] && {
+      /usr/bin/stm8 --agent &
+   }
+}
+
+stop() {
+    pid=$(ps |grep "/usr/bin/stm8"|grep -v grep|awk '{print $1}')
+    kill -9 $pid
+}
+
+restart() {
+    stop
+    start
+}

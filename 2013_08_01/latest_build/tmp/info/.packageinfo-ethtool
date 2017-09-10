@@ -1,0 +1,17 @@
+Source-Makefile: package/ethtool/Makefile
+Package: ethtool
+Version: 3.7-1
+Depends: 
+Provides: 
+Section: net
+Category: Network
+Title: Display or change ethernet card settings
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: ethtool-3.7.tar.gz
+Type: ipkg
+Description:  ethtool is a small utility for examining and tuning your ethernet-based
+ network interface
+http://www.kernel.org/pub/software/network/ethtool/
+@@
+
+

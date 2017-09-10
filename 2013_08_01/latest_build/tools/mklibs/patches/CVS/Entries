@@ -1,0 +1,10 @@
+/001-missing_stdio.patch/1.1/Thu Apr  1 22:13:27 2010/-kkv/Tar71xx_4g
+/002-disable_symbol_checks.patch/1.1/Thu Apr  1 22:13:27 2010/-kkv/Tar71xx_4g
+/003-no_copy.patch/1.1/Thu Apr  1 22:13:26 2010/-kkv/Tar71xx_4g
+/004-libpthread_link.patch/1.1/Thu Apr  1 22:13:27 2010/-kkv/Tar71xx_4g
+/005-readelf_fixes.patch/1.1/Thu Apr  1 22:13:27 2010/-kkv/Tar71xx_4g
+/006-duplicate_syms.patch/1.1/Thu Apr  1 22:13:26 2010/-kkv/Tar71xx_4g
+/007-uclibc_init.patch/1.1/Thu Apr  1 22:13:27 2010/-kkv/Tar71xx_4g
+/008-gc_sections.patch/1.1/Thu Apr  1 22:13:26 2010/-kkv/Tar71xx_4g
+/009-uclibc_libgcc_link.patch/1.1/Thu Apr  1 22:13:26 2010/-kkv/Tar71xx_4g
+D

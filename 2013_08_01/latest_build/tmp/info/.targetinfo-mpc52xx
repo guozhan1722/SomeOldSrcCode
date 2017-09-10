@@ -1,0 +1,18 @@
+Source-Makefile: target/linux/mpc52xx/Makefile
+Target: mpc52xx
+Target-Board: mpc52xx
+Target-Kernel: 2.6
+Target-Name: Freescale MPC52xx
+Target-Path: /home/zguo/project/2013_08_01/latest_build
+Target-Arch: powerpc
+Target-Features: ext2 gpio pci tgz usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -funit-at-a-time
+Linux-Version: 2.6.30.10
+Linux-Release: 1
+Linux-Kernel-Arch: powerpc
+Target-Description:
+	Build images for the Freescale MPC52xx based boards.
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall
+

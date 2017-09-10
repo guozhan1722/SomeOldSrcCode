@@ -1,0 +1,105 @@
+diff -Nuar linux_old/drivers/leds/leds-latch.c linux_new/drivers/leds/leds-latch.c
+--- linux_old/drivers/leds/leds-latch.c	2011-11-21 11:01:44.899699617 -0700
++++ linux_new/drivers/leds/leds-latch.c	2011-11-21 11:02:40.229699974 -0700
+@@ -21,6 +21,11 @@
+ static spinlock_t mem_lock;
+ static unsigned char *iobase;
+ 
++unsigned int MH_led_value=0xFF;
++unsigned int MH_lock=1;
++EXPORT_SYMBOL(MH_led_value);
++EXPORT_SYMBOL(MH_lock);
++
+ struct latch_led_data {
+ 	struct led_classdev cdev;
+ 	struct work_struct work;
+@@ -37,6 +42,7 @@
+ 		mem_keep &= ~(0x1 << bit);
+ 
+ 	writeb(mem_keep, iobase);
++    MH_led_value=mem_keep;
+ }
+ 
+ static void latch_led_set(struct led_classdev *led_cdev,
+@@ -46,10 +52,12 @@
+ 		container_of(led_cdev, struct latch_led_data, cdev);
+ 
+ 	spin_lock(mem_lock);
++    MH_lock=1;
+ 
+ 	led_dat->set_led(led_dat->bit, value);
+ 
+ 	spin_unlock(mem_lock);
++    MH_lock=0;
+ }
+ 
+ static int latch_led_probe(struct platform_device *pdev)
+diff -Nuar linux_old/drivers/serial/8250.c linux_new/drivers/serial/8250.c
+--- linux_old/drivers/serial/8250.c	2011-11-21 11:01:44.874502651 -0700
++++ linux_new/drivers/serial/8250.c	2011-11-21 11:03:14.150039269 -0700
+@@ -115,13 +115,32 @@
+ #define GPIO_RS485_RX           3
+ #define GPIO_RS485_TX           4
+ 
+-#define LEDMAN_COM1_RX		0x02
+-#define LEDMAN_COM1_TX		0x01
++#define LEDMAN_COM1_RX_BIT	1	
++#define LEDMAN_COM1_TX_BIT   0	
++#define LED_ON  1
++#define LED_OFF  0
+ #define LEDMAN_COM2_RX		0
+ #define LEDMAN_COM2_TX		0
+ static volatile unsigned char *ledman_data;
+-static volatile unsigned char led_val;
++
++extern int MH_led_value;
++extern int MH_lock;
+ static int revision ;
++
++/*tx led : mh_set_led(0,1)*/
++/*rx led : mh_set_led(1,1)*/
++static void mh_set_led(int bit,int led_on)
++{
++    if (led_on == LED_OFF)
++        MH_led_value |= (0x1 << bit);
++    else
++        MH_led_value &= ~(0x1 << bit);
++
++    if(MH_lock==0) {
++        *ledman_data = MH_led_value;
++    }
++}
++
+ #endif
+ 
+ #include <asm/serial.h>
+@@ -1425,7 +1444,7 @@
+ 
+ #ifdef MICROHARD_485
+ 	if(up->port.line == 0 && revision != 5 && revision != 4){
+-		*ledman_data =  ~LEDMAN_COM1_RX ;
++        mh_set_led(LEDMAN_COM1_RX_BIT,LED_ON);
+ 	}
+ #endif
+ 	do {
+@@ -1556,7 +1575,7 @@
+ 	}
+ #ifdef MICROHARD_485
+ 	if(up->port.line == 0 && revision != 5 && revision != 4){
+-		*ledman_data = ~LEDMAN_COM1_TX ;
++        mh_set_led(LEDMAN_COM1_TX_BIT,LED_ON);
+ 	} 
+ #endif
+ #ifdef MICROHARD_485
+@@ -3320,10 +3339,9 @@
+ 	revision = (*IXP4XX_EXP_CFG0 >> 17) & 0xf;
+ 	*IXP4XX_EXP_CS2 = 0xbfff0003;
+ 	ledman_data = (volatile unsigned char *) ioremap((IXP4XX_EXP_BUS_BASE_PHYS + 0x02000000), 512);
+-
+ 	printk(KERN_INFO "Serial: 8250/16550 driver, "
+ 		"%d ports, IRQ sharing %sabled and ioremap value %x at address %x\n", nr_uarts,
+-		share_irqs ? "en" : "dis",*ledman_data,ledman_data);
++		share_irqs ? "en" : "dis",MH_led_value,ledman_data);
+ #else
+ 	printk(KERN_INFO "Serial: 8250/16550 driver, "
+ 		"%d ports, IRQ sharing %sabled\n", nr_uarts,

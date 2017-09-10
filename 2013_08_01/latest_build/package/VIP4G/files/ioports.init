@@ -1,0 +1,34 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+. /etc/version
+START=50
+STOP=90
+
+start() {
+    if [ "$HARDWARE" = "v2.0.0" ]; then
+            logger "VIP4G /etc/init.d/ioports started..."
+            config_load ioports
+    
+            config_get FORM_output1 output output1
+            config_get FORM_output2 output output2
+            config_get FORM_output3 output output3
+            config_get FORM_output4 output output4
+    
+            echo $FORM_output1 > /sys/class/leds/OUTPUT1/brightness
+            echo $FORM_output2 > /sys/class/leds/OUTPUT2/brightness
+            echo $FORM_output3 > /sys/class/leds/OUTPUT3/brightness
+            echo $FORM_output4 > /sys/class/leds/OUTPUT4/brightness 
+    fi
+}
+
+stop() {
+    if [ "$HARDWARE" = "v2.0.0" ]; then
+            logger "VIP4G /etc/init.d/ioports stopped..."
+    fi
+}
+
+restart() {
+	stop
+	start
+}

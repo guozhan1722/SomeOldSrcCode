@@ -1,0 +1,628 @@
+302720,Rogers,ltemobile.apn,internet.com,staticip.apn,media.com,
+302610,Bell,pda.bell.ca,inet.bell.ca,pda2.bell.ca
+302220,Telus,sp.telus.com,isp.telus.com,sp.koodo.com
+302490,Wind,internet.windmobile.ca
+302320,Mobilicity,internet.davewireless.com,wap.davewireless.com
+302500,Videotron1,media.videotron
+302510,Videotron2,media.videotron
+302370,Fido,internet.fido.ca,wap.fido.ca
+302780,SaskTel,inet.stm.sk.ca,pda.stm.sk.ca
+310012,Verizon,vzwinternet
+310030,Internet,private.centennialwireless.com
+310090,Internet,isp
+310100,PLATWEB,plateauweb
+310160,T-Mobile US 160,epc.tmobile.com,fast.t-mobile.com
+310170,DataConnect,isp.cingular
+310200,T-Mobile US 200,epc.tmobile.com,fast.t-mobile.com
+310210,T-Mobile US 210,epc.tmobile.com,fast.t-mobile.com
+310220,T-Mobile US 220,epc.tmobile.com,fast.t-mobile.com
+310230,T-Mobile US 230,epc.tmobile.com,fast.t-mobile.com
+310240,T-Mobile US 240,epc.tmobile.com,fast.t-mobile.com
+310250,T-Mobile US 250,epc.tmobile.com,fast.t-mobile.com
+310260,T-Mobile US,epc.tmobile.com
+310270,T-Mobile US 270,epc.tmobile.com,fast.t-mobile.com
+310310,T-Mobile US 310,epc.tmobile.com,fast.t-mobile.com
+310380,Cingular 380 ATT,proxy,pdpwap1,i2gold
+310410,Cingular 410,pta,wap.cingular,wap.tracfone,tfdata,isp.cingular,blackberry.net
+310470,DataConnect,isp.cingular,wap.cingular
+310480,DataConnect,isp.cingular,wap.cingular
+310490,T-Mobile US 490,epc.tmobile.com,fast.t-mobile.com
+310580,T-Mobile US 580,epc.tmobile.com,fast.t-mobile.com
+310610,EpicINT,internet.epictouch
+310660,T-Mobile US 660,epc.tmobile.com,fast.t-mobile.com
+310770,WEB 2,i2.iwireless.com
+310800,T-Mobile US 800,epc.tmobile.com,fast.t-mobile.com
+310840,Internet,isp
+310910,WOW_WAP,wap.firstcellular.com
+46000,China Mobile,cmnet
+46001,China Unicom,3gnet,uninet
+20201,default,internet.com,internet
+20205,Vf Internet,internet.vodafone.gr,wap.vodafone.gr
+20210,Wind Internet,gint.b-online.gr
+20404,Vodafone NL,live.vodafone.com
+20408,KPN Internet,portalmmm.nl
+20412,Telfort Internet,internet
+20416,T-Mobile Internet,internet
+20420,Rabo Mobiel,rabo.plus
+20601,Proximus Internet,internet.proximus.be
+20605,Telenet,telenetwap.be
+20610,Mobistar,mworld.be
+20620,Base,gprs.base.be
+20801,Orange WAP,orange
+20810,SFR Full Internet,sl2sfr,wapsfr
+20820,Bouygues Telecom,mmsbouygtel.com
+20810,NRJWEB,fnetnrj
+20801,VM WAP,ofnew.fr,ofnew.fr,ofnew.fr
+20810,Auchan WAP,wap65
+20801,NRJWEB,ofnew.fr
+20810,WAP Simplicime,wapdebitel,wap66,wapcoriolis,internet68,wapdebitel
+208101,SFR,sl2sfr
+21401,Internet movil,airtelwap.es
+21403,Orange Internet PC,internet
+21404,GPRS Connection,internet
+21406,INTERNET GPRS,airtelnet.es,internet.euskaltel.mobi,internet.mundo-r.com,internet.telecable.es
+21407,Movistar,telefonica.es
+21408,Euskaltel Internet,internet.euskaltel.mobi
+21416,TeleCable Internet,internet.telecable.es
+21601,Telenor Online,net
+21630,Web,wnw
+21670,VF internet,internet.vodafone.net,vitamax.internet.vodafone.net
+21901,T-Mobile,web.htgprs
+21902,Tele2,internet.tele2.hr
+21910,Broadband,data.vip.hr
+22001,Telenor WAP,internet
+22003,mt:s wap,gprswap
+22004,T-Mobile Internet,tmcg-wnw
+22005,Vip GPRS,vipmobile
+22201,TIM WAP,wap.tim.it,ibox.tim.it,web.iusacellgsm.mx
+22210,Acc. Internet da cell,mobile.vodafone.it
+22288,WIND WEB,internet.wind,internet.wind.biz
+22299,3,tre.it,apn.fastweb.it
+22601,Vodafone live!,live.vodafone.com,live.pre.vodafone.com
+22603,Cosmote Internet,internet,wnw
+22606,web'n'walk,wnw
+22610,Orange Internet,net
+22801,Swisscom Services,gprs.swisscom.ch
+22802,Sunrise live,internet
+22803,Orange,internet
+23001,T-Mobile CZ,internet.t-mobile.cz
+23002,O2 internet,internet
+23003,GPRS Web,internet
+23101,Orange internet,internet,orangewap
+23102,T-Mobile internet,internet
+23106,O2 internet,o2internet
+23201,A1,a1.net,aon.at
+23203,T-Mobile Internet,gprsinternet
+23205,Orange Web,orange.web
+23207,tele.ring web,web
+23210,Planet3,drei.at
+23211,data.bob,bob.at
+23212,YESSS! GPRS,web.yesss.at
+23401,UBIQUISYS,internet
+23402,O2 MOBILE WEB,mobile.o2.co.uk
+23410,O2 PREPAY,payandgo.o2.co.uk,giffgaff.com
+23411,O2 MOBILE WEB,mobile.o2.co.uk
+23410,TESCO,prepay.tesco-mobile.com,wap.o2.co.uk
+23411,O2 MOBILE WEB,mobile.o2.co.uk
+23415,Vodafone UK,wap.vodafone.co.uk,pp.vodafone.co.uk,btmobile.bt.com,asdamobiles.co.uk
+23420,3 WAP,three.co.uk
+23430,T-Mobile UK,general.t-mobile.uk,goto.virginmobile.uk
+23431,T-Mobile Internet,general.t-mobile.uk
+23432,T-Mobile Internet,general.t-mobile.uk
+23433,Orange internet,orangeinternet
+23434,Orange internet,orangeinternet
+23450,pepperWEB (Jersey),pepper
+23455,C&W Guernsey Internet,internet
+23458,3G HSDPA,3gpronto,web.manxpronto.net
+23486,Orange internet,orangeinternet
+23801,TDC,internet,internet.no,wap,wap
+23802,Telenor Internet,Internet
+23806,3 Locked,data.tre.dk
+23820,Internet,websp,www.internet.mtelia.dk
+23877,Telenor Internet,Internet
+24001,Telia SE WAP,online.telia.se
+240017,Halebop Internet,halebop.telia.se
+24002,3,data.tre.se
+24004,Telenor Mobilsurf,services.telenor.se
+24006,Telenor Mobilsurf,services.telenor.se
+24007,Tele2,internet.tele2.no,internet.tele2.se
+24008,Telenor Mobilsurf,services.telenor.se
+24009,TelenorMobilsurf,services.telenor.se
+24010,Spring data,data.springmobil.se
+24201,Ventelo Internett,internet.ventelo.no,telenor
+24202,NetCom Internett,wap
+24204,Tele2 Internett,internet.tele2.no
+24205,NwN Internet,internet
+24403,DNA Internet,internet
+24404,DNA Internet,internet
+24405,Elisa Internet,internet
+24410,TDC Internet,internet.song.fi
+24412,DNA Internet,internet
+24413,DNA Internet,internet
+24421,Saunalahti Internet,internet.saunalahti
+24491,SONERA Internet,internet
+24601,Omnitel Internet,omnitel
+24602,Bite LT WAP,wap
+24603,Tele2 Internet LT,internet.tele2.lt
+24701,LMT Internet,internet.lmt.lv
+24702,Tele2 LV Internet,internet.tele2.lv
+24705,Bite LV Internet,internet,wap
+24801,EMT Internet,internet.emt.ee,wap.emt.ee
+24802,Elisa Internet,internet,wap
+24803,Tele2 Internet,internet.tele2.ee
+26001,Plus Internet,internet
+26002,Era Internet,erainternet,heyah.pl
+26003,Orange INTERNET,internet
+26006,P4 Internet,internet
+26201,T-Mobile Internet,internet.t-mobile
+26202,Vodafone DE,web.vodafone.de
+26203,E-Plus Web GPRS,internet.eplus.de
+26207,o2,internet
+26801,Vodafone Net2,net2.vodafone.pt
+26803,PortalOptimus,umts
+26806,tmn internet,internet
+27001,LUXGSM WAP,wap.pt.lu
+27077,Tango WAP,internet
+27099,Vox Mobile,vox.lu
+27201,Vodafone IE,live.vodafone.com
+27202,O2 Ireland,internet
+27203,Meteor Data,data.mymeteor.ie,mms.mymeteor.ie
+27205,3 Ireland,3ireland.ie
+27211,Tesco,tescomobile.liffeytelecom.com
+27401,Siminn Internet,internet
+27402,Vodafone Internet,gprs.is,live.gprs.is
+27411,Net Nova,net.nova.is
+27801,Vodafone MT,internet
+28001,CYTA,cytamobile
+28010,MTN Wap,wap
+28401,M-Tel,inet-gprs.mtel.bg
+28405,GPRS GLOBUL,globul
+28601,Turkcell Internet,internet
+28602,Vodafone Internet,internet
+28603,Avea Internet,internet
+29001,Tele Internet,internet
+29340,Vodafone live!,internet.simobil.si
+29341,Planet,internet
+29401,T-Mobile MK Internet,internet
+29403,Internet,vipoperator
+29702,T-Mobile Internet,tmcg-wnw
+311210,Farmers GPRS,internet.farmerswireless.com
+330110,INTERNET CLARO,internet.claropr.com
+334020,Internet,internet.itelcel.com
+33403,movistar Internet,internet.movistar.mx
+334030,movistar Internet,internet.movistar.mx
+334050,Iusacell Internet,web.iusacellgsm.mx
+338050,INTERNET Digicel,web.digiceljamaica.com
+33818,Lime Internet Postpaid,internet
+338070,Claro Web,internet.ideasclaro.com.jm
+338180,Lime Internet Postpaid,internet
+34001,Orange World CaraÃ¯be,orangewap
+34020,Digicel FR,wap.digicelfr.com
+34260,Lime Internet Postpaid,internet
+34492,Lime Internet Postpaid,internet
+34614,Lime Internet Postpaid,internet
+34817,Lime Internet Postpaid,internet
+35211,Lime Internet Postpaid,internet
+35486,Lime Internet Postpaid,internet
+35611,Lime Internet Postpaid,internet
+35811,Lime Internet Postpaid,internet
+36011,Lime Internet Postpaid,internet
+36584,Lime Internet Postpaid,internet
+36611,Lime Internet Postpaid,internet
+36801,Internet,internet
+37001,Orange net,orangenet.com.do
+37002,INTERNET CLARO,internet.ideasclaro.com.do
+37004,Viva Edge,edge.viva.net.do
+37412,Bmobile internet,internet
+374120,Bmobile internet,internet
+374121,Bmobile internet,internet
+374122,Bmobile internet,internet
+374123,Bmobile internet,internet
+374124,Bmobile internet,internet
+374125,Bmobile internet,internet
+374126,Bmobile internet,internet
+374127,Bmobile internet,internet
+374128,Bmobile internet,internet
+374129,Bmobile internet,internet
+37635,Lime Internet Postpaid,internet
+40401,Vodafone Connect,www,portalnmms
+40402,Airtel,airtelgprs.com
+40403,Airtel,airtelgprs.com
+40404,IDEA,internet
+40405,Vodafone Connect,www,portalnmms
+40407,IDEA,internet
+40409,Reliance RTel,SMARTNET
+40410,Airtel,airtelgprs.com
+40411,Vodafone Connect,www,portalnmms
+40412,IDEA,internet
+40413,Vodafone Connect,www,portalnmms
+40414,IDEA Punjab,spicegprs
+40415,Vodafone Connect,www,portalnmms
+40416,Airtel,airtelgprs.com
+40417,AIRCEL NE,aircelwebpost
+40418,Reliance RTel,SMARTNET
+40419,IDEA,internet
+40420,Vodafone Connect,www,portalnmms
+40421,Loop Mobile,www
+40422,IDEA,internet
+40424,IDEA,internet
+40425,AIRCEL NE,aircelwebpost
+40427,Vodafone Connect,www,portalnmms
+40428,AIRCEL NE,aircelwebpost
+40429,AIRCEL NE,aircelwebpost
+40430,Vodafone Connect,www,portalnmms
+40431,Airtel,airtelgprs.com
+40433,AIRCEL NE,aircelwebpost
+40434,Cellone_North,bsnlnet
+40435,AIRCEL NE,aircelwebpost
+40436,Reliance RTel,SMARTNET
+40437,AIRCEL NE,aircelwebpost
+40438,CellOne_Kolkata,bsnlnet
+40440,Airtel,airtelgprs.com
+40441,AIRCEL TN,aircelgprs.po
+40442,AIRCEL TN,aircelgprs.po
+40443,Vodafone Connect,www,portalnmms
+40444,IDEA Karnataka,simplyinternet
+40445,Airtel,airtelgprs.com
+40446,Vodafone Connect,www,portalnmms
+40449,Airtel,airtelgprs.com
+40450,Reliance RTel,SMARTNET
+40451,Cellone_North,bsnlnet
+40452,Reliance RTel,SMARTNET
+40453,Cellone_North,bsnlnet
+40454,Cellone_North,bsnlnet
+40455,Cellone_North,bsnlnet
+40456,IDEA,internet
+40457,Cellone_West,bsnlnet
+40458,Cellone_West,bsnlnet
+40459,Cellone_North,bsnlnet
+40460,Vodafone Connect,www,portalnmms
+40462,Cellone_North,bsnlnet
+40464,CellOne_South,bsnlnet
+40466,Cellone_West,bsnlnet
+40467,Reliance RTel,SMARTNET
+40468,Dolphin_Delhi,gprsmtnldel,mtnl3g
+40469,Dolphin_Mumbai,gprsmtnlmum,mtnl3g
+40470,Airtel,airtelgprs.com
+40471,CellOne_South,bsnlnet
+40472,CellOne_South,bsnlnet
+40473,CellOne_South,bsnlnet
+40474,CellOne_Kolkata,bsnlnet
+40475,CellOne_Kolkata,bsnlnet
+40476,CellOne_Kolkata,bsnlnet
+40477,CellOne_Kolkata,bsnlnet
+40478,IDEA,internet
+40479,CellOne_South,bsnlnet
+40480,CellOne_South,bsnlnet
+40481,CellOne_Kolkata,bsnlnet
+40482,IDEA,internet
+40483,Reliance RTel,SMARTNET
+40484,Vodafone Connect,www,portalnmms
+40485,Reliance RTel,SMARTNET
+40486,Vodafone Connect,www,portalnmms
+40487,IDEA,internet
+40488,Vodafone Connect,www,portalnmms
+40489,IDEA,internet
+40490,Airtel,airtelgprs.com
+40491,AIRCEL NE,aircelwebpost
+40492,Airtel,airtelgprs.com
+40493,Airtel,airtelgprs.com
+40494,Airtel,airtelgprs.com
+40495,Airtel,airtelgprs.com
+40496,Airtel,airtelgprs.com
+40497,Airtel,airtelgprs.com
+40498,Airtel,airtelgprs.com
+40501,Reliance RCOM,rcomnet
+40503,Reliance RCOM,rcomnet
+40504,Reliance RCOM,rcomnet
+40505,Reliance RCOM,rcomnet
+40506,Reliance RCOM,rcomnet
+40507,Reliance RCOM,rcomnet
+40508,Reliance RCOM,rcomnet
+40509,Reliance RCOM,rcomnet
+40510,Reliance RCOM,rcomnet
+40511,Reliance RCOM,rcomnet
+40512,Reliance RCOM,rcomnet
+40513,Reliance RCOM,rcomnet
+40514,Reliance RCOM,rcomnet
+40515,Reliance RCOM,rcomnet
+40517,Reliance RCOM,rcomnet
+40518,Reliance RCOM,rcomnet
+40519,Reliance RCOM,rcomnet
+40520,Reliance RCOM,rcomnet
+40521,Reliance RCOM,rcomnet
+40522,Reliance RCOM,rcomnet
+40523,Reliance RCOM,rcomnet
+405025,TataDOCOMO,TATA.DOCOMO.INTERNET
+405026,TataDOCOMO,TATA.DOCOMO.INTERNET
+405027,TataDOCOMO,TATA.DOCOMO.INTERNET
+405028,TataDOCOMO,TATA.DOCOMO.INTERNET
+405029,TataDOCOMO,TATA.DOCOMO.INTERNET
+405030,TataDOCOMO,TATA.DOCOMO.INTERNET
+405031,TataDOCOMO,TATA.DOCOMO.INTERNET
+405032,TataDOCOMO,TATA.DOCOMO.INTERNET
+405033,TataDOCOMO,TATA.DOCOMO.INTERNET
+405034,TataDOCOMO,TATA.DOCOMO.INTERNET
+405035,TataDOCOMO,TATA.DOCOMO.INTERNET
+405036,TataDOCOMO,TATA.DOCOMO.INTERNET
+405037,TataDOCOMO,TATA.DOCOMO.INTERNET
+405038,TataDOCOMO,TATA.DOCOMO.INTERNET
+405039,TataDOCOMO,TATA.DOCOMO.INTERNET
+405040,TataDOCOMO,TATA.DOCOMO.INTERNET
+405041,TataDOCOMO,TATA.DOCOMO.INTERNET
+405042,TataDOCOMO,TATA.DOCOMO.INTERNET
+405043,TataDOCOMO,TATA.DOCOMO.INTERNET
+405044,TataDOCOMO,TATA.DOCOMO.INTERNET
+405045,TataDOCOMO,TATA.DOCOMO.INTERNET
+405046,TataDOCOMO,TATA.DOCOMO.INTERNET
+405047,TataDOCOMO,TATA.DOCOMO.INTERNET
+40551,Airtel,airtelgprs.com
+40552,Airtel,airtelgprs.com
+40553,Airtel,airtelgprs.com
+40554,Airtel,airtelgprs.com
+40555,Airtel,airtelgprs.com
+40556,Airtel,airtelgprs.com
+40566,Vodafone Connect,www,portalnmms
+40567,Vodafone Connect,www,portalnmms
+40570,IDEA,internet
+405750,Vodafone Connect,jkgprs,vodafonelivejk
+405751,Vodafone Connect,www,portalnmms
+405752,Vodafone Connect,www,portalnmms
+405753,Vodafone Connect,www,portalnmms
+405754,Vodafone Connect,www,portalnmms
+405755,Vodafone Connect,www,portalnmms
+405756,Vodafone Connect,www,portalnmms
+405799,IDEA,internet
+405800,AIRCEL ROI,aircelgprs
+405801,AIRCEL South,aircelgprs
+405802,AIRCEL Central,aircelgprs
+405803,AIRCEL South,aircelgprs
+405804,AIRCEL ROI,aircelgprs
+405805,AIRCEL ROI,aircelgprs
+405806,AIRCEL Central,aircelgprs
+405807,AIRCEL Central,aircelgprs
+405808,AIRCEL Central,aircelgprs
+405809,AIRCEL South,aircelgprs
+405810,AIRCEL ROI,aircelgprs
+405811,AIRCEL ROI,aircelgprs
+405812,AIRCEL Central,aircelgprs
+405813,Uninor GPRS,uninor
+405814,Uninor GPRS,uninor
+405815,Uninor GPRS,uninor
+405816,Uninor GPRS,uninor
+405817,Uninor GPRS,uninor
+405818,Uninor GPRS,uninor
+405819,Uninor GPRS,uninor
+405820,Uninor GPRS,uninor
+405821,Uninor GPRS,uninor
+405822,Uninor GPRS,uninor
+405823,Videocon,vinternet.com
+405824,Videocon,vinternet.com
+405825,Videocon,vinternet.com
+405826,Videocon,vinternet.com
+405827,Videocon,vinternet.com
+405828,Videocon,vinternet.com
+405829,Videocon,vinternet.com
+405830,Videocon,vinternet.com
+405831,Videocon,vinternet.com
+405832,Videocon,vinternet.com
+405833,Videocon,vinternet.com
+405834,Videocon,vinternet.com
+405835,Videocon,vinternet.com
+405836,Videocon,vinternet.com
+405837,Videocon,vinternet.com
+405838,Videocon,vinternet.com
+405839,Videocon,vinternet.com
+405840,Videocon,vinternet.com
+405841,Videocon,vinternet.com
+405842,Videocon,vinternet.com
+405843,Videocon,vinternet.com
+405844,Uninor GPRS,uninor
+405845,IDEA,internet
+405846,IDEA,internet
+405847,IDEA,internet
+405848,IDEA,internet
+405849,IDEA,internet
+405850,IDEA,internet
+405851,IDEA,internet
+405852,IDEA,internet
+405853,IDEA,internet
+405875,Uninor GPRS,uninor
+405876,Uninor GPRS,uninor
+405877,Uninor GPRS,uninor
+405878,Uninor GPRS,uninor
+405879,Uninor GPRS,uninor
+405880,Uninor GPRS,uninor
+405881,STEL,gprs.stel.in
+405882,STEL,gprs.stel.in
+405883,STEL,gprs.stel.in
+405884,STEL,gprs.stel.in
+405885,STEL,gprs.stel.in
+405886,STEL,gprs.stel.in
+405908,IDEA,internet
+405909,IDEA,internet
+405910,IDEA,internet
+405911,IDEA,internet
+405925,Uninor GPRS,uninor
+405926,Uninor GPRS,uninor
+405927,Uninor GPRS,uninor
+405928,Uninor GPRS,uninor
+405929,Uninor GPRS,uninor
+405932,Videocon,vinternet.com
+41001,Mobilink WAP GPRS,connect.mobilinkworld.com
+41003,Ufone WAP,Ufone.internet
+41004,ZONG WAP,zonginternet
+41006,Telenor WAP,internet
+41007,Warid WAP,Wap.warid
+41501,Alfa Internet,internet.mic1.com.lb
+41503,MTC Touch GPRS,gprs.mtctouch.com.lb
+41601,Zain JO Internet Postpaid,internet,internetpre
+41603,umniahinternet Postpaid,internet,net
+41677,Orange Internet,net.orange.jo
+41902,ZAIN MI,pps
+41903,INTERNET ACTION,action.wataniya.com
+41904,VIVA Internet,VIVA
+42001,JAWALNet,jawalnet.com.sa
+42003,mobily Net Prepaid,web2,web1
+42004,zain-gprs,zain
+42202,Oman Mobile Internet,taif
+42203,Nawras GPRS,isp.nawras.com.om
+42402,DATA Package,etisalat.ae
+42403,du WAP,du
+42501,3G Portal,uwap.orange.co.il
+42502,Cellcom Internet,Sphone
+42503,Internet Pelephone,sphone.pelephone.net.il
+42601,Internet,internet.batelco.com
+42602,Zain Internet,connect.mobilinkworld.com
+42604,VIVAGPRS,viva.bh
+42701,Qtel GPRS,gprs.qtel
+42702,VFQ Mobile Internet,vodafone.com.qa
+44010,mopera,mopera.net,mpr2.bizho.net
+45002,KT,Alwayson-r6.ktfwing.com
+45005,SK Telecom (Roaming),roaming.sktelecom.com,web.sktelecom.com
+45008,KT-HSDPA,alwayson-r6.ktfwing.com
+45201,VN MOBIFONE Email,m-wap
+45202,Vinaphone Email,m3-world
+45204,Viettel Email,v-internet
+45205,Vietnamobile Email,internet
+45207,BEELINE Email,internet
+45400,CSL Data,hkcsl
+45402,CSL Data,hkcsl
+45403,3,mobile.three.com.hk
+45404,3-DB-GPRS,web-g.three.com.hk
+45406,SMC-Voda,SmarTone-Vodafone
+45410,CSL Data,hkcsl
+45412,CMHK GPRS,peoples.net
+45416,PCCW_GPRS,pccwdata
+45419,PCCW 3G,pccw
+45500,SmarTone Macau,smartgprs
+45501,CTM,ctm-mobile
+45503,Hutchison Macau,web-g.three.com.hk
+45504,CTM,ctm-mobile
+46601,Far EasTone,internet
+46688,KGT-Online,internet
+46689,VIBO,vibo
+46692,Chunghwa,internet,emome
+46693,TW Mobile,TWM,internet
+46697,TW Mobile,TWM,internet
+46699,TW Mobile,TWM,internet
+50212,Maxis Internet,net,unet
+50216,DiGi Internet,diginet
+50218,U Mobile Internet,my3g
+50219,Celcom Internet,celcom.net.my,celcom3g
+50501,Telstra Internet,Telstra.wap
+50502,Optus Internet,internet,yesinternet,VirginInternet
+50503,Vodafone AU,live.vodafone.com
+50506,3Internet,3netaccess,3services
+50507,VF Internet,vfinternet.au
+50511,Telstra Internet,Telstra.wap
+50512,3Internet,3netaccess,3services
+50571,Telstra Internet,Telstra.wap
+50572,Telstra Internet,Telstra.wap
+50588,VF Internet,vfinternet.au
+50590,Optus Internet,internet
+51001,ISAT BB INTERNET,indosat3g,indosatgprs
+51008,AXISinternet,AXIS
+51010,Telkomsel GPRS WEB,internet
+51011,XL GPRS,www.xlgprs.net,xlunlimited
+51021,ISAT M3 INTERNET,indosatgprs
+51089,3 GPRS,3gprs
+51502,myGlobe Internet Postpaid,internet.globe.com.ph,http.globe.com.ph
+51503,Smart Internet,internet
+51505,SUN INTERNET,minternet
+51518,RED INTERNET,redinternet
+52001,AIS Internet,internet
+52018,DTAC Internet,www.dtac.co.th
+52099,True GPRS Inet,internet
+52501,Singtel Internet,internet,e-ideas
+52502,Singtel E-mail,e-ideas
+52503,M1 E-mail,sunsurf
+52505,StarHub,internet,shwap,shwap
+53001,VFNZ Internet,www.vodafone.net.nz
+53005,Telecom Internet,internet.telecom.co.nz
+53024,2degrees Internet,internet
+60201,Mobinil Web,MobinilWeb
+60202,VF internet,internet.vodafone.net
+60203,Etisalat internet,Etisalat
+60502,mobinet,gprs.tn
+60503,internet Tunisiana,internet.tunisiana.com
+62120,Zain Mobile Internet,internet.ng.Zain.com
+62130,MTN GPRS,web.gprs.mtnnigeria.net
+62150,glo direct,glosecure
+62160,Etisalat Internet,etisalat
+63902,SafaricomBrowse,Safaricom
+63903,Zain WAP,wap.ke.celtel.com
+63907,Orange Internet,wap.orange.co.ke
+64004,Vodacom WAP,Wap
+64700,Orange World RÃ©union,orangerun
+64710,SRR Full Internet,sl2sfr
+65101,VCL Internet GPRS,internet
+65501,Vodacom,internet
+65502,8.ta internet,internet
+65507,Smartdata,internet,vdata
+65510,MTN Data,myMTN
+70401,INTERNET CLARO,internet.ideasclaro
+70402,BROADBAND TIGO,broadband.tigo.gt
+70403,Internet GT,internet.movistar.gt
+704030,Internet GT,internet.movistar.gt
+70601,INTERNET CLARO,internet.ideasclaro
+70603,BROADBAND TIGO,broadband.tigo.sv
+70604,Internet SV,internet.movistar.sv
+706040,Internet SV,internet.movistar.sv
+708001,Internet Claro,web.megatel.hn
+70802,INTERNET TIGO,internet.tigo.hn
+708020,INTERNET TIGO,internet.tigo.hn
+71021,INTERNET,web.emovil
+710300,Internet GPRS,internet.movistar.ni
+710730,INTERNET,web.emovil
+71201,Kolbi,kolbi3g
+71202,Kolbi,kolbi3g
+71401,Wap,apn01.cwpanama.com.pa
+714020,movistar INTERNET,internet.movistar.pa
+71403,WEB Claro,web.claro.com.pa
+71606,movistar Internet,movistar.pe
+71610,CLARO DATOS,claro.pe
+72207,Movistar EmociÃ³n,wap.gprs.unifon.com.ar
+72231,Claro AR,igprs.claro.com.ar
+722310,Claro AR,igprs.claro.com.ar
+72234,Personal Datos AR,gprs.personal.com
+722341,Personal Datos AR,gprs.personal.com
+72402,TIM Connect,timbrasil.br
+72403,TIM Connect,timbrasil.br
+72404,TIM Connect,timbrasil.br
+72405,Java Session,java.claro.com.br
+72406,Vivo Internet,zap.vivo.com.br
+72407,SCTL GPRS,sercomtel.com.br
+72410,Vivo Internet,zap.vivo.com.br
+72411,Vivo Internet,zap.vivo.com.br
+72416,BrT Modem,brt.br
+72419,TelemigC GPRS,gprs.telemigcelular.com.br
+72423,Vivo Internet,zap.vivo.com.br
+72424,AmazÃŽniaC GPRS,gprs.amazoniacelular.com.br
+72431,OI GPRS,gprs.oi.com.br
+73001,Internet Movil,bam.entelpcs.cl
+730010,Internet Movil,bam.entelpcs.cl
+73002,NEM,wap.tmovil.cl
+73003,BAM Claro,bam.clarochile.cl
+73007,web,web.gtdmovil.cl
+73010,Internet Movil,bam.entelpcs.cl
+732101,WEB Comcel 3GSM,internet.comcel.com.co
+732103,TIGO WEB,web.colombiamovil.com.co
+732111,TIGO WEB,web.colombiamovil.com.co
+732123,movistar INTERNET,internet.movistar.com.co
+73401,Digitel GSM,gprsweb.digitel.ve
+73402,Digitel GSM,gprsweb.digitel.ve
+73403,Digitel GSM,gprsweb.digitel.ve
+73404,movistar INTERNET,internet.movistar.ve
+73406,MODEM,int.movilnet.com.ve
+74000,movistar INTERNET,internet.movistar.com.ec
+74001,PORTA INTERNET,internet.porta.com.ec
+740010,PORTA INTERNET,internet.porta.com.ec
+74002,Internet Alegro,internet.alegro.net.ec
+74401,VOX INTERNET,vox.internet
+74402,Claro PY,igprs.claro.com.py
+74404,TIGO PY,internet.tigo.py
+74405,Personal Datos Py,internet
+74801,wapANCEL,wap
+74807,Movistar Internet,webapn.movistar.com.uy
+74810,Claro UY,igprs.claro.com.uy

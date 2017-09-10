@@ -1,0 +1,90 @@
+#!/bin/ash
+#Dont put it into & background mode, we need it return then go next step.
+#SubProgram will wait until it come back.
+ 
+ exec>/dev/null 2>&1
+ 
+case "$1" in 
+
+
+msc_gpsr)
+    GPS_STATUS=`uci get gpsd.cfg.status`
+    #If gps status is disabled
+    if [ "${GPS_STATUS}" = "0" ]; then
+        exit 0
+    fi
+
+    TCP_PORT=`uci get gpsd.cfg.tcpport`
+    /bin/gpsr_sms $TCP_PORT $2 &
+    exit 1
+    ;;
+
+
+wget_loc)
+   rm /var/run/GPS_position_carr
+   wget http://www.google.com/glm/mmap --post-file=/var/run/wget.location -O- > /var/run/nmap 
+   ;;
+
+
+gpsrsmtp)
+    /usr/sbin/sendmail -C/etc/ssmtp/gpsr$3.conf $2 < /tmp/run/gpsr$3_email.dat &
+   ;;
+
+ippass_check)
+    rm /tmp/run/gpslocalip
+    ippass_ip=$(cat /var/run/ippth_4g | grep on | awk '{print $1}' )
+    if [ "$ippass_ip" ]; then
+	ippass_set=$(cat /etc/config/lte |grep ippassthrough | grep Ethernet )
+	if [ "$ippass_set" ]; then
+		echo "$ippass_ip" >/tmp/run/gpslocalip
+	fi
+    fi
+   ;;
+
+arping_more)
+    rm /tmp/run/gpsarpingresult
+    awk '{print $3}' /tmp/dhcp.leases >/tmp/run/arpinglist
+    netstat | grep ESTABLISHED | grep -v localhost | awk '{print $5}'|awk -F':' '{print $(NF-1)}' >>/tmp/run/arpinglist
+    cat /proc/net/arp |grep 0x2| grep br-lan |awk '{print $1}' >>/tmp/run/arpinglist
+    cat /tmp/run/arplist |grep 0x2 |grep br-lan |awk '{print $1}' >>/tmp/run/arpinglist
+    cat /tmp/lan_arp |grep 0x2 |grep br-lan |awk '{print $1}' >>/tmp/run/arpinglist
+    cat /tmp/run/arpinglist | sort -u >/tmp/run/arpinglist
+    
+    for list_ip in `cat /tmp/run/arpinglist` ; do
+	ip_ok=$(arping -c 1 -I br-lan $list_ip| grep Unicast |awk '{ print $4 }')
+	if [ "$ip_ok" ]; then
+		echo "$list_ip" > /tmp/run/gpsarpingresult
+		break
+	fi
+    done
+    ;;
+
+arping_scan)
+	rm /tmp/run/gpsarpingresult
+	br_ip_base=$(ifconfig br-lan | grep inet |grep -v inet6 | awk -F'[: .]+' '{ip_str=$4"."$5"."$6"."} END {print ip_str}' )
+
+		fping -q -c 1 -g ${br_ip_base}1 ${br_ip_base}254  
+		cat /proc/net/arp |grep 0x2| grep br-lan |awk '{print $1}' >/tmp/run/arpinglist
+
+		    for list_ip in `cat /tmp/run/arpinglist` ; do
+			ip_ok=$(arping -c 1 -I br-lan $list_ip| grep Unicast |awk '{ print $4 }')
+			if [ "$ip_ok" ]; then
+				echo "$list_ip" > /tmp/run/gpsarpingresult
+				break
+			fi
+		    done
+    ;;
+
+arping_check)
+    rm /tmp/run/gpsarpingresult
+    arping -c 1 -I br-lan $2| grep Unicast |awk '{ print $4 }' >/tmp/run/gpsarpingresult
+    ;;
+
+
+*)
+    echo "Usage: /bin/UI_script {|ip_restart|ntpd_restart|ntpd_stop|dhcpd_restart|dhcpd_stop|soipd1_restart|soipd1_stop||soipd2_restart|soipd2_stop||soipdusb_restart|soipdusb_stop|}"
+    exit 1
+   ;;
+esac 
+exit 0
+

@@ -1,0 +1,22 @@
+
+include makefile.soc.linux.mak
+export TOOL_PREFIX=$(CROSS_COMPILE)
+
+
+all: devlib client 
+
+devlib: 
+	$(MAKE) -C ./devlib -f makefile.soc.linux dirs
+	$(MAKE) -C ./devlib -f makefile.soc.linux
+
+client: devlib
+	$(MAKE) -C ./client -f makefile.soc.linux dirs
+	$(MAKE) -C ./client -f makefile.soc.linux  
+
+clean:
+	$(MAKE) -C ./devlib -f makefile.soc.linux clean
+	$(MAKE) -C ./client -f makefile.soc.linux clean
+
+.PHONY: all createini devlib client clean 
+
+

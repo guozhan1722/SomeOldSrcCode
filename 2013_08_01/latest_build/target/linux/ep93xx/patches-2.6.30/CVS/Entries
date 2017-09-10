@@ -1,0 +1,13 @@
+/001-ep93xx-regs.patch/1.1/Thu Apr  1 22:10:25 2010/-kkv/Tar71xx_4g
+/002-lcd-linux-hd44780.patch/1.1/Thu Apr  1 22:10:25 2010/-kkv/Tar71xx_4g
+/003-ep93xx-i2c.patch/1.1/Thu Apr  1 22:10:25 2010/-kkv/Tar71xx_4g
+/004-simone-rtc.patch/1.1/Thu Apr  1 22:10:25 2010/-kkv/Tar71xx_4g
+/005-ep93xx-dma.patch/1.1/Thu Apr  1 22:10:25 2010/-kkv/Tar71xx_4g
+/006-ep93xx-touchscreen.patch/1.1/Thu Apr  1 22:10:25 2010/-kkv/Tar71xx_4g
+/007-ep93xx-eth.patch/1.1/Thu Apr  1 22:10:25 2010/-kkv/Tar71xx_4g
+/008-ep93xx-spi.patch/1.1/Thu Apr  1 22:10:25 2010/-kkv/Tar71xx_4g
+/009-ep93xx-fb.patch/1.1/Thu Apr  1 22:10:25 2010/-kkv/Tar71xx_4g
+/010-ep93xx-snd-ac97.patch/1.1/Thu Apr  1 22:10:25 2010/-kkv/Tar71xx_4g
+/011-simone-board-def.patch/1.1/Thu Apr  1 22:10:25 2010/-kkv/Tar71xx_4g
+/012-ep93xx-cpuinfo.patch/1.1/Thu Apr  1 22:10:25 2010/-kkv/Tar71xx_4g
+D

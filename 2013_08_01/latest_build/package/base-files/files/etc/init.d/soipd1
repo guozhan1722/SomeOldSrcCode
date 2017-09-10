@@ -1,0 +1,19 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+. /etc/version
+
+START=50
+STOP=90
+
+start() {
+	echo "soipd1 starting..."
+#	rm -f /var/run/com1_packet
+#	/bin/soipd1 &
+}
+
+stop() {
+	echo "soipd1 stopping..."
+#	killall soipd1 
+#	rm -f /var/run/com1_packet
+}

@@ -1,0 +1,1 @@
+brctl showmacs br-lan >/var/run/br_maclist

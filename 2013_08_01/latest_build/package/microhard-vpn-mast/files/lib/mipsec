@@ -1,0 +1,402 @@
+#!/bin/sh
+
+my_lockfile ()
+{
+        TEMPFILE="$1.$$"
+        LOCKFILE="$1.lock"
+        echo $$ > $TEMPFILE || {
+                echo "You don't have permission to access `dirname $TEMPFILE`"
+                return 1
+        }
+        ln $TEMPFILE $LOCKFILE && {
+                rm -f $TEMPFILE
+                return 0
+        }
+        kill -0 `cat $LOCKFILE` && {
+                rm -f $TEMPFILE
+                return 1
+        }
+        echo "Removing stale lock file"
+        rm -f $LOCKFILE
+        ln $TEMPFILE $LOCKFILE && {
+                rm -f $TEMPFILE
+                return 0
+        }
+        rm -f $TEMPFILE
+        return 1
+}
+ 
+me="mipsec[$$]" 
+
+[ -f "/etc/debugipsec" ] && logger -p local0.error -t "$me" "$@"
+ 
+case "$1" in 
+
+#reture value
+#1 -- interface down or ip_addr is 0.0.0.0
+#2 -- ipsec is not running
+#3 -- interface is not added into ipsec
+#8 -- success
+check_wan)
+        # get the WAN IP
+        wan_status="1"
+        wan_ip=$(/sbin/uci -P /var/state get network.wan.up)
+        if [ $wan_ip = "1" ]; then
+           wan_ip=$(/sbin/uci -P /var/state get network.wan.ipaddr)
+           [ $wan_ip = "0.0.0.0" ] && {
+              echo $wan_status
+              exit $wan_status
+           }
+           wan_status="2"
+           [ -S "/var/run/pluto/pluto.ctl" ] && {
+              cmd="ipsec auto --status|grep -c 'interface mast0/br-wan $wan_ip'"
+              bwan="0"
+              bwan=`eval $cmd`
+              if [ "$bwan" -eq 0 ]; then
+                    wan_status="3"
+              else
+                    wan_status="8"
+              fi
+           }
+        fi
+        echo $wan_status
+        exit $wan_status
+        ;;
+
+#reture value
+#1 -- interface down or ip_addr is 0.0.0.0
+#2 -- ipsec is not running
+#3 -- interface is not added into ipsec
+#8 -- success
+check_wan2)
+        # get the WAN2 IP
+        wan_status="1"
+        wan_ip=$(/sbin/uci -P /var/state get network.wan2.up)
+        if [ $wan_ip = "1" ]; then
+           wan_ip=$(/sbin/uci -P /var/state get network.wan2.ipaddr)
+           [ $wan_ip = "0.0.0.0" ] && {
+              echo $wan_status
+              exit $wan_status
+           }
+           wan_status="2"
+           [ -S "/var/run/pluto/pluto.ctl" ] && {
+              cmd="ipsec auto --status|grep -c 'interface mast0/br-wan2 $wan_ip'"
+              bwan="0"
+              bwan=`eval $cmd`
+              if [ "$bwan" -eq 0 ]; then
+                    wan_status="3"
+              else
+                    wan_status="8"
+              fi
+           }
+        fi
+        echo $wan_status
+        exit $wan_status
+        ;;
+
+#reture value
+#12 -- ipsec is not running
+#13 -- interface is not added into ipsec
+#18 -- success
+#$2 -- gre tunnel name
+check_greinf)
+        gre=$2
+        local_tunnel_ip=$(/sbin/uci get gre-tunnels.$gre.local_tunnel_ip)
+        gre_inf_status="12"
+        [ -S "/var/run/pluto/pluto.ctl" ] && {
+              cmd="ipsec auto --status|grep -c 'interface mast0/$gre $local_tunnel_ip'"
+              bwan="0"
+              bwan=`eval $cmd`
+              if [ "$bwan" -eq 0 ]
+              then
+                    gre_inf_status="13"
+              else
+                    gre_inf_status="18"
+              fi
+        }
+        echo $gre_inf_status
+        exit $gre_inf_status
+        ;;
+
+#$2 -- interface
+enable_x2s)
+        [ -d "/var/lock/mipsec" ] || mkdir -p /var/lock/mipsec
+        my_lockfile /var/lock/mipsec/"$2" || {
+            [ -f "/etc/debugipsec" ] && logger -p local0.error -t "$me" "$@ my_lockfile failed and exit connection"
+            exit 1
+        }
+        case "$2" in
+        br-wan)
+           ipsec=$(/sbin/uci get ipsec.Mxl2tpserver.ipsec)
+           [ "$ipsec" = "disable" ] || ipsec="enable" 
+           fp="/var/run/mipsec/Mxl2tpserver.status"
+           if [ "$ipsec" = "enable" ]; then 
+           initd="/etc/init.d/xl2tpd-wan" 
+           ctlfile="/var/run/xl2tpd/wan-control"
+           else
+           initd="/etc/init.d/nxl2tpd-wan" 
+           ctlfile="/var/run/xl2tpd/nwan-control"
+           fi
+           lnsfile="/etc/xl2tpd/lns-wan.conf"
+           ;;
+        br-wan2) 
+           ipsec=$(/sbin/uci get ipsec.M2xl2tpserver.ipsec)
+           [ "$ipsec" = "disable" ] || ipsec="enable" 
+           fp="/var/run/mipsec/M2xl2tpserver.status"
+           if [ "$ipsec" = "enable" ]; then 
+           initd="/etc/init.d/xl2tpd-wan" 
+           ctlfile="/var/run/xl2tpd/wan-control"
+           else
+           initd="/etc/init.d/nxl2tpd-wan2" 
+           ctlfile="/var/run/xl2tpd/nwan2-control"
+           fi
+           lnsfile="/etc/xl2tpd/lns-wan2.conf"
+           ;;
+        *) 
+           logger -p local0.error -t "$me" "ERROR $@" 
+           exit 0
+           ;;
+        esac
+
+
+        if [ -p "$ctlfile" ]; then
+              opt=$(cat $lnsfile)
+              echo "m lns active=yes;$opt;" > $ctlfile
+        else 
+              $initd stop > /dev/null 2>&1
+              $initd start > /dev/null 2>&1
+        fi
+
+        case "$2" in
+        br-wan)
+           ipsec auto --delete Mxl2tpserver
+           ipsec auto --delete roadwarrior-l2tp
+           ipsec auto --delete macintosh-l2tp
+           ipsec auto --delete roadwarrior-l2tp-updatedwin
+           ipsec auto --rereadsecrets
+           if [ "$ipsec" = "enable" ]; then
+           ipsec auto --add Mxl2tpserver
+           ipsec auto --add roadwarrior-l2tp
+           ipsec auto --add macintosh-l2tp
+           ipsec auto --add roadwarrior-l2tp-updatedwin
+           fi
+           ;;
+        br-wan2) 
+           ipsec auto --delete M2xl2tpserver
+           ipsec auto --delete roadwarrior-l2tp2
+           ipsec auto --delete macintosh-l2tp2
+           ipsec auto --delete roadwarrior-l2tp2-updatedwin
+           ipsec auto --rereadsecrets
+           if [ "$ipsec" = "enable" ]; then
+           ipsec auto --add M2xl2tpserver
+           ipsec auto --add roadwarrior-l2tp2
+           ipsec auto --add macintosh-l2tp2
+           ipsec auto --add roadwarrior-l2tp2-updatedwin
+           fi
+           ;;
+        *) 
+           logger -p local0.error -t "$me" "ERROR $@" 
+           exit 0
+           ;;
+        esac
+
+        rm -f /var/lock/mipsec/"$2".lock
+        exit 0
+        ;;
+
+#$2 -- interface
+disable_x2s)
+        case "$2" in
+        br-wan)  
+           ipsec=$(/sbin/uci get ipsec.Mxl2tpserver.ipsec)
+           [ "$ipsec" = "disable" ] || ipsec="enable" 
+           if [ "$ipsec" = "enable" ]; then
+           ctlfile="/var/run/xl2tpd/wan-control"
+           initd="/etc/init.d/xl2tpd-wan" 
+           else
+           ctlfile="/var/run/xl2tpd/nwan-control"
+           initd="/etc/init.d/nxl2tpd-wan" 
+           fi
+           fp="/var/run/mipsec/Mxl2tpserver.status"
+           lnsfile="/etc/xl2tpd/lns-wan.conf"
+           ipsec auto --delete Mxl2tpserver
+           ipsec auto --delete roadwarrior-l2tp
+           ipsec auto --delete macintosh-l2tp
+           ipsec auto --delete roadwarrior-l2tp-updatedwin
+           ;;
+        br-wan2) 
+           ipsec=$(/sbin/uci get ipsec.M2xl2tpserver.ipsec)
+           [ "$ipsec" = "disable" ] || ipsec="enable" 
+           if [ "$ipsec" = "enable" ]; then
+           ctlfile="/var/run/xl2tpd/wan2-control"
+           initd="/etc/init.d/xl2tpd-wan2"
+           else
+           ctlfile="/var/run/xl2tpd/nwan2-control"
+           initd="/etc/init.d/nxl2tpd-wan2"
+           fi
+           fp="/var/run/mipsec/M2xl2tpserver.status"
+           lnsfile="/etc/xl2tpd/lns-wan2.conf"
+           ipsec auto --delete M2xl2tpserver
+           ipsec auto --delete roadwarrior-l2tp2
+           ipsec auto --delete macintosh-l2tp2
+           ipsec auto --delete roadwarrior-l2tp2-updatedwin
+           ;;
+        *) 
+           logger -p local0.error -t "$me" "ERROR $@" 
+           exit 0
+           ;;
+        esac
+
+        echo "action=down" > $fp
+        echo "status=disable" >> $fp
+        echo "constat=N/A" >> $fp
+        if [ -p "$ctlfile" ]; then
+              opt=$(cat $lnsfile)
+              echo "m lns active=no;$opt;" > $ctlfile
+        fi
+        exit 0
+        ;;
+
+#$2 -- tunnel name
+up)
+        [ -d "/var/lock/mipsec" ] || mkdir -p /var/lock/mipsec
+        my_lockfile /var/lock/mipsec/"$2" || {
+            [ -f "/etc/debugipsec" ] && logger -p local0.error -t "$me" "up $2 my_lockfile failed and exist connection"
+            echo "status=waiting for connection" > /var/run/mipsec/$2.status
+            echo "constat=Connect" >> /var/run/mipsec/$2.status
+            echo "action=up" >> /var/run/mipsec/$2.status
+            exit 1
+        }
+        ipsec auto --delete "$2"
+        ipsec auto --rereadall >/dev/null 2>&1
+        echo "status=waiting for connection" > /var/run/mipsec/$2.status
+        echo "constat=Waiting..." >> /var/run/mipsec/$2.status
+        echo "action=up" >> /var/run/mipsec/$2.status
+        ipsec auto --add "$2"
+        ipsec auto --asynchronous --up "$2" &
+        rm -f /var/lock/mipsec/"$2".lock
+        exit 0
+        ;;
+
+#$2 -- tunnel name
+s2s_up)
+        [ -d "/var/lock/mipsec" ] || mkdir -p /var/lock/mipsec
+        right=$(/sbin/uci get ipsec.${2}.right)
+        my_lockfile /var/lock/mipsec/"$2" || {
+            [ -f "/etc/debugipsec" ] && logger -p local0.error -t "$me" "up $2 my_lockfile failed and exist connection"
+            echo "status=waiting for connection" > /var/run/mipsec/$2.status
+            echo "constat=Connect" >> /var/run/mipsec/$2.status
+            echo "action=up" >> /var/run/mipsec/$2.status
+            echo "peer=$right" >> /var/run/mipsec/$2.status
+            exit 1
+        }
+        ipsec auto --delete "$2"
+        ipsec auto --rereadall >/dev/null 2>&1
+        
+        echo "status=waiting for connection" > /var/run/mipsec/$2.status
+        echo "constat=Waiting..." >> /var/run/mipsec/$2.status
+        echo "action=up" >> /var/run/mipsec/$2.status
+        echo "peer=$right" >> /var/run/mipsec/$2.status
+        ipsec auto --add "$2"
+        ipsec auto --asynchronous --up "$2" &
+        rm -f /var/lock/mipsec/"$2".lock
+        exit 0
+        ;;
+
+#$2 -- tunnel name
+#$3 -- interface
+up_x2c)
+        ipsec=$(/sbin/uci get ipsec.${2}.ipsec)
+        [ "$ipsec" = "disable" ] || ipsec="enable"
+        case "$3" in
+        br-wan)
+           if [ "$ipsec" = "enable" ]; then  
+           ctlfile="/var/run/xl2tpd/wan-control"
+           initd="/etc/init.d/xl2tpd-wan" 
+           else
+           ctlfile="/var/run/xl2tpd/nwan-control"
+           initd="/etc/init.d/nxl2tpd-wan" 
+           fi
+           ;;
+        br-wan2) 
+           if [ "$ipsec" = "enable" ]; then  
+           ctlfile="/var/run/xl2tpd/wan2-control"
+           initd="/etc/init.d/xl2tpd-wan2" 
+           else
+           ctlfile="/var/run/xl2tpd/nwan2-control"
+           initd="/etc/init.d/nxl2tpd-wan2" 
+           fi
+           ;;
+        *) 
+           logger -p local0.error -t "$me" "ERROR $@" 
+           exit 0
+           ;;
+        esac
+        [ -d "/var/lock/mipsec" ] || mkdir /var/lock/mipsec
+        my_lockfile /var/lock/mipsec/"$2" || {
+            [ -f "/etc/debugipsec" ] && logger -p local0.error -t "$me" "$@ my_lockfile failed and exit connection"
+            exit 1
+        }
+        [ -f "/var/run/${2}.ctl" ] && rm -f /var/run/${2}.ctl
+        tname="$2"
+        echo "action=up" > /var/run/mipsec/$tname
+        echo "status=waiting for connection" >> /var/run/mipsec/$tname
+        echo "constat=Waiting..." >> /var/run/mipsec/$tname
+        [ "$ipsec" = "enable" ] && ipsec auto --delete "$tname"
+        if [ ! -p $ctlfile ]; then
+	     $initd restart >/dev/null 2>&1
+        fi
+        if [ "$ipsec" = "enable" ]; then
+        ipsec auto --rereadall >/dev/null 2>&1
+        ipsec auto --add "$2"
+        ipsec auto --asynchronous --up "$2"
+        else
+        /sbin/mxl2tpd call_xl2tp "$2" >/dev/null 2>&1 &
+        fi
+        rm -f /var/lock/mipsec/"$2".lock
+        exit 0
+        ;;
+
+#$2--tunnel name
+down_x2c)
+    # a flage indicates mifupdown ppp-ip-down proccess doesn't re-up this tunnel during disconnecting
+    touch /var/run/${2}.ctl
+
+    interface=$(/sbin/uci get ipsec.${2}.interface)
+    pppinf=""
+    cmd="/bin/cat /var/run/mipsec/${2} | grep -c 'inf=ppp'"
+    logger -p local0.error -t "$me" "$@ cmd=$cmd"
+    up=`eval $cmd`
+    [ $up -gt 0 ] && {
+        cmd="/bin/cat /var/run/mipsec/${2} | grep 'inf=ppp' | cut -d'=' -f 2"
+        pppinf=`eval $cmd`
+    }
+    [ -f "/etc/debugipsec" ] && logger -p local0.error -t "$me" "$@ interface=$interface up=$up pppinf=$pppinf"
+    if [ $interface = "br-wan2" ]
+    then
+         [ -p "/var/run/xl2tpd/wan2-control" ] && echo "r $2" > /var/run/xl2tpd/wan2-control
+         [ -p "/var/run/xl2tpd/nwan2-control" ] && echo "r $2" > /var/run/xl2tpd/nwan2-control
+    else
+         [ -p "/var/run/xl2tpd/wan-control" ] && echo "r $2" > /var/run/xl2tpd/wan-control
+         [ -p "/var/run/xl2tpd/nwan-control" ] && echo "r $2" > /var/run/xl2tpd/nwan-control
+    fi
+    echo "status=waiting for connection" > /var/run/mipsec/${2}
+    echo "constat=Connect" >> /var/run/mipsec/${2}
+    echo "inf=" >> /var/run/mipsec/${2}
+    
+    if [ $up -gt 0 ]; then
+         while [ -d /sys/class/net/${pppinf} ]; do
+              sleep 1
+         done
+    fi
+                /usr/sbin/ipsec auto --delete "$2" >/dev/null 2>&1
+
+    #rm -f /var/run/${2}.ctl
+    ;;
+
+*)
+    exit 1
+   ;;
+esac 
+exit 0
+

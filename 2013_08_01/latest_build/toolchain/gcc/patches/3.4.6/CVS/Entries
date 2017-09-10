@@ -1,0 +1,12 @@
+/100-uclibc-conf.patch/1.1/Thu Apr  1 22:10:27 2010/-kkv/Tar71xx_4g
+/200-uclibc-locale.patch/1.1/Thu Apr  1 22:10:27 2010/-kkv/Tar71xx_4g
+/300-libstdc++-pic.patch/1.1/Thu Apr  1 22:10:27 2010/-kkv/Tar71xx_4g
+/601-gcc34-arm-ldm.patch/1.1/Thu Apr  1 22:10:27 2010/-kkv/Tar71xx_4g
+/602-sdk-libstdc++-includes.patch/1.1/Thu Apr  1 22:10:27 2010/-kkv/Tar71xx_4g
+/700-pr15068-fix.patch/1.1/Thu Apr  1 22:10:27 2010/-kkv/Tar71xx_4g
+/800-arm-bigendian.patch/1.1/Thu Apr  1 22:10:27 2010/-kkv/Tar71xx_4g
+/810-arm-bigendian-uclibc.patch/1.1/Thu Apr  1 22:10:27 2010/-kkv/Tar71xx_4g
+/820-i386_inhibit_libc.patch/1.1/Thu Apr  1 22:10:27 2010/-kkv/Tar71xx_4g
+/910-mbsd_multi.patch/1.1/Thu Apr  1 22:10:27 2010/-kkv/Tar71xx_4g
+/arm-softfloat.patch.conditional/1.1/Thu Apr  1 22:10:27 2010/-kkv/Tar71xx_4g
+D

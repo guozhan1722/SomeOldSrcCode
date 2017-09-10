@@ -1,0 +1,82 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2012 Microhard Syetems Inc.
+#################################################
+# local define
+#################################################
+WorkFolder="/tmp/wsClient"
+WgetUrl="$WorkFolder/url"
+WatchFlag="$WorkFolder/wsWatch"
+WatchRetry=5
+
+#################################################
+# Golobal variable
+#################################################
+WGETURL="" 
+WGETSTR=""
+WGETFILE=""
+WGETPID=""
+WGETPIDOLD=""
+DOWNFILE=""
+OLDFILESIZE=""
+FILESIZE=""
+
+while [ true ]; do 
+    cd $WorkFolder
+    count=0
+    Wgetcount=0
+    while [ "$count" != "$WatchRetry" ]; do
+	[ -f $WgetUrl ] && {
+            WGETURL=$(cat $WgetUrl | awk -F'[/]' '{print $3}')
+	    WGETSTR=$(ps | grep "$WGETURL" | grep "wget" | awk -F'[w]' '{print $1}')
+  	    if [ -n "$WGETSTR" ]; then                
+	        WGETPID=$(echo $WGETSTR | awk -F'[ ]' '{print $1}')
+                if [ -z "$WGETPID" ]; then
+		    WGETPIDOLD="$WGETPID"
+                    count=$WatchRetry
+		else                    
+                    WGETFILE="$(cat $WgetUrl | awk -F "://" '{print $2}')"   
+                    DOWNFILE="$WorkFolder/$WGETFILE"
+                    if [ -f "$DOWNFILE" ]; then 
+                        FILESIZE="$(ls -l $DOWNFILE | awk '{ print $5 }')"
+                        if [ -z "$OLDFILESIZE" ]; then
+                            OLDFILESIZE="$FILESIZE"                                   
+                        else
+                            if [ "$OLDFILESIZE" = "$FILESIZE" ]; then
+                                count=`expr $count + 1`
+                                [ "$count" = "$WatchRetry" ] && {
+                                    kill -9 "$WGETPID"
+			            WGETPIDOLD=""
+                                    echo Download file timeout > $WatchFlag
+                                }
+                            else
+                                OLDFILESIZE="$FILESIZE" 
+                                count=0
+                            fi
+                        fi
+                    else
+                        if [ "$WGETPIDOLD" = "WGETPID" ]; then 
+                            Wgetcount=`expr $Wgetcount + 1`
+                            [ "$Wgetcount" = "200" ] && {
+                                kill -9 "$WGETPID"
+			        WGETPIDOLD=""
+                                echo Download no file fail > $WatchFlag
+                                count=$WatchRetry
+                            }
+                        else
+                            count=$WatchRetry
+                        fi
+                    fi 
+		fi                                  		
+	    else
+		WGETPID=""
+                FILESIZE=""
+                OLDFILESIZE=""
+	    fi
+        }
+        sleep 5
+    done
+    sleep 10
+done
+
+
+

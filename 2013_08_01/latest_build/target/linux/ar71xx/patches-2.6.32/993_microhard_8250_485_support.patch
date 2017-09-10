@@ -1,0 +1,116 @@
+diff -Nuar linux_old/drivers/serial/8250.c linux_new/drivers/serial/8250.c
+--- linux_old/drivers/serial/8250.c	2012-06-25 08:46:05.252175206 -0600
++++ linux_new/drivers/serial/8250.c	2012-09-18 09:31:54.274976915 -0600
+@@ -41,6 +41,7 @@
+ 
+ #include <asm/io.h>
+ #include <asm/irq.h>
++#include <asm/gpio.h>
+ 
+ #include "8250.h"
+ 
+@@ -48,6 +49,14 @@
+ #include "suncore.h"
+ #endif
+ 
++
++/* 
++ * SUPPORT FOR RS485 MODE 
++ * !RE-485  gpio 0 
++ *  DE-485  gpio 1 
++ */ 
++#define MICROHARD_485 		1
++
+ /*
+  * Configuration:
+  *   share_irqs - whether we pass IRQF_SHARED to request_irq().  This option
+@@ -172,6 +181,8 @@
+ static struct hlist_head irq_lists[NR_IRQ_HASH];
+ static DEFINE_MUTEX(hash_mutex);	/* Used to walk the hash */
+ 
++static void wait_for_xmitr(struct uart_8250_port *up, int bits);
++
+ /*
+  * Here we define the default xmit fifo size used for each type of UART.
+  */
+@@ -1388,7 +1399,7 @@
+ 	struct tty_struct *tty = up->port.state->port.tty;
+ 	unsigned char ch, lsr = *status;
+ 	int max_count = 256;
+-	char flag;
++	char flag; 
+ 
+ 	do {
+ 		if (likely(lsr & UART_LSR_DR))
+@@ -1403,7 +1414,7 @@
+ 			 */
+ 			ch = 0;
+ 
+-		flag = TTY_NORMAL;
++        flag = TTY_NORMAL;
+ 		up->port.icount.rx++;
+ 
+ 		lsr |= up->lsr_saved_flags;
+@@ -1458,10 +1469,17 @@
+ 	*status = lsr;
+ }
+ 
++
++
+ static void transmit_chars(struct uart_8250_port *up)
+ {
+ 	struct circ_buf *xmit = &up->port.state->xmit;
+ 	int count;
++#ifdef MICROHARD_485
++	int re485_value, de485_value;
++    unsigned int tmout = 1000000;
++	unsigned int status;
++#endif
+ 
+ 	if (up->port.x_char) {
+ 		serial_outp(up, UART_TX, up->port.x_char);
+@@ -1476,7 +1494,20 @@
+ 	if (uart_circ_empty(xmit)) {
+ 		__stop_tx(up);
+ 		return;
++	}   
++
++#ifdef MICROHARD_485
++	re485_value = gpio_get_value(0);
++	de485_value = gpio_get_value(1);
++  	if(up->port.line == 0) {
++		if (re485_value == de485_value ) {
++            //wait_for_xmitr(up, BOTH_EMPTY);           
++            // set value 1
++			gpio_direction_output(0, 1);
++			gpio_direction_output(1, 1);
++		}
+ 	}
++#endif
+ 
+ 	count = up->tx_loadsz;
+ 	do {
+@@ -1494,6 +1525,23 @@
+ 
+ 	if (uart_circ_empty(xmit))
+ 		__stop_tx(up);
++
++#ifdef MICROHARD_485
++	if(up->port.line == 0) {
++		if (re485_value == de485_value ) {
++            //wait_for_xmitr(up, BOTH_EMPTY);
++			do {
++              			status = serial_in(up, UART_LSR);
++				if(tmout -- == 0) break;
++				udelay(100);
++            } while (!(status & UART_LSR_TEMT));
++            // set value 0
++			gpio_direction_output(0, 0);
++			gpio_direction_output(1, 0);
++		}
++	}
++#endif
++
+ }
+ 
+ static unsigned int check_modem_status(struct uart_8250_port *up)

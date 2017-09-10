@@ -1,0 +1,69 @@
+#!/bin/ash
+ 
+ exec>/dev/null 2>&1
+ 
+case "$1" in 
+
+reboot)
+    /sbin/reboot
+   ;;
+
+msc_ioclose)
+   uci set ioports.output.output$2=1
+   uci commit ioports
+   /etc/init.d/ioports stop
+   /etc/init.d/ioports start
+   ;;
+
+msc_ioopen)
+   uci set ioports.output.output$2=0
+   uci commit ioports
+   /etc/init.d/ioports stop
+   /etc/init.d/ioports start
+   ;;
+
+msc_eurd)
+   /bin/eurd_sms $2 &
+   ;;
+
+msc_webclient)
+   echo "ok" > /tmp/run/wsonetime
+   ;;
+
+msc_apn_set)
+   uci set lte.connect.apn=$2
+   uci commit lte
+   ;;
+
+msc_apn_usr)
+   uci set lte.connect.username=$2
+   uci commit lte
+   ;;
+
+msc_apn_pwd)
+   uci set lte.connect.passwd=$2
+   uci commit lte
+   ;;
+
+msc_apn_enable)
+   /etc/init.d/lte stop
+   sleep 3
+   /etc/init.d/lte start
+   /etc/init.d/keepalive stop
+   /etc/init.d/multiwan restart
+   /etc/init.d/keepalive start 
+   /etc/init.d/twatchdog restart
+   ;;
+
+msc_gpsr)
+	/etc/init.d/gpsr stop
+	/bin/gpsr_sms $2 &
+	/etc/init.d/gpsr start 
+    ;;
+	
+*)
+    exit 1
+   ;;
+esac 
+exit 0
+

@@ -1,0 +1,36 @@
+config system
+	option hostname VIP2
+	option 'timezone'	'MST7MDT,M3.2.0,M11.1.0'
+	option log_type file
+	option systemmode bridge
+	option domainname default
+
+config button
+        option button   config
+        option action   released
+        option handler  "reset_default"
+        option min      8
+        option max      30
+
+config led
+        option sysfs ledrx
+        option name  ledrx
+        option trigger phy0rx
+        option default 1
+
+config led
+        option sysfs ledtx
+        option name  ledtx
+        option trigger phy0tx
+        option default 1
+
+config led
+        option sysfs RF_ACT
+        option name  RF_ACT
+        option trigger phy0tx
+        option default 1
+
+config user datetime
+	option date 2011.04.01
+	option time 00:00:00
+	option mode local

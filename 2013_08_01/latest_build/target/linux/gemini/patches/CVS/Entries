@@ -1,0 +1,7 @@
+/001-git_sync.patch/1.1/Thu Apr  1 22:14:24 2010/-kkv/Tar71xx_4g
+/002-wbd111_support.patch/1.1/Thu Apr  1 22:14:24 2010/-kkv/Tar71xx_4g
+/003-wbd111-static-flash-map.patch/1.1/Thu Apr  1 22:14:24 2010/-kkv/Tar71xx_4g
+/004-gemini-disable-watchdog-in-probe.patch/1.1/Thu Apr  1 22:14:24 2010/-kkv/Tar71xx_4g
+/005-gemini-add-missing-skbuff-include.patch/1.1/Thu Apr  1 22:14:23 2010/-kkv/Tar71xx_4g
+/100-mtd-physmap-try-static-partitions-first.patch/1.1/Thu Apr  1 22:14:24 2010/-kkv/Tar71xx_4g
+D

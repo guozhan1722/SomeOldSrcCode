@@ -1,0 +1,1039 @@
+#!/usr/bin/webif-page
+<?
+. /usr/lib/webif/webif.sh
+. /etc/version
+
+DESC_FILE="/usr/lib/hardware_desc"
+
+[ -f $DESC_FILE ] && . $DESC_FILE
+
+config_cb() {
+	cfg_type="$1"
+	cfg_name="$2"
+}
+
+parse_target() {
+
+   echo "$1" | awk -v "is_empty=$is_empty" -v "heading=$2" '
+   BEGIN {
+        rulecntr=0
+	odd=1
+
+    }
+	/^(#.*)?$/ {next}
+	$1 == "Station" {
+		if (odd == 1) {
+			print "	<tr class=\"odd\">"
+			odd--
+		} else {
+			print "	<tr>"
+			odd++
+		}
+		print "		<td width=\"10%\">" $2 "</td>"
+	}
+	$1 == "rx" && $2 == "packets:" {
+                rxpackets=$3
+                if ( rxpackets == 0) rxpackets=1;
+	}
+
+	$1 == "rx" && $2 == "dropped:" {
+                rxfailed=$3
+                rxccq = rxpackets  * 100 / (rxpackets + rxfailed);
+	}
+
+	$1 == "tx" && $2 == "packets:" {
+                txpackets=$3
+                if ( txpackets == 0) txpackets=1;
+	}
+	$1 == "tx" && $2 == "retries:" {
+                txretries=$3
+	}
+	$1 == "tx" && $2 == "failed:" {
+                txfailed=$3
+                txccq = txpackets  * 100 / (txpackets + txretries + txfailed);
+	}
+
+	$1 == "signal:" {
+                sig=$2
+	}
+	$1 == "noise" && $2 == "floor:" {
+                noi=$3
+                if (noi == 0) noi=-95;
+		print "		<td width=\"10%\">"noi"</td>"
+		print "		<td width=\"6%\">"sig-noi"</td>"
+	}
+	$1 == "rssi:" {
+                rssi = $2
+                if ( $2 == 0 ) rssi= sig+95;
+                RSSIPER= rssi * 100 / 30;
+ #               RSSIPER= 12 * 100 / 30;
+                if (RSSIPER < 0) RSSIPER=0;
+                if (RSSIPER > 100) RSSIPER=100;
+                if(RSSIPER <=10){                                 
+                    backgcolor="#FF0000";
+                    midbackgcolor="#FF0000";
+                    per=0.5;
+                }else if (RSSIPER>10 && RSSIPER < 35){           
+                    backgcolor="#FFFF00";
+                    midbackgcolor="#FF0000";
+                    per=0.5*10/RSSIPER;
+                    ffper2=70-RSSIPER;
+                    ffper1=350/RSSIPER;
+                }else{                                                       
+                    backgcolor="#00FF00";
+                    midbackgcolor="#FFFF00";
+                    per=0.1*100/RSSIPER;
+                    ffper2=235-RSSIPER;
+                    ffper1=1000/RSSIPER;
+                }                             
+		print "		<td width=\"8%\">"rssi-95"</td>"
+	}
+	$1 == "tx" && $2 == "bitrate:" {
+                printf(" <td width=\"8%%\">%d</td>",txccq);
+                printf(" <td width=\"8%%\">%d</td>",rxccq);
+		print "		<td width=\"10%\">" $3" "$4"</td>"
+	}
+	$1 == "rx" && $2 == "bitrate:" {
+		print "		<td>" $3" "$4"</td>"
+
+                printf("<td><div class=\"progressbar\" id=\"RSSI\" style=\"width:200px\">");
+                printf("<span class=\"progress\" style=\"background-color:%s;background: -webkit-gradient(linear, left top, right top, from(#FF0000), to(%s), color-stop(%s, %s)); background: -moz-linear-gradient(left,#FF0000 0%%,%s %s%%,%s %s%%);filter: progid:DXImageTransform.Microsoft.gradient(GradientType=1,startColorstr=%s, endColorstr=%s);width:%d%%\">%d%%</span>",backgcolor,backgcolor,per,midbackgcolor,midbackgcolor,ffper1,backgcolor,ffper2,midbackgcolor,backgcolor,RSSIPER,RSSIPER);
+              	printf("</div></td>");
+                printf("</td>");
+
+		print "	</tr>"
+		rulecntr++
+	}
+	END {
+	}'
+}
+
+displaywiface() {
+	local wifpar="$1"
+	local cfgsec="$3"
+	local fconfig mac_addr wconfig wlan_ssid wlan_mode wlan_freq wlan_txpwr 
+        local wlanid_caption="@TR<<SSID>>"
+	local wlan_secmode
+	local on_phy_num
+	local iw
+        local rx_pkts rx_bytes rx_errs rx_dropped rx_overrun rx_frame
+        local tx_pkts tx_bytes tx_errs tx_dropped tx_overrun tx_carrier
+	if [ -n "$wifpar" ]; then
+		local wnum="$2"
+		wnum="${wnum:-0}"
+		wconfig=$(iwconfig "$wifpar" 2>/dev/null)
+		fconfig=$(ifconfig "$wifpar" 2>/dev/null)
+		iw=$(iw dev "$wifpar" station dump 2>/dev/null)
+		[ -n "$wconfig" ] && {
+			wlan_ssid=$(echo "$wconfig" | grep "ESSID:" | grep -v off | cut -d'"' -f 2 | cut -d'"' -f 1)
+                        #wlan_mode=$(echo "$wconfig" | grep "Mode:" | cut -d':' -f 2 | cut -d' ' -f 1)
+                        eval "wlan_mode=\"\$CONFIG_${cfgsec}_mode\""
+
+                        rssi=$(echo "$iw"|grep "signal:"|awk '{print $2}')
+                        [ empty $rssi ] && rssi_percent=0  || {
+                           signal=$(expr $rssi + 110)
+                           rssi_percent=$(expr $signal "*" 100 / 29 )
+                           if [ "$rssi_percent" -gt "100" ]; then
+                              rssi_percent=100
+                           elif [ "$rssi_percent" -lt "0" ]; then
+                              rssi_percent=0
+                           fi
+                        } 
+                         
+                        #if [ "$wlan_mode" = "Auto" ]; then
+                        if [ "$wlan_mode" = "mesh" ]; then
+                              wlanid_caption="@TR<<Mesh ID>>"
+                        fi
+
+			if empty "$wlan_ssid" ; then
+                           if [ "$wlan_mode" = "mesh" ]; then
+			      eval "cfg_ssid=\"\$CONFIG_${cfgsec}_mesh_id\""
+			      wlan_ssid="$cfg_ssid"
+                           else
+			      eval "cfg_ssid=\"\$CONFIG_${cfgsec}_ssid\""
+			      wlan_ssid="$cfg_ssid"
+                           fi
+			fi
+			
+			case "$wlan_mode" in
+   			   ap)
+                                if [ "$PRODUCT" = "IPnDDL" ];then
+                                    wlan_mode="Master"
+                                else
+       			            wlan_mode="Access Point"
+                                fi
+                                ;;
+   			   sta)
+                                if [ "$PRODUCT" = "IPnDDL" ];then
+                                    wlan_mode="Slave"
+                                else
+                                    wlan_mode="Station"
+                                fi
+			      ;;
+   			   mesh)
+                                    wlan_mode="Mesh"
+			      ;;
+   			   repeater)
+   			      wlan_mode="Repeater"
+			      ;;
+   			   *)
+   			      wlan_mode="Unknow"
+			      ;;
+			esac
+			wlan_freq=$(echo "$wconfig" | grep "Frequency:" | cut -d':' -f 3 | cut -d' ' -f 1)
+			wlan_freq="${wlan_freq:-N/A}"
+			mac_addr=$(echo "$fconfig" | sed '/HWaddr /!d; s/^.*HWaddr //; s/[[:space:]]//')
+			wlan_txpwr=$(echo "$wconfig" | sed '/Tx-Power=/!d; s/^.*Tx-Power=//; s/[[:space:]].*$//')
+			wlan_txpwr="${wlan_txpwr:-0}"
+
+       			rx_pkts=$(echo "$fconfig" | grep "RX packets" | awk '{print $2}' | awk -F ":" '{print $2}')
+       			rx_bytes=$(echo "$fconfig" | grep "RX bytes" | awk '{print $2}' | awk -F ":" '{print $2}')
+			rx_errs=$(echo "$fconfig" | grep "RX packets" | awk '{print $3}' | awk -F ":" '{print $2}')
+			rx_dropped=$(echo "$fconfig" | grep "RX packets" | awk '{print $4}' | awk -F ":" '{print $2}')
+			rx_overrun=$(echo "$fconfig" | grep "RX packets" | awk '{print $5}' | awk -F ":" '{print $2}')
+			rx_frame=$(echo "$fconfig" | grep "RX packets" | awk '{print $6}' | awk -F ":" '{print $2}')
+			tx_pkts=$(echo "$fconfig" | grep "TX packets" | awk '{print $2}' | awk -F ":" '{print $2}')
+       			tx_bytes=$(echo "$fconfig" | grep "TX bytes" | awk '{print $6}' | awk -F ":" '{print $2}')
+			tx_errs=$(echo "$fconfig" | grep "TX packets" | awk '{print $3}' | awk -F ":" '{print $2}')
+			tx_dropped=$(echo "$fconfig" | grep "TX packets" | awk '{print $4}' | awk -F ":" '{print $2}')
+			tx_overrun=$(echo "$fconfig" | grep "TX packets" | awk '{print $5}' | awk -F ":" '{print $2}')
+			tx_carrier=$(echo "$fconfig" | grep "TX packets" | awk '{print $6}' | awk -F ":" '{print $2}')
+
+			eval "wlan_secmode=\"\$CONFIG_${cfgsec}_encryption\"" 
+
+			case "$wlan_secmode" in
+			   none)
+			      wlan_secmode="None"
+			      ;;
+			   wep)
+			      wlan_secmode="WEP"
+			      ;;
+			   psk)
+			      wlan_secmode="WPA(PSK)"
+			      ;;
+			   psk2)
+			      wlan_secmode="WPA2(PSK)"
+			      ;;
+			   psk-mixe*|psk+psk2)
+			      wlan_secmode="WPA+WPA2(PSK)"
+			      ;;
+			   wpa)
+			      wlan_secmode="WPA(RADIUS)"
+			      ;;
+			   wpa2|wpa+wpa2)
+			      wlan_secmode="WPA2(RADIUS)"
+			      ;;
+			   *)
+			      wlan_secmode="Unknown"
+			      ;;
+			esac
+
+			   eval "wdevice=\"\$CONFIG_${cfgsec}_device\""
+			   on_phy_num=" on $wdevice"
+                            radionum=$(echo $wdevice|cut -c 6)
+                            vendor=$(cat /sys/class/ieee80211/phy${radionum}/device/subsystem_device|cut -c3-4) 
+                            if [ "$vendor" = "20" ];then #Compex Card
+                                freqband=$(cat /sys/class/ieee80211/phy${radionum}/device/subsystem_device|cut -c5-6)
+                                if [ "$freqband" = "51" ];then 
+                                    fb="2.4G Mode"
+                                elif [ "$freqband" = "62" ];then
+                                    fb="5.8G Mode"
+                                elif [ "$freqband" = "91" ];then  #11ng
+                                    fb="2.4G Mode"
+                                elif [ "$freqband" = "96" ];then
+				    #determine if supported dual-band 
+				    iw phy |grep "MHz"|grep -q "* 24"
+				    equal "$?" 0 && {
+                                	fb="Dual-Band Mode"     #11abgn
+				    }||{
+                                	fb="5.8G Mode"          #11na
+				    }
+                                fi
+                            else #Ubiquiti Card
+                                freqband=$(cat /sys/class/ieee80211/phy${radionum}/device/subsystem_device|cut -c6)
+                                if [ "$freqband" = "2" ];then
+                                    fb="2.4G Mode"
+                                elif [ "$freqband" = "4" ];then
+                                    fb="4.9G Mode"
+                                elif [ "$freqband" = "5" ];then
+                                    fb="5.8G Mode"
+                                elif [ "$PRODUCT" = "IPnVT" ]; then
+                                    fb="2.4G Mode"
+                                elif [ "$freqband" = "1" ];then
+                                    fb="2.4G Mode"
+                                else
+                                    fb="Unknown Mode"
+                                fi
+                            fi
+
+                            radionum=$(( $radionum + 1 ))
+cat <<EOF
+<div class="settings">
+<table style="width: 100%; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr><th><h3><strong>Radio $radionum Status</strong></h3></th>
+</table>
+
+<table style="width: 95%; margin-left: 2em; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr>
+        <th><h3>General Status</h3></th>
+</tr>
+
+EOF
+cat <<EOF
+<tr>
+	<td width="16%">MAC Address</td>
+	<td width="16%">Mode</td>
+	<td width="16%">$wlanid_caption</td>
+	<td width="16%">Frequency Band</td>
+	<td width="16%">Radio Frequency</td>
+	<td>Security mode</td>
+</tr>
+
+<tr class="odd">
+	<td width="16%">$mac_addr</td>
+	<td width="16%">$wlan_mode</td>
+	<td width="16%">$wlan_ssid</td>
+	<td width="16%">$fb</td>
+	<td width="16%">$wlan_freq</td>
+	<td>$wlan_secmode</th>
+</tr>
+</table>
+
+EOF
+
+devidx=$wnum
+[ "$wnum" = "" ] && wnum=0
+netdevs=$(ls /sys/class/ieee80211/phy${wnum}/device/net)
+haveheader=0
+for dev in $netdevs; do
+    ap_iw=$(iw dev "$dev" station dump 2>/dev/null)
+    [ "$ap_iw" != "" ] && {
+            if [ "$haveheader" = "0" ]; then
+cat <<EOF
+<table style="width: 95%; margin-left: 2em; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr>
+        <th><h3>Connection Status</h3></th>
+</tr>
+
+<tr>
+        <td width="16%">@TR<<status_wlan_MAC#MAC Address>></td>
+        <td width="10%">@TR<<status_wlan_Noise#Noise Floor (dBm)>></td>
+        <td width="6%">@TR<<status_wlan_SNR#SNR (dB)>></td>
+        <td width="8%">@TR<<status_wlan_RSSI#RSSI (dBm)>></td>
+        <td width="8%">@TR<<status_wlan_TXCCQ#TX CCQ (%)>></td>
+        <td width="8%">@TR<<status_wlan_RXCCQ#RX CCQ (%)>></td>
+        <td width="10%">@TR<<status_wlan_RRate#TX Rate>></td>
+        <td>@TR<<status_wlan_TRate#RX Rate>></td>
+        <td>@TR<<status_wlan_Prg#Signal Level>></td>
+</tr>
+EOF
+                haveheader=1
+            fi
+            parse_target "${ap_iw}"
+    }
+done
+
+if [ "$haveheader" = "1" ]; then
+cat <<EOF
+</table>
+EOF
+fi
+cat <<EOF
+</div>
+<br/>
+
+EOF
+    }
+	fi
+}
+
+################ FOR refresh button ###############################
+[ "$FORM_interval" -gt 0 ] >/dev/null 2>&1 && {
+	meta_refresh="<meta http-equiv=\"refresh\" content=\"$FORM_interval;url=$SCRIPT_NAME?interval=$FORM_interval\" />"
+}
+
+header_inject_head=$(cat <<EOF
+$meta_refresh
+EOF
+
+)
+################ END refresh button ###############################
+uci_load lte
+uci_load network
+conf="connect"
+
+[ -f "/var/run/VIP4G_status" ] && {
+    . /var/run/VIP4G_status
+}
+
+get_human_time()
+{
+    local duration_second="$1"
+    FORM_duration=""
+    duration_day=$(echo $duration_second |awk '{printf "%i",$1/(60*60*24)}')
+
+    if [ "$duration_day" -ge "1" ];then
+        FORM_duration="$duration_day day(s)"
+        duration_second=$(echo $duration_second $duration_day  |awk '{printf "%i",$1-($2*60*60*24)}')
+    fi
+
+    duration_hour=$(echo $duration_second |awk '{printf "%i",$1/(60*60)}')
+    if [ "$duration_hour" -ge "1" ];then
+        FORM_duration="$FORM_duration $duration_hour hour"
+        duration_second=$(echo $duration_second $duration_hour|awk '{printf "%i",$1-($2*60*60)}')
+    fi
+
+    duration_min=$(echo $duration_second |awk '{printf "%i", $1/60}')
+    if [ "$duration_min" -ge "1" ];then
+        FORM_duration="$FORM_duration $duration_min min"
+        duration_second=$(echo $duration_second $duration_min |awk '{printf "%i",$1-($2 * 60)}')
+    fi
+
+    FORM_duration="$FORM_duration $duration_second sec"
+}
+
+header "System" "Summary" "@TR<<System Information>>"
+
+no_simcard=$(cat /sys/class/button/SIM_STAT/status)
+if [ "$no_simcard" = "0" ];then
+    FORM_have_simcard="1"
+else
+    FORM_have_simcard="0"
+fi
+
+config_get FORM_disabled $conf disabled 
+
+[ "$FORM_disabled" = "1" ] && { 
+	FORM_disabled="Disabled"
+} || {
+	FORM_disabled="Enabled"
+}
+
+I2CADDRESS=30
+p_vin=$(i2cdetect -y 0 0x$I2CADDRESS 0x$I2CADDRESS|awk -F ':' '{print $2}'|grep $I2CADDRESS)
+if [ -n "$p_vin" ]; then
+        i2ctestvolt
+        p_vin_val=$(cat /tmp/.i2c_chip/i2cchipresult |awk -F '=' '{print $2}')
+        cnt=0
+        while [ -z "$p_vin_val" -a "$cnt" -lt "20" ];do
+                p_vin_val=$(cat /tmp/.i2c_chip/i2cchipresult |awk -F '=' '{print $2}')
+                cnt=$(( $cnt + 1 ))
+                usleep 100000
+        done
+        #logger -t "system_info" "Read vin error count $cnt"
+fi
+
+_hostname=$(cat /proc/sys/kernel/hostname)
+config_get FORM_apn $conf apn "Unknown"
+    newapn=`cat /var/run/autoapn | awk '{ print $1 }'`
+    if [ "$newapn" ]; then
+        FORM_apn=$newapn
+    fi 
+
+brwan_ip="$(ifconfig br-wan | grep inet | grep -v inet6 | awk -F'[: ]+' '{print $4}')"
+[ -z "$brwan_ip" ] && brwan_ip="Unknown"
+
+FORM_connect_status=$connect_status 
+if echo $FORM_connect_status |grep -q "_CONNECTED"; then
+	brwan2_ip="$(ifconfig br-wan2 | grep inet | grep -v inet6 | awk -F'[: ]+' '{print $4}')"
+	[ -z "$brwan2_ip" ] && {
+		local ippassthrough=$(uci get lte.connect.ippassthrough)
+		if [ "$ippassthrough" = "Ethernet" ];then
+			brwan2_ip=$(cat /var/run/ippth_4g)
+			FORM_connect_status="Connected"
+		else
+			brwan2_ip="Unknown"
+			FORM_connect_status="Disconnected"
+	        fi
+	} || {
+		FORM_connect_status="Connected"
+	}
+else
+	FORM_connect_status="Disconnected"
+fi
+
+_date="`date +%F`"
+_time="`date +%T`"
+
+if [ "$FORM_connect_status" = "Connected" -a "$FORM_disabled" = "Enabled" ] ;then
+	FORM_network=$network
+	FORM_network=$(echo $FORM_network |cut -d "," -f3| sed 's/'\"'/''/g' )
+else
+	FORM_network="Unknown"
+fi
+
+_uptime="$(uptime)"
+_loadavg="${_uptime#*load average: }"
+_uptime="${_uptime#*up }"
+_uptime="${_uptime%%, load *}"
+
+FORM_roaming=$roaming
+roing=$(echo $FORM_roaming |cut -d "," -f2)
+if [ "$roing" = "0" ]; then
+	FORM_roaming="Not Searching"
+elif [ "$roing" = "1" ]; then
+	FORM_roaming="Home"
+elif [ "$roing" = "2" ]; then
+	FORM_roaming="Searching"
+elif [ "$roing" = "3" ]; then
+	FORM_roaming="Denied"
+elif [ "$roing" = "4" ]; then
+	FORM_roaming="Unknown"
+elif [ "$roing" = "5" ]; then
+	FORM_roaming="Roaming"
+fi
+[ -z "$FORM_roaming" ] &&  FORM_roaming="Unknown"
+
+FORM_rat=$rat
+service_mode=$(echo $FORM_rat|cut -d "," -f1)
+if [ "$service_mode" = "0" ]; then
+	ser_mode="Automatic"
+elif [ "$service_mode" = "1" ]; then
+	ser_mode="GSM Only"
+elif [ "$service_mode" = "2" ]; then
+	ser_mode="WCDMA Only"
+else
+	ser_mode="Unknown"
+fi
+
+state=$(echo $FORM_rat|cut -d "," -f3)
+if [ "$state" = "0" ]; then
+        state="Searching for Service"
+elif [ "$state" = "1" ]; then
+        state="WCDMA CS (Circuit Switched)"
+elif [ "$state" = "2" ]; then
+        state="WCDMA PS (Packet Switched)"
+elif [ "$state" = "3" ]; then
+        state="WCDMA CS and PS"
+elif [ "$state" = "4" ]; then
+        state="GSM CS (Circuit Switched)"
+elif [ "$state" = "5" ]; then
+        state="GSM PS (Packet Switched)"
+elif [ "$state" = "6" ]; then
+        state="GSM CS and PS "
+else
+        state="Unknown"
+fi
+
+brlan_ip="$(ifconfig br-lan | grep inet | grep -v inet6 | awk -F'[: ]+' '{print $4}')"
+[ -z "$brlan_ip" ] && brlan_ip="Unknown"
+
+_mac0=$(/sbin/ifconfig eth0 2>/dev/null | grep HWaddr | cut -b39-)
+_mac1=$(/sbin/ifconfig eth1 2>/dev/null | grep HWaddr | cut -b39-)
+
+FORM_cell_id=$cell_id
+FORM_cellid=$(echo $FORM_cell_id|cut -d "," -f1)
+FORM_lac=$(echo $FORM_cell_id|cut -d "," -f2)
+[ -z "$FORM_cellid" ] && FORM_cellid="Unknown"
+[ -z "$FORM_lac" ] && FORM_lac="Unknown"
+
+FORM_tech=$tech
+FORM_tech=$(echo $FORM_tech|sed 's/^[[:digit:]], //g')
+[ -z "$FORM_tech" ] && FORM_tech="Unknown"
+
+FORM_tech_avail=$tech_avail
+FORM_tech_avail=$(echo $FORM_tech_avail|sed 's/^[[:digit:]], //g')
+[ -z "$FORM_tech_avail" ] && FORM_tech_avail="Unknown"
+
+FORM_temp=$temp
+FORM_temp=$(echo $FORM_temp |cut -d " " -f1)
+[ -z "$FORM_temp" ] && FORM_temp="Unknown"
+
+RTT=$(echo $FORM_tech |grep "1xRTT")
+EvDO=$(echo $FORM_tech |grep "EvDO")
+
+if [ "$modem_type" = "E362" ];then
+    if [ -n "$RTT" -o -n "$EvDO" ];then
+        C_IMEI="MEID"
+        FORM_imei=$MEID
+        FORM_imei=$(echo $FORM_imei| sed 's/'0x'/''/g')
+        [ -z "$FORM_imei" ] &&  FORM_imei="Unknown"
+
+    else
+        C_IMEI="IMEI"
+        FORM_imei=$imei
+        [ -z "$FORM_imei" ] &&  FORM_imei="Unknown"
+    fi
+else
+    C_IMEI="IMEI"
+    FORM_imei=$imei
+    [ -z "$FORM_imei" ] &&  FORM_imei="Unknown"
+fi
+
+FORM_imsi=$imsi
+[ -z "$FORM_imsi" ] &&  FORM_imsi="Unknown"
+
+FORM_simpin=$simpin
+
+if [ "$FORM_have_simcard" = "0" ];then
+        FORM_simpin="Unknown"
+        FORM_network="Unknown"
+fi
+
+revision_text=" $SOFTWARE build $BUILD"
+Built_date=$(cat /etc/banner|grep "Built time"|awk '{print $3}')
+Built_time=$(cat /etc/banner|grep "Built time"|awk '{print $4}')
+
+FORM_simid=$simid
+if [ "$FORM_have_simcard" = "0" ];then
+	FORM_simid="No SIM Card"
+	FORM_roaming="Unknown"
+fi
+if [ "$modem_type" = "E362" ];then
+    if [ -n "$RTT" -o -n "$EvDO" ];then
+        FORM_simid="N/A"
+    fi
+fi
+
+FORM_phonenum=$phonenum
+FORM_phonenum=$(echo $FORM_phonenum|cut -d "," -f2)
+if [ "$modem_type" = "E362" ];then
+    if [ -n "$RTT" -o -n "$EvDO" ];then
+        FORM_phonenum="N/A"
+    fi
+fi
+
+if [ "$FORM_have_simcard" = "0" ];then
+        FORM_pinr="Unknown"
+        FORM_phonenum="Unknown"
+fi
+
+[ -z "$FORM_phonenum" ] && FORM_phonenum="Unknown"
+
+FORM_rssi=$rssi
+FORM_rssitype=$(echo $FORM_rssi |awk -F ":" '{print $1}' |grep "NO SERVICE RSSI")
+
+FORM_rssi=$(echo $FORM_rssi |awk -F ":" '{print $2+0}')
+
+Wimg=0
+if [ "$FORM_connect_status" = "Connected" ] ;then
+    if [ $FORM_rssi -gt 109 ]; then Wimg=1 ; 
+    elif [ $FORM_rssi -gt 105 ]; then Wimg=2 ; 
+    elif [ $FORM_rssi -gt 100 ]; then Wimg=3 ; 
+    elif [ $FORM_rssi -gt 95 ]; then Wimg=4 ; 
+    elif [ $FORM_rssi -gt 90 ]; then Wimg=5 ;  
+    elif [ $FORM_rssi -gt 85 ]; then Wimg=6 ; 
+    elif [ $FORM_rssi -eq 0 ]; then Wimg=0 ; 
+    else Wimg=7 ; 
+    fi
+fi
+if [ -n "$FORM_rssitype" ];then
+    FORM_rssi="NO SERVICE"
+else
+    if [ "$FORM_rssi" = "0" ];then
+        FORM_rssi="0 dBm"
+    else
+        FORM_rssi="-$FORM_rssi dBm"
+    fi
+fi
+
+    FORM_duration=$connect_duration
+
+    FORM_duration=$(echo $FORM_duration |cut -d " " -f1)
+
+    if [ "$FORM_connect_status" = "Disconnected" -o "$FORM_have_simcard" = "0" ] ;then
+        FORM_duration="0"
+    else
+       get_human_time $FORM_duration
+    fi
+
+config_get w_proto "wan" proto
+config_get l_proto "lan" proto
+brlan_mask="$(ifconfig br-lan | grep inet |grep -v inet6| awk -F'[: ]+' '{print $8}')"
+[ -z $brlan_mask ] && brlan_mask="N/A"
+brwan_mask="$(ifconfig br-wan | grep inet |grep -v inet6| awk -F'[: ]+' '{print $8}')"
+[ -z $brwan_mask ] && brwan_mask="N/A"
+
+nms_s=$(uci get eurd.eur_conf.Event_Remote_Reporting_Status |cut -c4)
+if [ "$nms_s" = "D" ];then
+	nms_status="UDP Enabled"
+else
+	nms_status="UDP Disabled"
+fi
+ws_s=$(uci get wsclient.general.status)
+if [ "$ws_s" = "enable" ];then
+	ws_status="WS Enabled"
+else
+	ws_status="WS Disabled"
+fi
+
+
+UB_CONFIG=$(grep params /proc/mtd | cut -d: -f1)
+REV=$(grep "MHX_HWREV" /dev/$UB_CONFIG | cut -d= -f2)
+if [ -z "$REV" ]; then
+    REV="r0"
+else
+    REV="r$REV"
+fi
+
+################ Header for sysinfo ###############################
+cat <<EOF
+<div class="settings">
+<table style="width: 100%; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr><th width=50%><h3><strong>System Information</strong></h3></th>
+<th><h3><strong>Carrier Status</strong></h3></th></tr>
+</table>
+
+<table style="width: 100%; margin-left: 2em; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr>
+        <td width=22%><strong>System:</strong></td>
+        <td width=28%> </td>
+	<td width=22%>Module Status</td>
+	<td>$FORM_disabled</td>
+</tr>
+</table>
+
+<table style="width: 100%; margin-left: 2em; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr>
+	<td width=22%>Host Name</td>
+	<td width=28%>$_hostname</td>
+	<td width=22%>Current APN</td>
+	<td>$FORM_apn</td>
+</tr>
+</table>
+
+<table style="width: 100%; margin-left: 2em; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr>
+	<td width=22%>System date</td>
+	<td width=28%>$_date</td>
+	<td width=22%>Activity Status</td>
+	<td>$FORM_connect_status </td>
+</tr>
+</table>
+
+<table style="width: 100%; margin-left: 2em; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr>
+	<td width=22%>System time</td>
+	<td width=28%>$_time</td>
+	<td width=22%>Network</td>
+	<td width=28%>$FORM_network</td>
+</tr>
+</table>
+
+<table style="width: 100%; margin-left: 2em; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr>
+	<td width=22%>System uptime</td>
+	<td width=28%>$_uptime</td>
+	<td width=22%>Home/Roaming</td>
+	<td width=>$FORM_roaming</td>
+</tr>
+</table>
+
+<table style="width: 100%; margin-left: 2em; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr>
+        <td width=22%><strong>Version:</strong></td>
+        <td width=28%> </td>
+	<td width=22%>Current Technology</td>
+	<td width=28%>$FORM_tech</td>
+</tr>
+</table>
+EOF
+
+if [ "$modem_type" = "E362" ];then
+cat <<EOF
+<table style="width: 100%; margin-left: 2em; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr>
+	<td width=22%>Product Name</td>
+	<td width=28%>$PRODUCTNAME</td>
+	<td width=22%>Available Technology</td>
+	<td>$FORM_tech_avail</td>
+</tr>
+</table>
+EOF
+else
+cat <<EOF
+<table style="width: 100%; margin-left: 2em; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr>
+	<td width=22%>Product Name</td>
+	<td width=28%>$PRODUCTNAME</td>
+	<td width=22%>Core Temperature(&deg;C)</td>
+	<td width=28%>$FORM_temp</td>
+</tr>
+</table>
+EOF
+fi
+cat <<EOF
+<table style="width: 100%; margin-left: 2em; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr>
+	<td width=22%>Hardware Version</td>
+	<td width=28%>$HWREV</td>
+	<td width=22%>$C_IMEI</td>
+	<td width=28%>$FORM_imei</td>
+</tr>
+</table>
+
+<table style="width: 100%; margin-left: 2em; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr>
+	<td width=22%>Software Version</td>
+	<td width=28%>$SOFTWARE</td>
+	<td width=22%>IMSI</td>
+	<td>$FORM_imsi</td>
+</tr>
+</table>
+
+<table style="width: 100%; margin-left: 2em; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr>
+	<td width=22%>Build Version</td>
+	<td width=28%>$BUILD</td>
+	<td width=22%>SIM Number (ICCID)</td>
+	<td width=28%>$FORM_simid</td>
+</tr>
+</table>
+
+<table style="width: 100%; margin-left: 2em; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr>
+	<td width=22%>Built date</td>
+	<td width=28%>$Built_date</td>
+	<td width=22%>Phone Number</td>
+	<td width=28%>$FORM_phonenum</td>
+</tr>
+</table>
+
+<table style="width: 100%; margin-left: 2em; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr>
+	<td width=22%>Built time</td>
+	<td width=28%>$Built_time</td>
+	<td width=22%>RSSI (dBm)</td>
+        <td>$FORM_rssi &nbsp; <img src="/images/cell$Wimg.gif" ALT='-" $FORM_rssi "dBm'/></td>
+</tr>
+</table>
+
+<table style="width: 100%; margin-left: 2em; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr>
+	<td width=22%>NMS status</td>
+	<td width=28%>$nms_status / $ws_status <a href="/cgi-bin/webif/tools-management.sh">Setting</a></td>
+	<td width=22%>Connection Duration</td>
+	<td width=28%>$FORM_duration</td>
+</tr>
+</table>
+EOF
+
+if [ -n "$p_vin" ];then
+cat<<EOF 
+<table style="width: 100%; margin-left: 2em; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr>
+	
+	<td width=22%>Supply Voltage(V)</td>
+	<td>$p_vin_val</td>
+        <td width=22%></td>
+	<td width=28%></td>
+</tr>
+</table>
+
+EOF
+fi
+
+cat<<EOF 
+
+</div>
+
+
+<div class="settings">
+<table style="width: 100%; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr><th><h3><strong>WAN Status</strong></h3></th>
+</table>
+
+<table style="width: 95%; margin-left: 2em; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr>
+        <th><h3>General Status</h3></th>
+</tr>
+<tr>
+	<td width="10%">IP Address</td>
+	<td width="10%">Connection Type</td>
+	<td width="10%">Net Mask</td>
+	<td width="10%">MAC Address</td>
+</tr>
+<tr class="odd">
+	<td width="10%">$brwan_ip</td>
+	<td width="10%">$w_proto</td>
+	<td width="10%">$brwan_mask</td>
+	<td width="10%">$_mac1</td>
+</tr>
+</table>
+</div>
+EOF
+
+cat <<EOF
+<div class="settings">
+<table style="width: 100%; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr><th><h3><strong>LAN Status</strong></h3></th>
+</table>
+
+<table style="width: 95%; margin-left: 2em; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+<tr>
+        <th><h3>General Status</h3></th>
+</tr>
+<tr>
+	<td width="10%">IP Address</td>
+	<td width="10%">Connection Type</td>
+	<td width="10%">Net Mask</td>
+	<td width="10%">MAC Address</td>
+</tr>
+<tr class="odd">
+	<td width="10%">$brlan_ip</td>
+	<td width="10%">$l_proto</td>
+	<td width="10%">$brlan_mask</td>
+	<td width="10%">$_mac0</td>
+</tr>
+</table>
+EOF
+
+
+cat <<EOF
+
+<table style="width: 95%; margin-left: 2em; text-align: left; font-size: 1em;" border="0" cellpadding="3" cellspacing="2" summary="Settings">
+
+<tr>
+        <th><h3><strong>Connection Status</strong></h3></th>
+</tr>
+
+<tr>
+	<td width="25%">@TR<<network_hosts_IP#IP Address>></td>
+	<td width="25%">@TR<<network_hosts_MAC#MAC Address>></td>
+	<td width="25%">@TR<<network_hosts_Name#Product Name>></td>
+	<td>@TR<<network_hosts_Expires#Expires in>></td>
+
+</tr>
+EOF
+
+rm -rf /tmp/lan_connect
+cat /proc/net/arp |grep -v IP |grep -v br-wan | grep -v 00:00:00:00:00:00 > /tmp/lan_arp
+awk -v date="$(date +%s)"  '{
+	print $2" "$3" br-lan "$1" "$4" "$5" ">> "/tmp/lan_connect";
+}' /tmp/dhcp.leases
+
+awk -v date="$(date +%s)"  '{
+	print $4" "$1" br-lan "date" * * " >> "/tmp/lan_connect";
+}' /tmp/lan_arp
+
+sort -r /tmp/lan_connect > /tmp/lan_connect1
+uniq -w 40 /tmp/lan_connect1 > /tmp/lan_connect
+ 
+cat /tmp/lan_connect 2>/dev/null | awk -v date="$(date +%s)" '
+BEGIN {
+	odd=1
+	counter = 0
+}
+$1 > 0 {
+	counter++
+	if (odd == 1)
+	{
+		print "	<tr>"
+		odd--
+	} else {
+		print "	<tr class=\"odd\">"
+		odd++
+	}
+	print "		<td width=\"25%\">" $2 "</td>"
+	print "		<td width=\"25%\">" $1 "</td>"
+	print "		<td width=\"25%\">" $5 "</td>"
+	print "		<td>"
+	t = $4 - date
+	h = int(t / 60 / 60)
+	if (h > 0) printf h "@TR<<network_hosts_h#h>> "
+	m = int(t / 60 % 60)
+	if (m > 0) printf m "@TR<<network_hosts_min#min>> "
+	s = int(t % 60)
+	if (s == 0)
+	{
+		print " * "
+	} else {
+		printf s "@TR<<network_hosts_sec#sec>> "
+	}
+
+	print "		</td>"
+	print "	</tr>"
+}
+END {
+	if (counter == 0) {
+		print "	<tr>"
+		print "		<td colspan=\"4\">@TR<<network_hosts_No_leases#There are no known Connections.>></td>"
+		print "	</tr>"
+	}
+	print "</table>"
+}'
+
+
+cat <<EOF
+</div>
+EOF
+
+config_load wireless
+cntr=0
+for cfgsec in $CONFIG_SECTIONS; do
+	eval "cfgtype=\$CONFIG_${cfgsec}_TYPE"
+	[ "$cfgtype" = "wifi-iface" ] && {
+		eval "wdevice=\"\$CONFIG_${cfgsec}_device\""
+		eval "manuf=\"\$CONFIG_${wdevice}_type\""
+                wlancount=$(echo $wdevice |cut -c 6)            
+		case "$manuf" in
+			atheros)
+				ath_cnt=$(( $ath_cnt + 1 ))
+				cur_iface=$(printf "ath%d" "$(( $ath_cnt - 1))")
+			;;
+			mac80211)
+				#wlan_cnt=$(( $wlan_cnt + 1 ))
+				#cur_iface=$(printf "wlan%d" "$(( $wlan_cnt - 1))") 
+				cur_iface="wlan$wlancount" 
+			;;
+			*)
+				eval "wdcnt=\$${wdevice}_cnt"
+				wdcnt=$(( $wdcnt + 1 ))
+				eval "${wdevice}_cnt=$wdcnt"
+				if [ "$wdcnt" -gt 1 ]; then
+					cur_iface=$(printf "$wdevice.%d" "$(( $wdcnt - 1))")
+				else
+					cur_iface="$wdevice"
+				fi
+			;;
+		esac
+		eval "cfgnet=\"\$CONFIG_${cfgsec}_network\""
+		eval "isbridge=\"\$${cfgnet}_bridgen\""
+		if [ "$isbridge" != "1" ]; then
+			eval "${cfgnet}_ifacen=\"${cur_iface}\""
+		fi
+
+		displaywiface $cur_iface $wlancount $cfgsec
+		cntr=$(( $cntr +1 ))
+	}
+done
+
+
+
+################ FOR refresh button ###############################
+echo "<div class=\"settings\" style=\"float: right;\">"
+echo "<form name=\"refresh\" method=\"post\" action=\"$SCRIPT_NAME\">"
+
+[ "$FORM_interval" -gt 0 ] >/dev/null 2>&1 && {
+	cat <<EOF
+<input  type="submit" value=" @TR<<system_info_Stop_Refreshing#Stop Refreshing>> " name="refreshstop" />
+@TR<<system_info_Interval#Interval>>: $FORM_interval(@TR<<system_info_in_seconds#s>>)
+EOF
+} || {
+	cat <<EOF
+<input  type="submit" value=" @TR<<system_info_Auto_Refresh#Auto Refresh>> " name="refreshstart" />
+@TR<<system_info_Interval#Interval>>:
+
+<select name="interval">
+EOF
+	for sec in $(seq 3 59); do
+		[ "$sec" -eq 20 ] && {
+			echo "<option value=\"$sec\" selected=\"selected\">$sec</option>"
+		} || {
+			echo "<option value=\"$sec\">$sec</option>"
+		}
+	done
+	cat <<EOF
+</select>
+(@TR<<system_info_in_seconds#s>>)
+EOF
+}
+echo "</form></div><br/>"
+################ END refresh button ###############################
+
+footer_nosubmit
+
+?>
+<!--
+##WEBIF:name:System:001:Summary
+-->

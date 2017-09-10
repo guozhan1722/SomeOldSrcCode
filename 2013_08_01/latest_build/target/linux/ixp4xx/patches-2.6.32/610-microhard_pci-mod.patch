@@ -1,0 +1,47 @@
+diff -Nuar linux_old/arch/arm/mach-ixp4xx/vip-pci.c linux_new/arch/arm/mach-ixp4xx/vip-pci.c
+--- linux_old/arch/arm/mach-ixp4xx/vip-pci.c	2010-06-29 10:43:55.000000000 -0600
++++ linux_new/arch/arm/mach-ixp4xx/vip-pci.c	2010-07-06 09:15:18.000000000 -0600
+@@ -43,19 +43,33 @@
+ static int __init vip_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
+ {
+ 
+-	if (slot == 12) 
+-		return IRQ_IXP4XX_GPIO7;
++    int revision = (*IXP4XX_EXP_CFG0 >> 17) & 0xf;
+ 
+-	else if (slot == 13)
+-		return IRQ_IXP4XX_GPIO6;
++    printk("vip map irq revision = %d\n",revision);
+ 
+-	else if (slot == 11) 
+-		return IRQ_IXP4XX_GPIO4;
+-		
+-	else if(slot == 10) 
+-		return IRQ_IXP4XX_GPIO5;
++    if(revision == 4 ) {
++        if (slot == 12) 
++            return IRQ_IXP4XX_GPIO7;
++    
++        else if (slot == 13)
++            return IRQ_IXP4XX_GPIO6;
++    
++        else if (slot == 11) 
++            return IRQ_IXP4XX_GPIO4;
++            
++        else if(slot == 10) 
++            return IRQ_IXP4XX_GPIO5;
++    
++        else return -1;
++    } else {
++        if (slot == 12 || slot == 13)
++            return IRQ_IXP4XX_GPIO7;
++        else if (slot == 14)
++            return IRQ_IXP4XX_GPIO6;
++        else
++            return -1;
+ 
+-	else return -1;
++    } 
+ }
+ 
+ 

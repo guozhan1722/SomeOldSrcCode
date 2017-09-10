@@ -1,0 +1,9 @@
+TARGETNAME=anwiwdm
+TARGETPATH=obj
+TARGETTYPE=DRIVER
+
+MSC_WARNING_LEVEL=-W3 -WX
+
+INCLUDES=./inc
+
+SOURCES=anwiwdm.c	anwiclient.c 	anwievent.c 	anwiisr.c	anwiio.c	anwiioctl.c

@@ -1,0 +1,75 @@
+diff -Nuar org/lib/libopenswan/oswlog.c microhard/lib/libopenswan/oswlog.c
+--- org/lib/libopenswan/oswlog.c	2012-03-23 15:33:43.000000000 -0600
++++ microhard/lib/libopenswan/oswlog.c	2013-06-05 11:18:17.284337088 -0600
+@@ -54,7 +54,7 @@
+     if (log_to_stderr)
+ 	setbuf(stderr, NULL);
+     if (log_to_syslog)
+-	openlog(progname, LOG_CONS | LOG_NDELAY | LOG_PID, LOG_AUTHPRIV);
++	openlog(progname, LOG_CONS | LOG_NDELAY | LOG_PID, LOG_LOCAL0);
+ 
+     pfkey_error_func = printf;
+     pfkey_debug_func = printf;
+diff -Nuar org/programs/pluto/log.c microhard/programs/pluto/log.c
+--- org/programs/pluto/log.c	2012-03-23 15:33:43.000000000 -0600
++++ microhard/programs/pluto/log.c	2013-06-05 11:18:50.646243035 -0600
+@@ -123,7 +123,7 @@
+     if (log_to_stderr)
+ 	setbuf(stderr, NULL);
+     if (log_to_syslog)
+-	openlog("pluto", LOG_CONS | LOG_NDELAY | LOG_PID, LOG_AUTHPRIV);
++	openlog("pluto", LOG_CONS | LOG_NDELAY | LOG_PID, LOG_LOCAL0);
+ 
+     CIRCLEQ_INIT(&perpeer_list);
+ }
+diff -Nuar org/programs/_plutorun/_plutorun.in microhard/programs/_plutorun/_plutorun.in
+--- org/programs/_plutorun/_plutorun.in	2012-03-23 15:33:43.000000000 -0600
++++ microhard/programs/_plutorun/_plutorun.in	2013-06-05 17:07:22.562240872 -0600
+@@ -201,7 +201,7 @@
+ IPSEC_SECRETS=${IPSEC_CONFS}/ipsec.secrets
+ if test ! -f "${IPSEC_SECRETS}"
+ then
+-    ( logger -p authpriv.info -t ipsec__plutorun No file ${IPSEC_SECRETS}, generating key.
++    ( logger -p local0.info -t ipsec__plutorun No file ${IPSEC_SECRETS}, generating key.
+       ipsec newhostkey --quiet 
+       
+       # tell pluto to go re-read the file
+@@ -211,7 +211,7 @@
+ fi
+ 
+ # spin off into the background, with our own logging
+-echo "$verb Pluto subsystem..." | logger -p authpriv.error -t ipsec__plutorun
++echo "$verb Pluto subsystem..." | logger -p local0.error -t ipsec__plutorun
+ execdir=${IPSEC_EXECDIR-@IPSEC_EXECDIR@}
+ libdir=${IPSEC_LIBDIR-@IPSEC_LIBDIR@}
+ 
+diff -Nuar org/programs/setup/setup.in microhard/programs/setup/setup.in
+--- org/programs/setup/setup.in	2012-03-23 15:33:43.000000000 -0600
++++ microhard/programs/setup/setup.in	2013-06-06 10:29:57.878275361 -0600
+@@ -60,7 +60,7 @@
+ if [ `id -u` -ne 0 ]
+ then
+     echo "permission denied (must be superuser)" |
+-      logger -s -p daemon.error -t ipsec_setup 2>&1
++      logger -s -p local0.error -t ipsec_setup 2>&1
+     exit 4
+ fi
+ 
+@@ -113,7 +113,7 @@
+     IPSEC_confreadsection=${IPSEC_confreadsection:-setup}
+     export IPSEC_confreadsection
+ 
+-    IPSECsyslog=${IPSECsyslog:-daemon.error}
++    IPSECsyslog=${IPSECsyslog:-local0.error}
+     export IPSECsyslog
+ 
+     # remove for: @cygwin_END@
+@@ -126,7 +126,7 @@
+ 
+ 
+ stop() {
+-    IPSECsyslog=${IPSECsyslog:-daemon.error}
++    IPSECsyslog=${IPSECsyslog:-local0.error}
+     export IPSECsyslog
+     (
+     ipsec _realsetup stop

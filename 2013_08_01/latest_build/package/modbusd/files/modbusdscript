@@ -1,0 +1,43 @@
+#!/bin/ash
+ 
+ exec>/dev/null 2>&1
+ 
+case "$1" in 
+
+md_restart)
+   /etc/init.d/modbusd restart
+   ;;
+	
+reboot)
+    /sbin/reboot
+   ;;
+
+md_ioclose)
+   uci set ioports.output.output$2=1
+   uci commit ioports
+   /etc/init.d/ioports stop
+   /etc/init.d/ioports start
+   ;;
+
+md_ioopen)
+   uci set ioports.output.output$2=0
+   uci commit ioports
+   /etc/init.d/ioports stop
+   /etc/init.d/ioports start
+   ;;
+
+md_eurd)
+   /bin/eurd_ $2 &
+   ;;
+
+md_webclient)
+   /etc/init.d/wsClient stop
+   /etc/init.d/wsClient start
+   ;;
+
+*)
+    exit 1
+   ;;
+esac 
+exit 0
+

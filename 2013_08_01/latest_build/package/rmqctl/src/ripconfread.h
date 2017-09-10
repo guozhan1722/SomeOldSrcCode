@@ -1,0 +1,6 @@
+#ifndef RIPCONFREAD_H
+#define RIPCONFREAD_H
+
+#define LINE_LENGTH 256
+
+#endif //RIPCONFREAD_H

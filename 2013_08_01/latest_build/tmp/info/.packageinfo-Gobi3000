@@ -1,0 +1,15 @@
+Source-Makefile: package/Gobi3000/Makefile
+Package: Gobi3000
+Version: 1
+Depends: +kmod-GobiNet +kmod-GobiSerial
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Microhard Gobi3000 utility
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  This package contains the microhard home grown Gobi3000 utility.
+@@
+
+

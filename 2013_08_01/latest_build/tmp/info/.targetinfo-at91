@@ -1,0 +1,18 @@
+Source-Makefile: target/linux/at91/Makefile
+Target: at91
+Target-Board: at91
+Target-Kernel: 2.6
+Target-Name: Atmel AT91
+Target-Path: /home/zguo/project/2013_08_01/latest_build
+Target-Arch: arm
+Target-Features: broken gpio squashfs usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -march=armv5te -mtune=xscale -funit-at-a-time
+Linux-Version: 2.6.25.20
+Linux-Release: 1
+Linux-Kernel-Arch: arm
+Target-Description:
+  Build fimware images for Figment Design Labs VersaLink board.
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall
+

@@ -1,0 +1,132 @@
+#!/bin/sh /etc/rc.common
+
+START=10 
+
+config_cb() {
+    local cfg="$CONFIG_SECTION"
+    local type
+    local enable
+    local hostname
+    local port
+    local interval
+    local count
+
+    config_get enable       $cfg enable
+    config_get type         $cfg type
+    config_get hostname     $cfg hostname
+    config_get port         $cfg port
+    config_get interval 	$cfg interval
+    config_get count 	    $cfg count
+
+    if [ "$enable" = "1" ]; then
+        case "$type" in
+    	ICMP)
+
+           sleep $interval
+
+            while true; do
+                COUNTER=0
+                while [ $COUNTER -lt $count ]; do
+                    lte_disable=$(uci get lte.connect.disabled)
+                    #PPP0_IF=`ifconfig |grep eth2`
+                    #if [ -z "$PPP0_IF" ]; then
+                    if [ "$lte_disable" = "1" ]; then
+                        let COUNTER=0
+                        break;
+                    fi
+
+                    ping ${hostname:-8.8.8.8} -c 1 -s 1 -W 4 -w 4 2>&1 >/dev/null
+                    if [ "$?" = "0" ]; then
+                        let COUNTER=0
+                        break;
+                    else
+                        let COUNTER=COUNTER+1
+                        sleep 1
+                        logger -t "keepalive" "couldn't ping $COUNTER."
+                    fi
+                done
+                if [ "$COUNTER" = "$count" ]; then
+                    logger -t "keepalive" "wan2 connection not present, reboot."
+                    dfile_size=$(ls -s /etc/system.debug |awk '{print $1}')
+                    if [ "$dfile_size" -gt "2" ];then
+                        echo -n `date`>/etc/system.debug   
+                        echo " keepalive : wan2 connection not present, after $count seconds ... reboot." >>/etc/system.debug
+                    else
+                        echo -n `date`>>/etc/system.debug   
+                        echo " keepalive : wan2 connection not present, after $count seconds ... reboot.">>/etc/system.debug
+                    fi
+                    /sbin/reboot
+                fi
+
+                sleep $interval
+            done
+    	;;
+    
+    	HTTP)
+           sleep $interval
+            while true; do
+                COUNTER=0
+                while [ $COUNTER -lt $count ]; do
+                    #PPP0_IF=`ifconfig |grep eth2`
+                    lte_disable=$(uci get lte.connect.disabled)
+                    #if [ -z "$PPP0_IF" ]; then
+                    if [ "$lte_disable" = "1" ]; then
+                        let COUNTER=0
+                        break;
+                    fi
+
+                    wget -q -O /var/run/tmpfile http://${hostname:-8.8.8.8}:${port:-80}
+                    if [ "$?" = "0" ]; then
+                        let COUNTER=0
+                        #logger -t "keepalive" "wget hostname = $hostname  port = $port COUNTER =$COUNTER conut =$count ."
+                        break;
+                    else
+                        let COUNTER=COUNTER+1
+                        sleep 1
+                        logger -t "keepalive" "couldn't http $COUNTER."
+                    fi
+                done
+                if [ "$COUNTER" = "$count" ]; then
+                    logger -t "keepalive" "wan2 connection not present, reboot."
+
+                    dfile_size=$(ls -s /etc/system.debug |awk '{print $1}')
+                    if [ "$dfile_size" -gt "2" ];then
+                        echo -n `date`>/etc/system.debug   
+                        echo " keepalive : wan2 connection not present, after $count seconds ... reboot." >>/etc/system.debug
+                    else
+                        echo -n `date`>>/etc/system.debug   
+                        echo " keepalive : wan2 connection not present, after $count seconds ... reboot.">>/etc/system.debug
+                    fi
+
+                    /sbin/reboot
+                fi
+
+                sleep $interval
+
+            done
+    	;;
+    
+        esac
+    fi
+}
+
+boot() {
+        #sleep 600
+	#config_load keepalive&
+        /bin/keepalivebootup &
+}
+
+start() {
+	config_load keepalive&
+}
+
+stop() {
+        keepalivebootup_pid=$(ps |grep keepalivebootup |grep -v grep |awk '{print $1}')
+        if [ "$keepalivebootup_pid" = "" ] ;then
+	    killall -9 S${START}keepalive 2>&- >&-
+	killall -9 keepalive 2>&- >&-
+        else
+            kill $keepalivebootup_pid 2>&- >&-
+        fi
+}
+

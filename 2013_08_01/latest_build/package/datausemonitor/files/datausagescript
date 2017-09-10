@@ -1,0 +1,31 @@
+#!/bin/ash
+#Dont put it into & background mode, we need it return then go next step.
+#SubProgram will wait until it come back.
+ 
+ exec>/dev/null 2>&1
+ 
+case "$1" in 
+
+reset2zero)
+        /etc/init.d/datausemonitord stop
+        rm /var/run/datausagestat
+        rm /var/run/daystat
+        rm /etc/carrierstat/*
+        /bin/datausemonitor $2 clear tozero
+        sleep 2
+        FORM_DataUseMonitor_SetDate=$(date)
+        uci_set "datausemonitor" "datausage_conf" "DataUseMonitor_SetDate" "$FORM_DataUseMonitor_SetDate"
+        uci_commit "datausemonitor"
+        /etc/init.d/datausemonitord start
+   ;;
+
+noticesmtp)
+    /usr/sbin/sendmail -C/tmp/run/datausage.conf $2 < /tmp/run/datause_email.dat & 
+   ;;
+
+*)
+    exit 1
+   ;;
+esac 
+exit 0
+

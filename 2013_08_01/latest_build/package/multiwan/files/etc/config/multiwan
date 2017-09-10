@@ -1,0 +1,80 @@
+
+config 'multiwan' 'config'
+	# REMOVE THIS LINE OR PUT TO 1 TO ENABLE MULTIWAN
+	option 'enabled' '0'
+
+	option 'default_route' 'fastbalancer'
+	# health_monitor below is defaulted to parallel, and can be set to
+	# serial to save system resources.
+	option 'health_monitor' 'serial'
+	option 'debug' '0'
+
+config 'interface' 'wan'
+	option 'weight' '10'
+	option 'health_interval' 'disable'
+	option 'icmp_hosts' '8.8.8.8'
+	# icmp_count is defaulted to 1, and can be increased to reduce
+	# false positives.
+	# option 'icmp_count' '3'
+	option 'timeout' '3'
+	option 'health_fail_retries' '3'
+	option 'health_recovery_retries' '3'
+	option 'failover_to' 'wan2'
+	option 'dns' 'auto'
+
+config 'interface' 'wan2'
+	option 'weight' '10'
+	option 'health_interval' 'disable'
+	option 'icmp_hosts' '8.8.8.8'
+	option 'timeout' '3'
+	option 'health_fail_retries' '3'
+	option 'health_recovery_retries' '3'
+	option 'failover_to' 'wan'
+	option 'dns' 'auto'
+
+config 'mwanfw'                             
+        option 'name' 'rule1'             
+        option 'wanrule' 'wan2'             
+        option 'port_type' ''               
+        option 'ports' ''                   
+        option 'src' 'all'                  
+        option 'proto' 'all'                
+        option 'dst' '8.8.4.4'              
+                                            
+config 'mwanfw'                             
+        option 'name' 'rule2'             
+        option 'src' 'all'                  
+        option 'dst' '4.2.2.2'           
+        option 'proto' 'all'                
+        option 'ports' ''                   
+        option 'wanrule' 'wan'              
+        option 'port_type' ''               
+                                 
+
+#config 'mwanfw'
+#	option 'name' 'rule1'
+#	option 'src' '192.168.1.0/24'
+#	option 'dst' 'ftp.netlab7.com'
+#	option 'proto' 'tcp'
+#	option 'ports' '21'
+#	option 'wanrule' 'wan2'
+
+# VoIP traffic goes through wan
+# config 'mwanfw'
+	# option 'name' 'rule2'
+	# option 'src' '192.168.1.0/24'
+	# option 'proto' 'udp'
+	# option 'port_type' 'source-ports'
+	# option 'ports' '5060,16384:16482'
+	# option 'wanrule' 'wan'
+
+#config 'mwanfw'
+#	option 'name' 'rule3'
+#	option 'src' '192.168.0.3'
+#	option 'proto' 'icmp'
+#	option 'wanrule' 'balancer'#
+
+#config 'mwanfw'
+#	option 'name' 'rule4'
+#	option 'dst' 'www.whatismyip.com'
+#	option 'wanrule' 'fastbalancer'

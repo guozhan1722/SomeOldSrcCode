@@ -1,0 +1,67 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+. /etc/functions.sh
+
+iface_main="br-wan2"
+pidfile="/var/run/$iface_main.pid"
+
+start() {
+    ifup wan2
+    config_load network
+    config="wan2"
+    proto="dhcp"
+
+    lock "/var/lock/dhcp-$iface_main"
+    local pid="$(cat "$pidfile" 2>/dev/null)"
+    if [ -d "/proc/$pid" ] && grep udhcpc "/proc/${pid}/cmdline" >/dev/null 2>/dev/null; then
+	lock -u "/var/lock/dhcp-$iface_main"
+    else
+        local ipaddr netmask hostname proto1 clientid
+    
+        config_get ipaddr "$config" ipaddr
+        config_get netmask "$config" netmask
+        config_get hostname "$config" hostname
+        config_get proto1 "$config" proto
+        config_get clientid "$config" clientid
+    
+        [ -z "$ipaddr" ] || \
+                $DEBUG ifconfig "$iface_main" "$ipaddr" ${netmask:+netmask "$netmask"}
+    
+        # don't stay running in background if dhcp is not the main proto on the interface (e.g. when using pptp)
+        local dhcpopts
+        #[ ."$proto1" != ."$proto" ] && dhcpopts="-n -q"
+        eval udhcpc -A 20 -t 0 -i "$iface_main" ${hostname:+-H $hostname} ${clientid:+-c $clientid} -b -p "$pidfile" ${dhcpopts:- -O rootpath -R &}
+        echo "udhcpc args: -t 0 -i \"$iface_main\" ${ipaddr:+-r $ipaddr} ${hostname:+-H $hostname} ${clientid:+-c $clientid} -b -p \"$pidfile\" ${dhcpopts:- -O rootpath -R &}">/tmp/abc
+	lock -u "/var/lock/dhcp-$iface_main"
+    fi
+
+    local ippassthrough=$(uci get lte.connect.ippassthrough)
+    if [ "$ippassthrough" = "Ethernet" -o "$ippassthrough" = "WANport" ];then
+        local wan2_ip="$(ifconfig br-wan2 | grep inet | grep -v inet6 | awk -F'[: ]+' '{print $4}')"
+        cnt=0
+        while [ -z "$wan2_ip" -a "$cnt" -lt "10" ]; do
+            sleep 1
+            wan2_ip="$(ifconfig br-wan2 | grep inet | grep -v inet6 | awk -F'[: ]+' '{print $4}')"
+            cnt=$(($cnt+1))
+            logger "dhcp_client Test" "count = $cnt and wan ip is $wan2_ip"
+        done
+    fi
+
+    #local lte_ipaddr=$(uci_get_state network wan2 ipaddr 'x')
+    local lte_iface=br-wan2
+    logger -t "dhcp_client" "/bin/ippassthrough $lte_iface $wan2_ip $ippassthrough"
+    /bin/ippassthrough "$lte_iface" "$wan2_ip" "$ippassthrough" 
+
+    #restart ntpclient just in case for hotplug doesn't work
+    /etc/init.d/ntpclient stop
+    /etc/init.d/ntpclient start
+
+}
+
+stop() {
+    ifdown wan2
+#    killall -9 udhcpc
+#    dpid=$(cat $pidfile)
+#    kill $dpid
+}

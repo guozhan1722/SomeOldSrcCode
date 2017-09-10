@@ -1,0 +1,92 @@
+diff -Nuar linux_old/drivers/input/input.c linux_new/drivers/input/input.c
+--- linux_old/drivers/input/input.c	2011-10-21 10:49:12.678346232 -0600
++++ linux_new/drivers/input/input.c	2011-10-21 10:21:37.528424071 -0600
+@@ -1536,8 +1536,8 @@
+ 		return error;
+ 
+ 	path = kobject_get_path(&dev->dev.kobj, GFP_KERNEL);
+-	printk(KERN_INFO "input: %s as %s\n",
+-		dev->name ? dev->name : "Unspecified device", path ? path : "N/A");
++	//printk(KERN_INFO "input: %s as %s\n",
++	//	dev->name ? dev->name : "Unspecified device", path ? path : "N/A");
+ 	kfree(path);
+ 
+ 	error = mutex_lock_interruptible(&input_mutex);
+diff -Nuar linux_old/drivers/input/misc/gpio_buttons.c linux_new/drivers/input/misc/gpio_buttons.c
+--- linux_old/drivers/input/misc/gpio_buttons.c	2011-10-21 10:49:12.581346742 -0600
++++ linux_new/drivers/input/misc/gpio_buttons.c	2011-10-21 10:21:37.418391248 -0600
+@@ -196,7 +196,7 @@
+ 
+ static int __init gpio_buttons_init(void)
+ {
+-	printk(KERN_INFO DRV_NAME " driver version " DRV_VERSION "\n");
++	//printk(KERN_INFO DRV_NAME " driver version " DRV_VERSION "\n");
+ 	return platform_driver_register(&gpio_buttons_driver);
+ }
+ 
+diff -Nuar linux_old/drivers/leds/led-class.c linux_new/drivers/leds/led-class.c
+--- linux_old/drivers/leds/led-class.c	2011-10-21 10:49:13.024359923 -0600
++++ linux_new/drivers/leds/led-class.c	2011-10-21 10:21:38.648350963 -0600
+@@ -164,8 +164,8 @@
+ 	led_trigger_set_default(led_cdev);
+ #endif
+ 
+-	printk(KERN_INFO "Registered led device: %s\n",
+-			led_cdev->name);
++	//printk(KERN_INFO "Registered led device: %s\n",
++	//		led_cdev->name);
+ 
+ 	return 0;
+ 
+diff -Nuar linux_old/drivers/net/ag71xx/ag71xx_main.c linux_new/drivers/net/ag71xx/ag71xx_main.c
+--- linux_old/drivers/net/ag71xx/ag71xx_main.c	2011-10-21 10:49:10.690346101 -0600
++++ linux_new/drivers/net/ag71xx/ag71xx_main.c	2011-10-21 10:21:35.556369424 -0600
+@@ -334,8 +334,8 @@
+ 
+ 	if (!ag->link) {
+ 		netif_carrier_off(ag->dev);
+-		if (netif_msg_link(ag))
+-			printk(KERN_INFO "%s: link down\n", ag->dev->name);
++//		if (netif_msg_link(ag))
++//			printk(KERN_INFO "%s: link down\n", ag->dev->name);
+ 		return;
+ 	}
+ 
+@@ -386,11 +386,11 @@
+ 	ag71xx_wr(ag, AG71XX_REG_MAC_IFCTL, ifctl);
+ 
+ 	netif_carrier_on(ag->dev);
+-	if (netif_msg_link(ag))
+-		printk(KERN_INFO "%s: link up (%sMbps/%s duplex)\n",
+-			ag->dev->name,
+-			ag71xx_speed_str(ag),
+-			(DUPLEX_FULL == ag->duplex) ? "Full" : "Half");
++	//if (netif_msg_link(ag))
++		//printk(KERN_INFO "%s: link up (%sMbps/%s duplex)\n",
++		//	ag->dev->name,
++		//	ag71xx_speed_str(ag),
++		//	(DUPLEX_FULL == ag->duplex) ? "Full" : "Half");
+ 
+ 	DBG("%s: fifo_cfg0=%#x, fifo_cfg1=%#x, fifo_cfg2=%#x\n",
+ 		ag->dev->name,
+diff -Nuar linux_old/fs/mini_fo/main.c linux_new/fs/mini_fo/main.c
+--- linux_old/fs/mini_fo/main.c	2011-10-21 10:49:54.663346983 -0600
++++ linux_new/fs/mini_fo/main.c	2011-10-21 10:36:38.938381526 -0600
+@@ -179,7 +179,7 @@
+ 		*tmp = '\0';
+ 		if (!strncmp("base=", options, 5)) {
+ 			name = options + 5;
+-			printk(KERN_INFO "mini_fo: using base directory: %s\n", name);
++			//printk(KERN_INFO "mini_fo: using base directory: %s\n", name);
+ 
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+ 			if (path_init(name, LOOKUP_FOLLOW, &nd))
+@@ -199,7 +199,7 @@
+ 		} else if(!strncmp("sto=", options, 4)) {
+ 			/* parse the storage dir */
+ 			name = options + 4;
+-			printk(KERN_INFO "mini_fo: using storage directory: %s\n", name);
++			//printk(KERN_INFO "mini_fo: using storage directory: %s\n", name);
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+ 			if(path_init(name, LOOKUP_FOLLOW, &nd2))
+ 				err = path_walk(name, &nd2);

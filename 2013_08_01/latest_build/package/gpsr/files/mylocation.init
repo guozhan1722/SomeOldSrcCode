@@ -1,0 +1,85 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+. /etc/version
+
+GPSPIPE=/usr/bin/gpspipe
+OUTFILE=/tmp/run/GPS_position
+GPSDIP=127.0.0.1
+
+config_load "gpsd"
+config_get GPSDPORT "gpsd_conf" GPSD_TCP_Port
+
+while true
+do
+        LAT=""
+        LON=""
+        ELEV=""
+        GPSDATA=$($GPSPIPE -w -n 10 $GPSDIP:$GPSDPORT |grep O=GGA)
+        if [ "$?" ]
+        then
+                LAT=`echo $GPSDATA| awk '{ print $4 }'`
+                LON=`echo $GPSDATA| awk '{ print $5 }'`
+		ELEV=`echo $GPSDATA| awk '{ print $6 }'`
+	else
+	        GPSDATA=`$GPSPIPE -w -n 10 $GPSDIP:$GPSDPORT |grep O=RMC`
+		if [ "$?" ]
+		then
+		        LAT=`echo $GPSDATA| awk '{ print $4 }'`
+		        LON=`echo $GPSDATA| awk '{ print $5 }'`
+			ELEV=`echo $GPSDATA| awk '{ print $6 }'`
+		else
+			GPSDATA=`$GPSPIPE -w -n 10 $GPSDIP:$GPSDPORT |grep O=GSV`
+			if [ "$?" ]
+			then
+				LAT=`echo $GPSDATA| awk '{ print $4 }'`
+				LON=`echo $GPSDATA| awk '{ print $5 }'`
+				ELEV=`echo $GPSDATA| awk '{ print $6 }'`
+                        else
+        			GPSDATA=`$GPSPIPE -w -n 10 $GPSDIP:$GPSDPORT |grep O=GSA`
+        			if [ "$?" ]
+        			then
+        				LAT=`echo $GPSDATA| awk '{ print $4 }'`
+        				LON=`echo $GPSDATA| awk '{ print $5 }'`
+                			ELEV=`echo $GPSDATA| awk '{ print $6 }'`
+                                else
+                			GPSDATA=`$GPSPIPE -w -n 10 $GPSDIP:$GPSDPORT |grep O=GLL`
+                			if [ "$?" ]
+                			then
+                				LAT=`echo $GPSDATA| awk '{ print $4 }'`
+                				LON=`echo $GPSDATA| awk '{ print $5 }'`
+                				ELEV=" "
+                			fi
+        			fi
+			fi
+
+		fi
+	fi
+
+	UPDATETIME=`date`
+    if [ "$LAT" ]
+    then
+cat > $OUTFILE <<EOF
+latitude="$LAT"
+longitude="$LON"
+elevation="$ELEV"
+updatetime="$UPDATETIME"
+EOF
+        /bin/gps_webget write $LAT $LON $ELEV
+        if [ ! -f /tmp/run/gpscarrstat ]; then
+            echo "ok" > /tmp/run/gpscarrstat
+        fi
+
+    else
+cat > $OUTFILE <<EOF
+latitude="$LAT"
+longitude="$LON"
+elevation="$ELEV"
+updatetime="$UPDATETIME"
+EOF
+    fi
+
+    sleep 5
+done
+
+
+

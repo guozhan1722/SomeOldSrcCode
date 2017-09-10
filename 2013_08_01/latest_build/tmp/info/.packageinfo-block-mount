@@ -1,0 +1,48 @@
+Source-Makefile: package/block-mount/Makefile
+Package: block-mount
+Version: 0.1.0-1
+Depends: 
+Provides: 
+Section: base
+Category: Base system
+Title: Block device mounting and checking
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:   Scripts used to mount and check block devices (filesystems and swap)
+@@
+Config:
+  select BUSYBOX_CONFIG_MKSWAP
+  select BUSYBOX_CONFIG_FEATURE_MKSWAP_UUID
+  select BUSYBOX_CONFIG_SWAPONOFF
+  select BUSYBOX_CONFIG_BLKID
+  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_EXT
+  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_REISERFS
+  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_FAT
+  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_HFS
+  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_JFS
+  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_XFS
+  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_NTFS
+  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_SYSV
+  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_OCFS2
+  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_ISO9660
+  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_UDF
+  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_LINUXSWAP
+  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_CRAMFS
+  select BUSYBOX_CONFIG_FEATURE_VOLUMEID_ROMFS
+@@
+
+Package: block-hotplug
+Version: 0.1.0-1
+Depends: block-mount hotplug2
+Provides: 
+Section: base
+Category: Base system
+Title: Automount and autocheck block devices
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:   Scripts used to automatically check and mount filesystem and/or swap
+@@
+
+

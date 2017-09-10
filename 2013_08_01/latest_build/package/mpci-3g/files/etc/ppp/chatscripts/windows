@@ -1,0 +1,13 @@
+#set TIMEOUT
+TIMEOUT 10
+
+#send CLIENT and delay one second 3 times
+'' CLIENT\c
+'' '\d\c'
+'' CLIENT\c
+'' '\d\c'
+'' CLIENT\c
+'' '\d\c'
+'CLIENTSERVER' CLIENT\c
+
+

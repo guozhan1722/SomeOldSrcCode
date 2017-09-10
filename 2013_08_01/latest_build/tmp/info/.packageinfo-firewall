@@ -1,0 +1,16 @@
+Source-Makefile: package/firewall/Makefile
+Package: firewall
+Version: 1-10
+Depends: +libuci +libpthread +iptables +iptables-mod-conntrack +iptables-mod-nat
+Provides: 
+Section: net
+Category: Base system
+Title: OpenWrt firewall
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  uci based firewall for openwrt
+http://openwrt.org/
+@@
+
+

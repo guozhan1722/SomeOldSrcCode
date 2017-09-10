@@ -1,0 +1,61 @@
+#!/bin/sh
+# Copyright (C) 2012 Microhard Syetems Inc.
+
+#DEBUG="debug"
+WorkFolder="/tmp"
+
+. /etc/version
+
+COPY_FILES="/etc/firewall.config
+/etc/firewall.user
+/etc/httpd.conf
+/etc/hosts
+/etc/ethers
+/etc/passwd"
+
+COPY_DIRS="/etc/config
+/etc/openvpn
+/etc/crontabs
+/etc/ssl
+/etc/dropbear"
+
+board_info="${VENDOR}:${PRODUCTNAME}-${PRODUCT}:${HARDWARE}"
+echo "Creating Configuration File, please wait ... "
+FORM_name="$(hostname)"
+
+tmp=$WorkFolder/config.$$
+tgz=$WorkFolder/${FORM_name}.config
+rm -rf $tmp 2>/dev/null
+mkdir -p $tmp 2>/dev/null
+date > $tmp/config.date
+echo "$FORM_name" > $tmp/config.name
+echo "$board_info" > $tmp/config.boardinfo
+        
+echo $(dmesg | grep "CPU revision is:" | sed -e s/'CPU revision is: '//g) > $tmp/config.boardtype
+for file in $COPY_FILES; do
+    [ -e $file ] && [ ! -h $file ] && {
+        d=`dirname $file`; [ -d $tmp$d ] || mkdir -p $tmp$d
+        cp -af $file $tmp$file 2>/dev/null
+    }
+done
+
+for dir in $COPY_DIRS; do
+    [ -e $dir ] && {
+        mkdir -p $tmp$dir
+        cp -afr $dir/* $tmp$dir/ 2>/dev/null
+    }
+done
+
+(cd $tmp; tar czf $tgz *)
+[ -z "$DEBUG" ] && {    
+    rm -rf $tmp 2>/dev/null
+}
+Bin_txt -b ${FORM_name}.config
+[ -z "$DEBUG" ] && {
+    rm ${FORM_name}.config
+    rm -f $tgz 2>/dev/null
+}
+mv ${FORM_name}.config.txt wsBackup.txt
+echo "Creating Configuration File done"
+
+    

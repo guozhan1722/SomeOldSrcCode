@@ -1,0 +1,9 @@
+/100-static.patch/1.1/Thu Apr  1 22:12:36 2010/-kkv/Tar71xx_4g
+/110-offsetof.patch/1.1/Thu Apr  1 22:12:36 2010/-kkv/Tar71xx_4g
+/120-add_if_vlan.h.patch/1.1/Thu Apr  1 22:12:36 2010/-kkv/Tar71xx_4g
+/130-fix_minor_memleaks_on_exit.patch/1.1/Thu Apr  1 22:12:36 2010/-kkv/Tar71xx_4g
+/140-fix-linking-libnl-genl.patch/1.1/Thu Apr  1 22:12:36 2010/-kkv/Tar71xx_4g
+/150-fix-libnl-pc-config.patch/1.1/Thu Apr  1 22:12:36 2010/-kkv/Tar71xx_4g
+/160-update_includes_for_iw.patch/1.1/Thu Apr  1 22:12:36 2010/-kkv/Tar71xx_4g
+/170-fix_netlink_local_missing_limits_h.patch/1.1/Thu Apr  1 22:12:36 2010/-kkv/Tar71xx_4g
+D

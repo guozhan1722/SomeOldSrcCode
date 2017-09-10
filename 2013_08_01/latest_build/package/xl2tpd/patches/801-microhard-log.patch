@@ -1,0 +1,12 @@
+diff -Nuar org/misc.c microhard/misc.c
+--- org/misc.c	2011-10-06 13:22:05.000000000 -0600
++++ microhard/misc.c	2013-06-05 13:24:07.628215284 -0600
+@@ -44,7 +44,7 @@
+     static int logopen=0;
+     
+     if(!logopen) {
+-	SYSLOG_CALL( openlog (BINARY, LOG_PID, LOG_DAEMON) );
++	SYSLOG_CALL( openlog (BINARY, LOG_PID, LOG_LOCAL0) );
+ 	logopen=1;
+     }
+ }

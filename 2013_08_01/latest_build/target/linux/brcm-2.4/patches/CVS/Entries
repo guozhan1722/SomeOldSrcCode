@@ -1,0 +1,17 @@
+/001-bcm47xx.patch/1.1/Thu Apr  1 22:12:13 2010/-kkv/Tar71xx_4g
+/003-bcm47xx_cache_fixes.patch/1.1/Thu Apr  1 22:12:13 2010/-kkv/Tar71xx_4g
+/004-flash.patch/1.1/Thu Apr  1 22:12:13 2010/-kkv/Tar71xx_4g
+/005-bluetooth_sco_buffer_align.patch/1.1/Thu Apr  1 22:12:13 2010/-kkv/Tar71xx_4g
+/006-ide_workaround.patch/1.1/Thu Apr  1 22:12:13 2010/-kkv/Tar71xx_4g
+/008-b44_bcm47xx_support.patch/1.1/Thu Apr  1 22:12:13 2010/-kkv/Tar71xx_4g
+/009-wrt54g3g_pcmcia.patch/1.1/Thu Apr  1 22:12:13 2010/-kkv/Tar71xx_4g
+/010-bcm47xx-cam_absent.patch/1.1/Thu Apr  1 22:12:12 2010/-kkv/Tar71xx_4g
+/011-wl_qdisc_war.patch/1.1/Thu Apr  1 22:12:13 2010/-kkv/Tar71xx_4g
+/012-aec62xx.patch/1.1/Thu Apr  1 22:12:13 2010/-kkv/Tar71xx_4g
+/013-wl_hdd_pdc202xx.patch/1.1/Thu Apr  1 22:12:13 2010/-kkv/Tar71xx_4g
+/014-sierra_support.patch/1.1/Thu Apr  1 22:12:13 2010/-kkv/Tar71xx_4g
+/015-sierra_kconfig.patch/1.1/Thu Apr  1 22:12:13 2010/-kkv/Tar71xx_4g
+/016-fuse-ntfs-3g-mips.patch/1.1/Thu Apr  1 22:12:13 2010/-kkv/Tar71xx_4g
+/100-wl_config.patch/1.1/Thu Apr  1 22:12:13 2010/-kkv/Tar71xx_4g
+/110-b44_alignment.patch/1.1/Thu Apr  1 22:12:12 2010/-kkv/Tar71xx_4g
+D

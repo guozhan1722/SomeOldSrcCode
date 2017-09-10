@@ -1,0 +1,21 @@
+--- a/programs/pluto/timer.c	2013-07-18 12:47:26.551713665 -0600
++++ b/programs/pluto/timer.c	2013-07-18 16:11:26.031710808 -0600
+@@ -581,6 +581,18 @@
+ 		    DBG(DBG_LIFECYCLE
+ 			, openswan_log("replacing stale %s SA"
+ 			    , IS_PHASE1(st->st_state)? "ISAKMP" : "IPsec"));
++            if (type == EVENT_SA_REPLACE_IF_USED) {
++               openswan_log("EVENT_SA_REPLACE_IF_USED, outbound_time=%lu, tm=%lu, reky=%lu"
++                ,st->st_outbound_time
++                ,tm
++                ,c->sa_rekey_margin);
++            }
++            if (type == EVENT_SA_REPLACE) {
++               openswan_log("EVENT_SA_REPLACE, outbound_time=%lu, tm=%lu, reky=%lu"
++                ,st->st_outbound_time
++                ,tm
++                ,c->sa_rekey_margin);
++            }
+ 		    ipsecdoi_replace(st, LEMPTY, LEMPTY, 1);
+ 		}
+ 		delete_dpd_event(st);

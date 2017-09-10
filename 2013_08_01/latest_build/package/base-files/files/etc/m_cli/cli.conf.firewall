@@ -1,0 +1,23 @@
+#firewall
+
+## firewall status
+cmd status:Display the system status:firewall:Show firewall status:status-firewall.sh:
+
+###firewall forwarding configurateion
+cmd firewall:Set or Get firewall config:forwarding_conf:forwarding configuration:get:getting the value for forwarding conf:firewall-forwarding-conf-get.sh:
+cmd firewall:Set or Get firewall config:forwarding_conf:forwarding configuration:set:setting the value for forwarding conf:firewall-forwarding-conf-set.sh:
+cmd firewall:Set or Get firewall config:forwarding_conf:forwarding configuration:add:adding the item for forwarding conf:firewall-forwarding-conf-add.sh:
+cmd firewall:Set or Get firewall config:forwarding_conf:forwarding configuration:del:delete the item for forwarding conf:firewall-forwarding-conf-del.sh:
+
+###firewall zone setting
+cmd firewall:Set or Get firewall config:zone_setting:zone setting:get:getting the value for zone setting:firewall-zone-setting-get.sh:
+
+###firewall incoming ports
+cmd firewall:Set or Get firewall config:incoming_ports:Incoming Ports:get:getting the value for incoming ports:firewall-incoming-ports-get.sh:
+
+###firewall port forwarding
+cmd firewall:Set or Get firewall config:port_forwarding:Port Forwarding:get:getting the value for port forwarding:firewall-port-forwarding-get.sh:
+
+###firewall submit
+cmd firewall:Set or Get firewall config:submit:submit all settings:firewall-submit.sh:
+

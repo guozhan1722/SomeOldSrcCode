@@ -1,0 +1,226 @@
+#!/bin/sh 
+
+. /etc/functions.sh
+
+config_cb() {
+        local cfg_type="$1"
+        local cfg_name="$2"
+
+        case "$cfg_type" in
+                s2stunnel)
+                        append s2s_cfgs "$cfg_name"
+                ;;
+                x2ctunnel)
+                        append x2c_cfgs "$cfg_name"
+                ;;
+                vca)
+                        append vca_cfgs "$cfg_name" "$N"
+                ;;
+                gretunnel)
+                        append gre_cfgs "$cfg_name" "$N"
+                ;;
+        esac
+}
+
+my_lockfile ()
+{
+        TEMPFILE="$1.$$"
+        LOCKFILE="$1.lock"
+        echo $$ > $TEMPFILE || {
+                echo "You don't have permission to access `dirname $TEMPFILE`"
+                return 1
+        }
+        ln $TEMPFILE $LOCKFILE && {
+                rm -f $TEMPFILE
+                return 0
+        }
+        kill -0 `cat $LOCKFILE` && {
+                rm -f $TEMPFILE
+                return 1
+        }
+        echo "Removing stale lock file"
+        rm -f $LOCKFILE
+        ln $TEMPFILE $LOCKFILE && {
+                rm -f $TEMPFILE
+                return 0
+        }
+        rm -f $TEMPFILE
+        return 1
+}
+
+my_check_wan2 ()
+{
+    wan2_ip=$(/sbin/uci -P /var/state get network.wan2.up)
+    if [ $wan2_ip = "1" ]; then
+       wan2_ip=$(/sbin/uci -P /var/state get network.wan2.ipaddr)
+           [ $wan_status != "0" ] && {
+              [ ! -S "/var/run/pluto/pluto.ctl" ] && {
+                 [ -f "/etc/debugipsec" ] && logger -t "ipsec_wan2" "pluto.ctl doesn't exist so restart ipsec_vpn"
+                 my_lockfile /var/lock/mipsec/ipsec_vpn && {
+                    [ -f "/etc/debugipsec" ] && logger -t "ipsec_wan2" "my_lockfile ipsec_vpn success"
+                    /etc/init.d/ipsec_vpn start >/dev/null 2>&1
+                    ipsec setup restart >/dev/null 2>&1
+                    rm -f /var/lock/mipsec/ipsec_vpn.lock
+                    [ -f "/etc/debugipsec" ] && logger -t "ipsec_wan2" "delete ipsec_vpn.lock"
+                 }
+              }
+              cmd="ipsec auto --status|grep -c 'interface br-wan2/br-wan2 $wan_ip'"
+              bwan="0"
+              scnt="0"
+              while [ "$scnt" -lt 10 ]; do
+                    sleep 1
+                    bwan=`eval $cmd`
+
+                    if [ "$bwan" -eq 0 ]; then
+                         wan_status="disadded"
+                    else
+                         wan_status="added"
+                         return
+                    fi
+                    let "scnt+=1"
+              done
+
+           }
+    else
+       wan2_ip="x"
+       wan_status="noneip"
+    fi
+}
+
+    [ -d "/var/lock/mipsec" ] || mkdir /var/lock/mipsec
+    my_lockfile /var/lock/ipsec_wan2 || {
+               [ -f "/etc/debugipsec" ] && logger -t "ipsec_wan2" "my_lockfile failed and exit"
+               exit 0
+    }
+
+    cnt="0"
+
+        [ -f /var/run/mipsec/cfgcnt ] || /etc/init.d/ipsec_vpn start >/dev/null 2>&1
+        w2s2scnt=$(cat /var/run/mipsec/cfgcnt|grep w2s2scnt|cut -d '=' -f 2)
+        w2x2scnt=$(cat /var/run/mipsec/cfgcnt|grep w2x2scnt|cut -d '=' -f 2)
+        w2x2ccnt=$(cat /var/run/mipsec/cfgcnt|grep w2x2ccnt|cut -d '=' -f 2)
+        w2grecnt=$(cat /var/run/mipsec/cfgcnt|grep w2grecnt|cut -d '=' -f 2)
+
+        let wan_status=w2x2scnt+w2x2ccnt+w2s2scnt+w2grecnt
+
+        [ -f "/etc/debugipsec" ] && logger -t "ipsec_wan2" "wan_status=$wan_status x2s=$w2x2scnt s2s=$w2s2scnt x2c=$w2x2ccnt"
+
+        [ $wan_status = "0" ] && {
+             logger -t "ipsec_wan2" "wan_status=$wan_status so exit" 
+             rm -f /var/lock/ipsec_wan2.lock 
+             exit 0
+        }       
+        my_check_wan2
+        while [ $wan_status = "disadded" ]; do
+             my_check_wan2
+        done
+        [ -f "/etc/debugipsec" ] && logger -t "ipsec_wan2" "after my_check_wan wan_status=$wan_status"
+        [ $wan_status = "noneip" -o $wan_status = "0" ] && {
+             logger -t "ipsec_wan2" "after my_check_wan wan_status=$wan_status so exit"
+             rm -f /var/lock/ipsec_wan2.lock 
+             exit 0
+        } 
+        s2s_cfgs=""
+        x2c_cfgs=""
+        gre_cfgs=""
+
+    uci_load ipsec
+
+        seren=$(uci get ipsec.Mxl2tpserver.enabled)
+        inf=$(uci get ipsec.Mxl2tpserver.interface)
+        if [ $seren = "1" ]; then
+            if [ $inf = "br-wan2" ]; then
+            serready=$(ipsec auto --status|grep -c 'Mxl2tpserver')
+            [ $serready -eq 0 ] && {
+                 ipsec auto --rereadsecrets
+                 ipsec auto --add Mxl2tpserver
+                 ipsec auto --add roadwarrior-l2tp
+                 ipsec auto --add macintosh-l2tp
+                 ipsec auto --add roadwarrior-l2tp-updatedwin
+                 logger -t "ipsec_wan2" "load Mxl2tpserver ipsec conns"
+            }
+            /etc/init.d/xl2tpd restart >/dev/null 2>&1
+            fi
+        fi
+            [ -f "/etc/debugipsec" ] && logger -t "ipsec_wan2" "x2c_cfgs=$x2c_cfgs"
+            for x2c in $x2c_cfgs; do
+                 config_get x2c_enabled $x2c enabled
+                 config_get x2c_inf $x2c interface
+                 if [ "$x2c_enabled" = "0" ]; then
+                            [ -f "/etc/debugipsec" ] && logger -t "ipsec_wan2" "connect_x2c $x2c but $x2c is disabled then go next conn"
+                            continue
+                 fi
+                 if [ "$x2c_inf" = "br-wan" ]; then
+                            [ -f "/etc/debugipsec" ] && logger -t "ipsec_wan2" "$x2c interface is br-wan then go next conn"
+                            continue
+                 fi
+                 constat=$(cat /var/run/mipsec/$x2c | grep -c 'constat=Disconnect')
+                 coninf=$(cat /var/run/mipsec/$x2c | grep -c 'inf=ppp')
+                 [ "$constat" -eq 0 -o "$coninf" -eq 0 ] && {
+                     cmd="ps|grep -v grep |grep -c 'mipsec.sh connect_x2c $x2c'"
+                     result=`eval $cmd`
+                     if [ $result -eq 0 ]; then
+                           logger -t "ipsec_wan2" "connect_x2c $x2c constat=$constat coninf=$coninf result=$result so do process"
+                           /sbin/mipsec.sh connect_x2c $x2c &
+                     fi
+                 }
+                 sleep 1
+            done
+        
+        [ -f "/etc/debugipsec" ] && logger -t "ipsec_wan2" "s2s_cfgs=$s2s_cfgs"
+        for s2s in $s2s_cfgs; do
+                 config_get enabled  $s2s enabled
+                 config_get s2s_inf $s2s interface
+                 if [ "$enabled" = "0" ]; then
+                     [ -f "/etc/debugipsec" ] && logger -t "ipsec_wan2" "connect_s2s $s2s but $s2s is disabled then go next conn"
+                     continue
+                 fi
+                 if [ "$s2s_inf" = "br-wan" ]; then
+                     [ -f "/etc/debugipsec" ] && logger -t "ipsec_wan2" "$s2s interface is br-wan then go next conn"
+                     continue
+                 fi
+                 cmd="ipsec auto --status|grep 'IPsec SA established'|grep -c '\"$s2s\"'"
+                 result=`eval $cmd`
+                 if [ $result -gt 0 ]; then
+                     [ -f "/etc/debugipsec" ] && logger -t "ipsec_wan2" "connect_s2s $s2s but $s2s is connected then sleep 1sec go next conn"
+                     sleep 1
+                     continue
+                 fi
+                 [ -f "/etc/debugipsec" ] && logger -t "ipsec_wan2" "connect_s2s $s2s and then sleep 1sec"
+                 /sbin/mipsec.sh connect_s2s $s2s &
+                 sleep 1
+        done
+
+    uci_load gre-tunnels
+    [ -f "/etc/debugipsec" ] && logger -t "ipsec_wan2" "gre_cfgs=$gre_cfgs"
+    for gre in $gre_cfgs; do
+                 config_get local_status  $gre local_status
+                 config_get enableipsec  $gre enableipsec
+                 config_get gre_inf $gre interface
+                 config_get local_tunnel_ip  $gre local_tunnel_ip
+                 if [ "$local_status" = "Disable" ]; then
+                     [ -f "/etc/debugipsec" ] && logger -t "ipsec_wan2" "connect_gre $gre but $gre is disabled then go next conn"
+                     continue
+                 fi
+                 if [ "$enableipsec" = "Disable" ]; then
+                     [ -f "/etc/debugipsec" ] && logger -t "ipsec_wan2" "connect_gre $gre but $gre is disabled ipsec then go next conn"
+                     continue
+                 fi
+                 if [ "$gre_inf" = "br-wan" ]; then
+                     [ -f "/etc/debugipsec" ] && logger -t "ipsec_wan2" "$gre interface is br-wan then go next conn"
+                     continue
+                 fi
+                 cmd="ipsec auto --status|grep 'IPsec SA established'|grep -c '\"$gre\"'"
+                 result=`eval $cmd`
+                 if [ $result -gt 0 ]; then
+                     [ -f "/etc/debugipsec" ] && logger -t "ipsec_wan2" "connect_gre $gre but $gre is connected then sleep 1sec go next conn"
+                     sleep 1
+                     continue
+                 fi
+                 [ -f "/etc/debugipsec" ] && logger -t "ipsec_wan2" "connect_gre $gre and then sleep 1sec"
+                 /sbin/mipsec.sh connect_gre $gre &
+                 sleep 1
+    done
+    rm -f /var/lock/ipsec_wan2.lock
+    exit 0
+

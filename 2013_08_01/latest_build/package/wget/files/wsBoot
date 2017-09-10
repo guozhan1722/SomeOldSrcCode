@@ -1,0 +1,698 @@
+#!/bin/sh
+# Copyright (C) 2012 Microhard Syetems Inc.
+
+#DEBUG="debug"
+#################################################
+# Web services function define 
+#################################################
+WS_BACKUP="/agent/backup"
+WS_COMMAND="/agent/taskCommand"
+WS_RESPONSE="/agent/taskStatus"
+WS_DISCOVERY="/agent/discovery"
+UCIDOMAIN="eurd.nms_conf"
+UCIDOMAINNM=$UCIDOMAIN.domainname
+UCIDOMAINPWD=$UCIDOMAIN.domainpasswd
+
+#################################################
+# Web services Command field define
+#################################################
+CMDFIELD="cmd"
+TASKFIELD="id"
+URLFIELD="url"
+CTNFIELD="hasNext"
+ITVFIELD="reqInterval"
+USERFIELD="user"
+PSWDFIELD="password"
+RNMFIELD="newName"
+ACKFIELD="ack"
+DMNMFIELD="domainName"
+DMPWDFIELD="domainPwd"
+
+#################################################
+# Web services Command define
+#################################################
+UPGRADE="upgrade"
+BACKUP="backup"
+RESTORE="restore"
+REBOOT="reboot"
+WSCFG="wsClientCfg"
+RPTCFG="reportCfg"
+RENAME="rename"
+DISCOVERY="discovery"
+CHGDOMAIN="changeDomain"
+
+#################################################
+# local define
+#################################################
+msVersion="1.1"
+UPGRADEPATH="/tmp"
+WorkFolder="/tmp/wsClient"
+WgetUrl="$WorkFolder/url"
+WatchFlag="$WorkFolder/wsWatch"
+BackUpFile="bkf"
+UDPCFG="/etc/config/udprpt.conf"
+WSCLIENTCFG="/etc/config/wsclient"
+WSCLIENTLOG="/tmp/wsClientlog"
+DLRETRY=8
+Result="/tmp/RestoreResult"
+WSONETIME="/tmp/run/wsonetime"
+
+#################################################
+# Golobal variable
+#################################################
+COMMAND="" 
+TASKID=""
+FILEURL=""
+CONTINUE=""
+URLUSER=""
+URLPSWD=""
+HSTNAME=""
+LANIPADDR=""
+WANIPADDR=""
+WAN2IPADDR=""
+BOOTFLAG="yes" 
+LOOPDONE="no"
+HARDWARE=""
+ACKTASKID=""
+RESPONSEACK=""
+DMNAME=""
+DMPWD=""
+
+#################################################
+# Functions
+#################################################
+WsClientLog() {
+    if [ "$1" = "syslog" ]; then
+        [ -n "$DEBUG" ] && {
+            echo >> $WSCLIENTLOG
+            date >> $WSCLIENTLOG
+            echo "$2" >> $WSCLIENTLOG
+        }
+        logger -t "wsClient" "$2"
+    else
+        [ -n "$DEBUG" ] && {
+            echo >> $WSCLIENTLOG
+            date >> $WSCLIENTLOG
+            echo "$2" >> $WSCLIENTLOG
+        }        
+    fi    
+}
+
+WgetInquire() {
+  local Ws_arg={\"version\":$msVersion
+
+  Ws_arg=$Ws_arg,\"type\":\"taskReq\"
+  Ws_arg=$Ws_arg,\"macAddr\":\"$ethaddr\"
+  Ws_arg=$Ws_arg,\"softwareVersion\":\"$FWVERSION\" 
+  Ws_arg=$Ws_arg,\"$ITVFIELD\":$PERIOD   
+  if [ $BOOTFLAG == "yes" ]; then 
+    Ws_arg=$Ws_arg,\"reset\":true
+  else
+    Ws_arg=$Ws_arg,\"reset\":false
+  fi
+  Ws_arg=$Ws_arg,\"domain\":
+  Ws_arg=$Ws_arg{\"$DMNMFIELD\":\"$DMNAME\"
+  Ws_arg=$Ws_arg,\"$DMPWDFIELD\":\"$DMPWD\"
+  Ws_arg=$Ws_arg}}
+
+  WsClientLog log "WgetInquire:$Ws_arg"
+  rm -f $WSERVERIP:$WSPORT$WS_COMMAND
+  echo $WSERVER$WS_COMMAND > $WgetUrl
+  if [ $WSVRTYPE == "https" ]; then                                
+    wget $WSERVER$WS_COMMAND $WSLOGIN $WS_TYPE $WS_CERT $WGETOPT --post-data="$Ws_arg" 1>>/dev/null 2>>/dev/null
+  else                                                 
+    wget $WSERVER$WS_COMMAND $WSLOGIN $WS_TYPE $WGETOPT --post-data="$Ws_arg" 1>>/dev/null 2>>/dev/null
+  fi
+  [ -f $WSERVERIP:$WSPORT$WS_COMMAND ] &&  
+  WsClientLog log "WgetInquire received:$(cat $WSERVERIP:$WSPORT$WS_COMMAND)"
+  rm -f $WgetUrl
+}
+
+ParseAckCommand() {
+  case "$1" in
+    $TASKFIELD)ACKTASKID="$2";;    
+    $ACKFIELD) [ "$ACKTASKID" = "$TASKID" ] && RESPONSEACK="$2";;            
+    *);;
+  esac
+}
+
+ParseAckSection() {
+  local field=$(echo $1 | awk -F'[:]' '{print $1}')
+  local temp
+  local value
+
+  temp=$(echo $1 | awk -F'[:]' '{print $2}') 
+  value="$temp"
+  temp=$(echo $1 | awk -F'[:]' '{print $3}')
+  [ -n "$temp" ] && value=$value:"$temp"
+  temp=$(echo $1 | awk -F'[:]' '{print $4}')
+  [ -n "$temp" ] && value=$value:"$temp"
+  temp=$(echo $1 | awk -F'[:]' '{print $5}')
+  [ -n "$temp" ] && value=$value:"$temp"
+  temp=$(echo $1 | awk -F'[:]' '{print $6}')
+  [ -n "$temp" ] && value=$value:"$temp"
+  
+  ParseAckCommand $field $value
+}
+
+ResponseAck() {  
+  local section
+  local content="$1"
+
+  content=${content//\"/}
+  content=$(echo "$content" | awk -F'[{]' '{print $2}')  
+  content=$(echo "$content" | awk -F'[}]' '{print $1}')
+  section=$(echo "$content" | awk -F'[,]' '{print $1}') 
+  [ -n "$section" ] && ParseAckSection "$section"
+  section=$(echo "$content" | awk -F'[,]' '{print $2}')
+  [ -n "$section" ] && ParseAckSection "$section"
+  section=$(echo "$content" | awk -F'[,]' '{print $3}') 
+  [ -n "$section" ] && ParseAckSection "$section"
+  section=$(echo "$content" | awk -F'[,]' '{print $4}') 
+  [ -n "$section" ] && ParseAckSection "$section"
+  section=$(echo "$content" | awk -F'[,]' '{print $5}') 
+  [ -n "$section" ] && ParseAckSection "$section"
+  section=$(echo "$content" | awk -F'[,]' '{print $6}') 
+  [ -n "$section" ] && ParseAckSection "$section"  
+  WsClientLog log "ACKTASKID=$ACKTASKID RESPONSEACK=$RESPONSEACK"
+}
+
+WgetResponse() {
+  local Rcount=0  
+  local Ws_arg={\"version\":$msVersion
+  WsClientLog log "WgetResponse_dbg $1 $2 $3 $4" 
+
+  Ws_arg=$Ws_arg,\"type\":\"taskStatus\"
+  [ -n "$ethaddr" ] && Ws_arg=$Ws_arg,\"macAddr\":\"$ethaddr\"
+  [ -n "$1" ] && Ws_arg=$Ws_arg,\"$CMDFIELD\":\"$1\"
+  [ -n "$2" ] && Ws_arg=$Ws_arg,\"$TASKFIELD\":$2
+  [ -n "$3" ] && Ws_arg=$Ws_arg,\"status\":\"$3\"
+  [ -n "$4" ] && Ws_arg=$Ws_arg,\"desc\":\"$4\"
+  Ws_arg=$Ws_arg}
+  
+  WsClientLog log "WgetResponse:$Ws_arg"
+
+  RESPONSEACK=""  
+  while [ -z "$RESPONSEACK" -a "$Rcount" != "4" ] ; do
+    rm -f $WSERVERIP:$WSPORT$WS_RESPONSE
+    echo $WSERVER$WS_RESPONSE > $WgetUrl
+    if [ $WSVRTYPE == "https" ]; then                                
+        wget $WSERVER$WS_RESPONSE $WSLOGIN $WS_TYPE $WS_CERT $WGETOPT --post-data="$Ws_arg" 
+    else                                                 
+        wget $WSERVER$WS_RESPONSE $WSLOGIN $WS_TYPE $WGETOPT --post-data="$Ws_arg"    
+    fi
+    
+    if [ -f $WSERVERIP:$WSPORT$WS_RESPONSE ]; then
+        WsClientLog log "WgetResponse received:$(cat $WSERVERIP:$WSPORT$WS_RESPONSE)"
+    else
+        WsClientLog log "WgetResponse no download file"
+    fi
+    Rcount=`expr $Rcount + 1`
+    WsClientLog log "WgetResponse $Rcount"
+    ResponseAck "$(cat $WSERVERIP:$WSPORT$WS_RESPONSE)"
+  done
+}
+
+Discovery() {
+  WsClientLog log "WgetDiscovery_dbg $1 $2"
+  local Ws_arg={\"version\":$msVersion 
+  Ws_arg=$Ws_arg,\"type\":\"discoveryReq\"
+  [ -n "$1" ] && Ws_arg=$Ws_arg,\"$CMDFIELD\":\"$1\"
+  [ -n "$2" ] && Ws_arg=$Ws_arg,\"$TASKFIELD\":$2
+  Ws_arg=$Ws_arg,\"device\":
+  Ws_arg=$Ws_arg{\"deviceName\":\"$(hostname)\"
+  Ws_arg=$Ws_arg,\"productName\":\"$PRODUCTNAME\"
+  Ws_arg=$Ws_arg,\"imageName\":\"$PRODUCT\"
+  Ws_arg=$Ws_arg,\"macAddr\":\"$ethaddr\"
+  Ws_arg=$Ws_arg,\"ipAddrs\":[
+  [ -n "$LANIPADDR" ] && Ws_arg=$Ws_arg\"$LANIPADDR\"
+  [ -n "$WANIPADDR" ] && Ws_arg=$Ws_arg,\"$WANIPADDR\"
+  [ -n "$WAN2IPADDR" ] && Ws_arg=$Ws_arg,\"$WAN2IPADDR\"
+  Ws_arg=$Ws_arg]
+  Ws_arg=$Ws_arg,\"hardwareVersion\":\"$HARDWARE\"
+  Ws_arg=$Ws_arg,\"softwareVersion\":\"$FWVERSION\"
+  Ws_arg=$Ws_arg,\"$ITVFIELD\":$PERIOD
+  /etc/exdiscovery
+  RadioNum=$(uci show sdpServer.discovery.mlradio | awk -F'[=]' '{print $2}')
+  Ws_arg=$Ws_arg,\"modulesList\":\[$RadioNum,2,1,0,1\]
+  Ws_arg=$Ws_arg}
+  Ws_arg=$Ws_arg,\"domain\":
+  Ws_arg=$Ws_arg{\"$DMNMFIELD\":\"$DMNAME\"
+  Ws_arg=$Ws_arg,\"$DMPWDFIELD\":\"$DMPWD\"
+  Ws_arg=$Ws_arg}}
+  
+  WsClientLog log "Discovery:$Ws_arg"
+  rm -f $WSERVERIP:$WSPORT$WS_DISCOVERY
+  echo $WSERVER$WS_DISCOVERY > $WgetUrl
+  if [ $WSVRTYPE == "https" ]; then                                
+    wget $WSERVER$WS_DISCOVERY $WSLOGIN $WS_TYPE $WS_CERT $WGETOPT --post-data="$Ws_arg" 
+  else                                                 
+    wget $WSERVER$WS_DISCOVERY $WSLOGIN $WS_TYPE $WGETOPT --post-data="$Ws_arg"    
+  fi
+  
+  [ -f $WSERVERIP:$WSPORT$WS_DISCOVERY ] &&
+  WsClientLog log "Discovery received:$(cat $WSERVERIP:$WSPORT$WS_DISCOVERY)" 
+  rm -f $WgetUrl
+}
+
+UpgradeFw() {
+  local type
+  local filename
+  local Ucount=0
+
+  WsClientLog log "UpgradeFw_dbg $1 $2"
+  [ -n "$FILEURL" ] && {
+    type=$(echo "$FILEURL" | awk -F'[:]' '{print $1}')     
+    filename=$(basename "$FILEURL")
+
+    WGETFILE=`echo $FILEURL | awk -F "://" '{print $2}'`   
+    DOWNFILE="$WorkFolder/$WGETFILE"
+    
+    while [ "$Ucount" != "$DLRETRY" ] ; do
+        rm -f $DOWNFILE
+        rm -f $UPGRADEPATH/$filename
+        rm -f $WatchFlag
+        echo $FILEURL > $WgetUrl
+        if [ "$type" = "https" ]; then				  
+            wget $FILEURL  $WSLOGIN $WS_TYPE $WS_CERT $WGETOPT
+        else
+            wget $FILEURL  $WSLOGIN $WS_TYPE $WGETOPT
+        fi 
+        if [ ! -f "$DOWNFILE" ]; then            
+            Ucount=`expr $Ucount + 1`
+            WsClientLog log "upgrade no file retry $Ucount"
+        else
+            if [ -f $WatchFlag ]; then            
+                Ucount=`expr $Ucount + 1`
+                WsClientLog log "upgrade retry $Ucount $(cat $WatchFlag)"
+            else
+                Ucount=$DLRETRY
+            fi
+        fi
+    done
+
+    if [ -f $WatchFlag ]; then
+        WsClientLog syslog "upgrade aborted $(cat $WatchFlag)"
+        WgetResponse $1 $2 "aborted" "$(cat $WatchFlag)"
+    else        
+        WsClientLog log "DOWNFILE:$DOWNFILE"
+        if [ -f "$DOWNFILE" ]; then
+            mv $DOWNFILE $UPGRADEPATH/$filename
+            WgetResponse $1 $2 ok
+            CONTINUE=flase
+            PERIODBK=$PERIOD
+            PERIOD=5000
+            WsClientLog syslog "upgrade firmware $filename"
+            /sbin/sysupgrade $UPGRADEPATH/$filename
+            PERIOD=$PERIODBK
+        else
+            WsClientLog syslog "upgrade aborted Couldn't download $filename"
+            WgetResponse $1 $2 "aborted" "Couldn't download $filename"
+        fi
+    fi 
+  }
+  rm -f $WgetUrl
+}
+
+Restore() {
+  local type
+  local filename
+  local Ucount=0
+  local result
+
+  WsClientLog log "Restore_dbg $1 $2"
+  [ -n "$FILEURL" ] && {
+    type=$(echo "$FILEURL" | awk -F'[:]' '{print $1}')     
+    filename=$(basename "$FILEURL")
+
+    WGETFILE=`echo $FILEURL | awk -F "://" '{print $2}'`   
+    DOWNFILE="$WorkFolder/$WGETFILE"
+    
+    while [ "$Ucount" != "$DLRETRY" ] ; do
+        rm -f $DOWNFILE
+        rm -f $UPGRADEPATH/$filename
+        rm -f $WatchFlag
+        echo $FILEURL > $WgetUrl
+        if [ "$type" = "https" ]; then				  
+            wget $FILEURL  $WSLOGIN $WS_TYPE $WS_CERT $WGETOPT
+        else
+            wget $FILEURL  $WSLOGIN $WS_TYPE $WGETOPT
+        fi 
+        if [ ! -f "$DOWNFILE" ]; then            
+            Ucount=`expr $Ucount + 1`
+            WsClientLog log "Restore no file retry $Ucount"
+        else
+            if [ -f $WatchFlag ]; then            
+                Ucount=`expr $Ucount + 1`cd $WorkFolder
+                WsClientLog log "Restore retry $Ucount $(cat $WatchFlag)"
+            else
+                Ucount=$DLRETRY
+            fi
+        fi
+    done
+
+    if [ -f $WatchFlag ]; then
+        WsClientLog syslog "Restore aborted $(cat $WatchFlag)"
+        WgetResponse $1 $2 "aborted" "$(cat $WatchFlag)"
+    else        
+        WsClientLog log "DOWNFILE:$DOWNFILE"
+        if [ -f "$DOWNFILE" ]; then
+            PERIODBK=$PERIOD
+            PERIOD=5000
+            CONTINUE=flase
+            mv $DOWNFILE /tmp/wsRestore.txt
+            cd /tmp
+            rm -f $Result
+            /usr/bin/wsRestore wsRestore.txt
+            result="$(cat $Result)"
+            cd $WorkFolder
+            if [ "$result" = "wsRestore Done" ]; then
+                WgetResponse $1 $2 ok                
+                WsClientLog log "$result"      
+                reboot
+            else
+                PERIOD=$PERIODBK
+                WgetResponse $1 $2 "$result"
+            fi            
+        else
+            WsClientLog syslog "Restore aborted Couldn't download $filename"
+            WgetResponse $1 $2 "aborted" "Couldn't download $filename"
+        fi
+    fi 
+  }
+  rm -f $WgetUrl
+}
+
+Backup() {
+  WsClientLog log "Backup_dbg $1 $2"
+
+  cd /tmp
+  rm -f wsBackup.txt
+  /usr/bin/wsBackup
+  cd $WorkFolder
+  if [ -f /tmp/wsBackup.txt ]; then   
+    echo {\"version\":$msVersion\,\"macAddr\":\"$ethaddr\"\,  > $BackUpFile
+    echo \"type\":\"backupReq\"\,\"name\":\"$1\"\,\"id\":$2\,\"content\":\" >> $BackUpFile
+    cat /tmp/wsBackup.txt >> $BackUpFile 
+    echo \"} >> $BackUpFile 
+    rm -f /tmp/wsBackup.txt
+    WsClientLog log "Backup:$WSERVER$WS_BACKUP $WSLOGIN $WS_TYPE $WGETOPT"
+    echo $WSERVER$WS_BACKUP > $WgetUrl
+    if [ "$WSVRTYPE" = "https" ]; then                                
+        wget $WSERVER$WS_BACKUP $WSLOGIN $WS_TYPE $WS_CERT $WGETOPT --post-file="$BackUpFile" 
+    else                                                 
+        wget $WSERVER$WS_BACKUP $WSLOGIN $WS_TYPE $WGETOPT --post-file="$BackUpFile"     
+    fi  
+    rm -f $BackUpFile
+  else
+   WgetResponse $1 $2 "aborted" "Couldn't create system.conf"  
+  fi
+  
+  [ -f $WSERVERIP:$WSPORT$WS_BACKUP ] &&
+  WsClientLog log "Backup received:$(cat $WSERVERIP:$WSPORT$WS_BACKUP)"
+  rm -f $WgetUrl
+}
+
+Chgdomain() {
+    WsClientLog log "Chgdomain_dbg $1 $2"
+    uci set $UCIDOMAINNM=$DMNAME
+    uci set $UCIDOMAINPWD=$DMPWD
+    uci commit $UCIDOMAIN
+    WgetResponse $1 $2 ok
+}
+
+Printvar(){
+  [ -n "$DEBUG" ] && {
+    echo "BOOTFLAG:$BOOTFLAG" >> $WSCLIENTLOG
+    echo "LANIPADDR:$LANIPADDR" >> $WSCLIENTLOG
+    echo "WANIPADDR:$WANIPADDR" >> $WSCLIENTLOG
+    echo "WAN2IPADDR:$WAN2IPADDR" >> $WSCLIENTLOG     
+    echo "COMMAND:$COMMAND" >> $WSCLIENTLOG 
+    echo "TASKID:$TASKID" >> $WSCLIENTLOG
+    echo "FILEURL:$FILEURL" >> $WSCLIENTLOG  
+    echo "CONTINUE:$CONTINUE" >> $WSCLIENTLOG 
+    echo "URLUSER:$URLUSER" >> $WSCLIENTLOG
+    echo "URLPSWD:$URLPSWD" >> $WSCLIENTLOG
+    echo "HSTNAME:$HSTNAME" >> $WSCLIENTLOG 
+    echo "PERIOD:$PERIOD" >> $WSCLIENTLOG
+  } 
+}
+
+ExecCommand() {
+  WsClientLog log "ExecCommand_dbg $1 $2"
+  Printvar
+  case "$1" in
+    $UPGRADE) UpgradeFw $1 $2;;
+    $BACKUP) Backup $1 $2;;
+    $RESTORE) Restore $1 $2;;
+    $WSCFG) {
+      WgetResponse $1 $2 ok
+    };;
+    $RPTCFG) {
+      /etc/init.d/eurd stop
+      mv $WSERVERIP:$WSPORT$WS_COMMAND $UDPCFG
+      /etc/init.d/eurd start
+      WgetResponse $1 $2 ok      
+    };;
+    $REBOOT) {
+      CONTINUE=flase
+      PERIOD=5000
+      WgetResponse $1 $2 ok
+      reboot
+    };;
+    $RENAME) {
+      [ -n "$HSTNAME" ] && {        
+        hostname "$HSTNAME"
+        uci set system.@system[0].hostname="$HSTNAME"
+        uci commit system
+      }
+      WgetResponse $1 $2 ok 
+    };; 
+    $DISCOVERY) Discovery $1 $2;;
+    $CHGDOMAIN) Chgdomain $1 $2;;
+    *)WgetResponse $1 $2 unknown;; 
+  esac  
+}
+
+Clrvar(){  
+  COMMAND="" 
+  TASKID=""
+  FILEURL=""  
+  CONTINUE="false"
+  URLUSER=""
+  URLPSWD=""
+  HSTNAME=""
+}
+
+Printsvr(){
+  [ -n "$DEBUG" ] && {
+    date >> $WSCLIENTLOG
+    echo "Print environment:" >> $WSCLIENTLOG
+    echo "WSCLIENT:$WSCLIENT" >> $WSCLIENTLOG
+    echo "WSVRTYPE:$WSVRTYPE" >> $WSCLIENTLOG
+    echo "WSERVERIP:$WSERVERIP" >> $WSCLIENTLOG
+    echo "WSPORT:$WSPORT" >> $WSCLIENTLOG
+    echo "WSUSR:$WSUSR" >> $WSCLIENTLOG
+    echo "WSPASSWD:$WSPASSWD" >> $WSCLIENTLOG
+    echo "PERIOD:$PERIOD" >> $WSCLIENTLOG
+    echo "DMNAME:$DMNAME" >> $WSCLIENTLOG
+    echo "DMPWD:$DMPWD" >> $WSCLIENTLOG
+  }
+}
+
+UpdateCFG(){
+    LANIPADDR=$(uci show network.lan.ipaddr 2>/dev/null | awk -F'[=]' '{print $2}')
+    WANIPADDR=$(uci show network.wan.ipaddr 2>/dev/null | awk -F'[=]' '{print $2}')
+    WAN2IPADDR=$(uci show network.wan2.ipaddr 2>/dev/null | awk -F'[=]' '{print $2}')
+    WSVRTYPE=$(uci show wsclient.general.wsvrtype | awk -F'[=]' '{print $2}')
+    WSERVERIP=$(uci show wsclient.general.wserverip | awk -F'[=]' '{print $2}')
+    WSPORT=$(uci show wsclient.general.wsport | awk -F'[=]' '{print $2}')
+    WSUSR=$(uci show wsclient.general.wsusr | awk -F'[=]' '{print $2}')
+    WSPASSWD=$(uci show wsclient.general.wspasswd | awk -F'[=]' '{print $2}')
+    PERIOD=$(uci show wsclient.general.period | awk -F'[=]' '{print $2}')
+    WSCLIENT=$(uci show wsclient.general.status | awk -F'[=]' '{print $2}')
+    DMNAME=$(uci show eurd.nms_conf.domainname | awk -F'[=]' '{print $2}')
+    DMPWD=$(uci show eurd.nms_conf.domainpasswd | awk -F'[=]' '{print $2}')
+    Printsvr
+}
+
+ParseCommand() {
+  case "$1" in
+    $CMDFIELD)COMMAND="$2";;
+    $TASKFIELD)TASKID="$2";;    
+    $URLFIELD)FILEURL="$2";;
+    $CTNFIELD)CONTINUE="$2";;
+    $ITVFIELD)PERIOD="$2";;
+    $USERFIELD)URLUSER="$2";;     
+    $PSWDFIELD)URLPSWD="$2";; 
+    $RNMFIELD){
+        HSTNAME="$2 $3 $4 $5 $6"
+        HSTNAME=`echo $HSTNAME`
+    };;
+    $DMNMFIELD)DMNAME="$2";;
+    $DMPWDFIELD)DMPWD="$2";;         
+    *);;
+  esac
+}
+
+ParseSection() {
+  local field=$(echo $1 | awk -F'[:]' '{print $1}')
+  local temp
+  local value
+
+  WsClientLog log "ParseSection_dbg $1"  
+  temp=$(echo $1 | awk -F'[:]' '{print $2}') 
+  value="$temp"
+  temp=$(echo $1 | awk -F'[:]' '{print $3}')
+  [ -n "$temp" ] && value=$value:"$temp"
+  temp=$(echo $1 | awk -F'[:]' '{print $4}')
+  [ -n "$temp" ] && value=$value:"$temp"
+  temp=$(echo $1 | awk -F'[:]' '{print $5}')
+  [ -n "$temp" ] && value=$value:"$temp"
+  temp=$(echo $1 | awk -F'[:]' '{print $6}')
+  [ -n "$temp" ] && value=$value:"$temp"
+  
+  ParseCommand $field $value
+}
+
+GetCommand() {  
+  local section
+  local content="$1"
+
+  content=${content//\"/}
+  content=$(echo "$content" | awk -F'[{]' '{print $2}')  
+  content=$(echo "$content" | awk -F'[}]' '{print $1}')
+  section=$(echo "$content" | awk -F'[,]' '{print $1}') 
+  [ -n "$section" ] && ParseSection "$section"
+  section=$(echo "$content" | awk -F'[,]' '{print $2}')
+  [ -n "$section" ] && ParseSection "$section"
+  section=$(echo "$content" | awk -F'[,]' '{print $3}') 
+  [ -n "$section" ] && ParseSection "$section"
+  section=$(echo "$content" | awk -F'[,]' '{print $4}') 
+  [ -n "$section" ] && ParseSection "$section"
+  section=$(echo "$content" | awk -F'[,]' '{print $5}') 
+  [ -n "$section" ] && ParseSection "$section"
+  section=$(echo "$content" | awk -F'[,]' '{print $6}') 
+  [ -n "$section" ] && ParseSection "$section"  
+}
+
+wtloop(){
+  LOOPDONE="yes"
+  WsClientLog log "kill signal received"
+}
+
+#################################################
+# Main script
+#################################################
+start() {
+    rm -f $WSCLIENTLOG
+    rm -fr "$WorkFolder"
+    WsClientLog log "Start up wsClient"
+#################################################
+# Web server define, get value from webUI
+#################################################
+    while [ ! -f $WSCLIENTCFG ]; do             
+        WsClientLog log "Waiting for $WSCLIENTCFG ready" 
+        sleep 10
+    done    
+    UpdateCFG
+    [ "$WSCLIENT" = "disable" ] && {
+        WsClientLog syslog "wsClient stop, wsClient $WSCLIENT" 
+        exit 0
+    }
+   
+#################################################
+# Web server setting
+#################################################
+WSERVER=$WSVRTYPE://$WSERVERIP:$WSPORT
+WSLOGIN="--http-user=$WSUSR --http-passwd=$WSPASSWD"
+WS_TYPE="--header=Content-Type:application/json --auth-no-challenge=yes"
+WS_CERT="--no-check-certificate"
+WGETOPT="-r --connect-timeout=20 --dns-timeout=5 --read-timeout=20 --tries=3"
+
+  [ ! -f "/tmp/wsWatch/run" ] && {
+    WsClientLog log "Start up wsWatch"
+    mkdir -p /tmp/wsWatch  
+    echo yes > /tmp/wsWatch/run
+    /usr/bin/wsWatch &  
+  }  
+  trap "wtloop" TERM 
+  
+  while [ -z "$FWVERSION" -o -z "$ethaddr" ]; do       
+    while  [ ! -r /etc/version ]; do
+        WsClientLog log "Couldn't read /etc/version" 
+        sleep 10
+    done      
+    . /etc/version
+    FWVERSION=$SOFTWARE-r$BUILD        
+
+    [ -z "$ethaddr" ] && {
+      ethaddr=$(fw_printenv | grep ethaddr | awk -F'[=]' '{print $2}')
+      ethaddr=${ethaddr//:/}
+      [ -z $ethaddr ] && {
+        WsClientLog log "Couldn't read eThernet MAC address"
+        sleep 10
+      }   
+    }
+    WsClientLog log "ethaddr:$ethaddr FWVERSION:$FWVERSION HARDWARE:$HARDWARE"
+  done 
+ 
+  while [ true ]; do     
+    mkdir -p $WorkFolder
+    cd $WorkFolder      
+    count="0" 
+    CONTINUE="true"      
+    while [ "$CONTINUE" = "true" -a "$count" != "10" ] ; do
+        Clrvar
+        count=`expr $count + 1`
+        UpdateCFG
+        [ -f "$WorkFolder/boot" ] && BOOTFLAG="no"
+        rm -rf $WSERVERIP:$WSPORT
+        WgetInquire
+        [ -f $WSERVERIP:$WSPORT$WS_COMMAND ] && {
+            [ ! -f "$WorkFolder/boot" ] && echo no > $WorkFolder/boot
+            GetCommand "$(cat $WSERVERIP:$WSPORT$WS_COMMAND)"
+            if [ -n "$COMMAND" -a "$COMMAND" != "none" ]; then
+                [ "$COMMAND" != "discovery" ] && {
+                    WgetResponse $COMMAND $TASKID started
+                }                
+                ExecCommand $COMMAND $TASKID   
+            else            
+                [ "$COMMAND" != "none" ] && {
+                    WsClientLog log "wrong COMMAND=$COMMAND"
+                    WgetResponse unknown 0 "unknown commond"
+                }
+            fi
+        }
+        [ "$LOOPDONE" = "yes" ] && {
+            WsClientLog log "wsClient exit by kill signal"
+            exit 0
+        }
+    done
+    [ "$LOOPDONE" = "yes" ] && {
+        WsClientLog log "wsClient exit by kill signal"
+        exit 0
+    }    
+
+    Sleep_time_count=0
+    while [ $Sleep_time_count -le $PERIOD ]; do
+        if [ -f $WSONETIME ]; then
+            rm $WSONETIME
+            Sleep_time_count=`expr $PERIOD + 1`
+        else    
+            sleep 10
+            Sleep_time_count=`expr $Sleep_time_count + 10`
+        fi
+    done    
+    #sleep $PERIOD
+
+    [ "$LOOPDONE" = "yes" ] && {
+        WsClientLog log "wsClient exit by kill signal"
+        exit 0
+    }    
+  done
+}
+
+start
+
+

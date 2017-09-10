@@ -1,0 +1,28 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+. /etc/functions.sh
+
+local ippassthrough=$(uci get lte.connect.ippassthrough)
+local wan_ip="$(ifconfig br-wan2 | grep inet | grep -v inet6 | awk -F'[: ]+' '{print $4}')"
+local lte_iface=br-wan2
+
+case "${ACTION:-ifup}" in
+	#ifup)
+	#	[ -z "$wan_ip" ] || {
+	#		[ "$ippassthrough" = "Ethernet" ] && {
+	#			/bin/ippassthrough "$lte_iface" "$wan_ip" "$ippassthrough" 
+	#		}
+	#	} 
+	#;;
+	update)
+                logger -t "hotplug" "update"
+		[ -z "$wan_ip" ] || {
+			[ "$ippassthrough" = "Ethernet" -o "$ippassthrough" = "WANport" ] && {
+                                logger -t "hotplug" "/bin/ippassthrough $lte_iface $wan2_ip $ippassthrough"
+				/bin/ippassthrough "$lte_iface" "$wan_ip" "$ippassthrough" 
+			}
+		} 
+	;;
+esac
+

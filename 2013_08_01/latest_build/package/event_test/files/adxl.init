@@ -1,0 +1,15 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=99
+STOP=99
+
+start(){
+         logger "Start adxlr..."
+         /bin/adxl_report /dev/input/event1 &
+}
+stop(){
+       logger "Stop adxlr..."
+       killall -9 adxl_report
+}
+

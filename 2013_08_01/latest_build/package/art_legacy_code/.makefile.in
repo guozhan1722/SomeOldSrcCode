@@ -1,0 +1,6 @@
+OWRT_ROOT=
+
+export LINUX_KARCH=arm
+export LINUX_SUBARCH=
+export CROSS_COMPILE=$(OWRT_ROOT)/staging_dir/toolchain-mips_gcc4.1.2/bin/mips-linux-uclibc-
+export LINUX_DIR=$(wildcard $(OWRT_ROOT)/build_dir/linux-ar71xx/linux-2.6.*)

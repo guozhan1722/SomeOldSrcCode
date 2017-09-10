@@ -1,0 +1,17 @@
+Source-Makefile: package/libmserial/Makefile
+Package: libmserial
+Version: 3
+Depends: 
+Provides: 
+Build-Depends: libtool
+Section: microhard
+Category: Microhard Packages
+Title: Microhard library for communication and operation with the H24 module
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description: 	libmserial is a suite of programs linked against a backend
+	library that allows communication with the H24 module. 
+@@
+
+

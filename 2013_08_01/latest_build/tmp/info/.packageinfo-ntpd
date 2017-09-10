@@ -1,0 +1,18 @@
+Source-Makefile: package/ntpd/Makefile
+Package: ntpd
+Submenu: Time Synchronization
+Version: 4.2.4p4-3
+Depends: +libreadline
+Provides: 
+Build-Depends: libelf
+Section: net
+Category: Network
+Title: full featured NTP server
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: ntp-4.2.4p4.tar.gz
+Type: ipkg
+Description: 	The full featured original ntpd
+http://www.ntp.org/
+@@
+
+

@@ -1,0 +1,8 @@
+/100-cross-compile.patch/1.1/Tue Apr 13 16:17:28 2010/-kkv/Tar71xx_4g
+/101-no-comp.patch/1.1/Tue Apr 13 16:17:28 2010/-kkv/Tar71xx_4g
+/102-no-ssl2.patch/1.1/Tue Apr 13 16:17:29 2010/-kkv/Tar71xx_4g
+/103-no-zlib-link.patch/1.1/Tue Apr 13 16:17:29 2010/-kkv/Tar71xx_4g
+/104-fix-paths.patch/1.1/Tue Apr 13 16:17:29 2010/-kkv/Tar71xx_4g
+/105-stunnel-conf.patch/1.1/Tue Apr 13 16:17:29 2010/-kkv/Tar71xx_4g
+/106-stunnel-xforwardedfor.patch/1.1/Tue Apr 13 16:17:29 2010/-kkv/Tar71xx_4g
+D

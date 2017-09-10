@@ -1,0 +1,17 @@
+diff -Nuar linux_old/arch/mips/ar71xx/mach-VIP4G.c linux_new/arch/mips/ar71xx/mach-VIP4G.c
+--- linux_old/arch/mips/ar71xx/mach-VIP4G.c	2012-06-12 16:52:03.870341034 -0600
++++ linux_new/arch/mips/ar71xx/mach-VIP4G.c	2012-06-12 17:13:35.536221370 -0600
+@@ -333,7 +333,11 @@
+ 	} , {
+ 		.name		= "rootfs",
+ 		.offset		= 0x280000,
+-		.size		= 0xd80000,
++		.size		= 0xb80000,
++	} , {
++		.name		= "rootfs_data",
++		.offset		= 0xe00000,
++		.size		= 0x200000,
+ 	} 
+ };
+ 
+

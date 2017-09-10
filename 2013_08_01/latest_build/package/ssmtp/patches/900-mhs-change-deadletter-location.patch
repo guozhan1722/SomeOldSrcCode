@@ -1,0 +1,12 @@
+diff -Nuar old/ssmtp.c new/ssmtp.c
+--- old/ssmtp.c	2012-05-09 09:49:51.865411572 -0600
++++ new/ssmtp.c	2012-05-09 09:50:41.287419438 -0600
+@@ -167,7 +167,7 @@
+ 		return;
+ 	}
+ 
+-#define DEAD_LETTER "/dead.letter"
++#define DEAD_LETTER "/tmp/dead.letter"
+ 	path = malloc (strlen (pw->pw_dir) + sizeof (DEAD_LETTER));
+ 	if (!path) {
+ 		/* Can't use die() here since dead_letter() is called from die() */

@@ -1,0 +1,122 @@
+diff -Nuar linux_old/arch/mips/ar71xx/mach-pb42.c linux_new/arch/mips/ar71xx/mach-pb42.c
+--- linux_old/arch/mips/ar71xx/mach-pb42.c	2011-01-21 10:05:12.000000000 -0700
++++ linux_new/arch/mips/ar71xx/mach-pb42.c	2011-01-21 10:06:31.000000000 -0700
+@@ -9,10 +9,19 @@
+  *  by the Free Software Foundation.
+  */
+ 
++
++#include <linux/init.h>
++#include <linux/bitops.h>
++#include <linux/delay.h>
++#include <linux/platform_device.h>
++
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/partitions.h>
+ 
+ #include <asm/mach-ar71xx/ar71xx.h>
++#include <linux/i2c.h>
++#include <linux/i2c-gpio.h>
++#include <linux/i2c/pca953x.h>
+ 
+ #include "machtype.h"
+ #include "devices.h"
+@@ -20,11 +29,65 @@
+ #include "dev-gpio-buttons.h"
+ #include "dev-pb42-pci.h"
+ #include "dev-usb.h"
++#include "dev-leds-gpio.h"
+ 
+ #define PB42_BUTTONS_POLL_INTERVAL	20
+ 
+ #define PB42_GPIO_BTN_SW4	7
+ 
++//#define PB42_GPIO_I2C_SCL	2
++//#define PB42_GPIO_I2C_SDA	4	
++#define PB42_GPIO_I2C_SCL	5
++#define PB42_GPIO_I2C_SDA	4
++
++/*here just for test led rx and tx*/
++#define PB42_GPIO_LED_RX	2
++#define PB42_GPIO_LED_TX	3
++
++#define PB42_GPIO_EXP_BASE	16
++#define PB42_GPIO_LED_RSSI_LOW 21	
++#define PB42_GPIO_LED_RSSI_MID 22	
++#define PB42_GPIO_LED_RSSI_HIGH 23	
++
++/*udelay= 200 put i2c clk to 2.5kHz*/
++static struct gpio_led pb42_leds_gpio[] __initdata = {
++	{
++		.name		= "ledrx",
++		.gpio		= PB42_GPIO_LED_RX,
++	}, {
++		.name		= "ledtx",
++		.gpio		= PB42_GPIO_LED_TX,
++	}
++};
++
++
++static struct i2c_gpio_platform_data pb42_i2c_gpio_data = {
++	.sda_pin        = PB42_GPIO_I2C_SDA,
++	.scl_pin        = PB42_GPIO_I2C_SCL,
++	.scl_is_output_only	= 1,
++	.udelay=200,
++	.sda_is_open_drain = 0,
++};
++
++static struct platform_device pb42_i2c_gpio_device = {
++	.name		= "i2c-gpio",
++	.id		= 0,
++	.dev = {
++		.platform_data	= &pb42_i2c_gpio_data,
++	}
++};
++
++static struct pca953x_platform_data pb42_pca9557_data = {
++	    .gpio_base    = PB42_GPIO_EXP_BASE
++	};
++	
++static struct i2c_board_info pb42_i2c_board_info[] __initdata = {
++	{
++		I2C_BOARD_INFO("pca9557", 0x18),
++		.platform_data  = &pb42_pca9557_data,
++	},
++};
++
+ static struct gpio_button pb42_gpio_buttons[] __initdata = {
+ 	{
+ 		.desc		= "sw4",
+@@ -86,13 +149,16 @@
+ 
+ 	ar71xx_add_device_mdio(0xfffffffe);
+ 
+-        ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+-		ar71xx_eth0_data.phy_mask = 0x00000001;
+-
+-//        ar71xx_eth0_data.phy_mask = 0x00000000;
+-//        ar71xx_eth0_data.speed = SPEED_100;
+-//        ar71xx_eth0_data.duplex = DUPLEX_FULL;
++	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
++    ar71xx_eth0_data.phy_mask = 0x00000001;
+ 
++// 	ar71xx_eth0_data.phy_mask = 0x00000000;
++// 	ar71xx_eth0_data.speed = SPEED_100;
++// 	r71xx_eth0_data.duplex = DUPLEX_FULL;
++
++	i2c_register_board_info(0, pb42_i2c_board_info,
++				ARRAY_SIZE(pb42_i2c_board_info));
++	platform_device_register(&pb42_i2c_gpio_device);
+ 	ar71xx_add_device_eth(0);
+ 	ar71xx_add_device_usb();
+ 	pb42_pci_init();
+@@ -101,6 +167,9 @@
+ 				       ARRAY_SIZE(pb42_gpio_buttons),
+ 				       pb42_gpio_buttons);
+ 
++	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(pb42_leds_gpio),
++					pb42_leds_gpio);
++
+ }
+ 
+ MIPS_MACHINE(AR71XX_MACH_PB42, "PB42", "Atheros PB42", pb42_init);

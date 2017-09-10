@@ -1,0 +1,18 @@
+Source-Makefile: target/linux/ep93xx/Makefile
+Target: ep93xx
+Target-Board: ep93xx
+Target-Kernel: 2.6
+Target-Name: Cirrus Logic EP93xx SoC
+Target-Path: /home/zguo/project/2013_08_01/latest_build
+Target-Arch: arm
+Target-Features: display ext2 gpio jffs2 squashfs tgz usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -march=armv4t -funit-at-a-time
+Linux-Version: 2.6.30.10
+Linux-Release: 1
+Linux-Kernel-Arch: arm
+Target-Description:
+
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall
+

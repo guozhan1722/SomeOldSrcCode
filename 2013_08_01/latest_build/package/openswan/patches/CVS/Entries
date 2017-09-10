@@ -1,0 +1,11 @@
+/120-no_manpages.patch/1.1.2.1/Wed Jul 11 19:40:21 2012/-ko/Tar71xx_4g
+/140-generated_autoconf.patch/1.1.2.1/Wed Jul 11 19:40:21 2012/-ko/Tar71xx_4g
+/900-microhard-updown_netkey.patch/1.1.2.9/Fri Mar 15 14:32:35 2013/-ko/Tar71xx_4g
+/901-microhard-packet.patch/1.1.4.1/Mon Mar 18 20:31:26 2013/-ko/Tar71xx_4g
+/902-microhard-log.patch/1.1.4.1/Thu Jun  6 19:25:11 2013/-ko/Tar71xx_4g
+/910-microhard-dpdbackup.patch/1.1.4.1/Fri Jun 14 23:06:01 2013/-ko/Tar71xx_4g
+/800-microhard-openswan.patch/1.1.2.5/Fri Jul 19 15:27:11 2013/-ko/Tar71xx_4g
+/801-microhard-ipsecdoi.patch/1.1.2.1/Fri Jul 19 15:25:48 2013/-ko/Tar71xx_4g
+/802-microhard-initiate.patch/1.1.2.1/Fri Jul 19 15:25:48 2013/-ko/Tar71xx_4g
+/804-microhard-timer.patch/1.1.2.1/Fri Jul 19 15:25:48 2013/-ko/Tar71xx_4g
+D

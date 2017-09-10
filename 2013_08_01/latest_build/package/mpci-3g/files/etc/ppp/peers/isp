@@ -1,0 +1,50 @@
+#Uncomment next line for debug
+#debug
+
+#Uncomment next line to run in foreground
+#nodetach
+
+#Provider name
+name isp
+
+usepeerdns
+
+#Baud rate
+115200
+
+local
+#dialup-on-demand
+#demand
+
+maxfail 0
+holdoff 5
+#tear down after idle for certain amount of time(s)
+idle 0
+#keep on reopening connection after close
+persist
+
+#call chat script, AT CMD and dial when connect
+connect "/usr/sbin/chat -v -t 90 -f /etc/ppp/chatscripts/isp"
+#call chat script, AT CMD and reset when disconnect
+disconnect "/usr/sbin/chat -v -t 90 -f /etc/ppp/chatscripts/isp_disconnect"
+#set data unit
+mru 1500
+mtu 1500
+#Authentication
+#require-chap
+#refuse-pap
+#handle default routing
+defaultroute
+
+#Replace default routing
+replacedefaultroute
+
+#set user
+user ""
+#obtain IP from ISP
+0.0.0.0:0.0.0.0
+noipdefault
+ipcp-accept-local
+ipcp-accept-remote
+lcp-echo-failure 3
+

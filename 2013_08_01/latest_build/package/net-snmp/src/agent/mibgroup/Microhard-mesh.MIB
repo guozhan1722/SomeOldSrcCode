@@ -1,0 +1,1876 @@
+Microhard-MIB DEFINITIONS ::= BEGIN
+
+-- Title:	MICROHARD MIB
+-- Date:	Sep 10, 2010
+-- Disription: Not all parameters are supported in a paticular device,Support of parameters varies 
+-- from version to version
+
+IMPORTS
+        MODULE-IDENTITY,
+        OBJECT-IDENTITY,
+        enterprises,
+        OBJECT-TYPE, 
+        NetworkAddress, 
+        IpAddress,
+        Counter, 
+        Gauge, 
+        TimeTicks
+	FROM RFC1065-SMI;
+--	DisplayString
+--		FROM RFC1158-MIB;
+
+Microhard OBJECT IDENTIFIER ::=	{ enterprises 21703 }
+
+--VIPNNNN
+	VIPNNNN				OBJECT IDENTIFIER ::=	{ Microhard 300 }
+	Future				OBJECT IDENTIFIER ::=	{ Microhard 301 }
+	SystemConfig			OBJECT IDENTIFIER ::=	{ VIPNNNN 1 }
+	NetworkConfig			OBJECT IDENTIFIER ::=	{ VIPNNNN 2 }
+	RadioConfig			OBJECT IDENTIFIER ::=	{ VIPNNNN 3 }
+	COM1Config			OBJECT IDENTIFIER ::=	{ VIPNNNN 4 }
+	COM2Config			OBJECT IDENTIFIER ::=	{ VIPNNNN 5 }
+	SecurityConfig			OBJECT IDENTIFIER ::=	{ VIPNNNN 6 }
+	SystemInformation		OBJECT IDENTIFIER ::=	{ VIPNNNN 7 }
+	SystemTools			OBJECT IDENTIFIER ::=	{ VIPNNNN 8 }
+	Misc				OBJECT IDENTIFIER ::=	{ VIPNNNN 9 }
+
+-- SystemConfig parameter group
+
+	SystemOpeartionMode	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		bridge(0),
+		router(1),
+		gateway(2)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-bridge.1-router.2-gateway" 
+		::= { SystemConfig 1 }
+	
+	SystemDescription	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "System Description."
+		::= { SystemConfig 2 }
+
+	UTCOffset	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "System UTC Offset."
+		::= { SystemConfig 5 }
+	
+	RadioInfo	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Radio Information."
+		::= { SystemConfig 6 }
+	
+	SystemConfigAction	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		SubmitOrReset(0),
+		Submit(1),
+		Reset(2)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Default no selection.1-Submit,this will update setting immidiately.
+		2-Reset,this will cacel all related settings in the sub tree" 
+		::= { SystemConfig 8 }
+
+-- Network parameter group
+
+	IPConfig	OBJECT IDENTIFIER ::=	{ NetworkConfig 1 }
+		-- IPConfig parameter group
+
+	IPAddressMode	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		static(0),
+		dhcp(1)		
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "IP Address Mode: 0 - static 1 - dhcp"
+		::= { IPConfig 1 }
+
+	IPAddress	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "IP Address."
+		::= { IPConfig 2 }
+
+	IPSubNetMask	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "IP SubNet Mask."
+		::= { IPConfig 3 }
+
+	IPGateWay	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		 DESCRIPTION "IP Gate Way."
+		::= { IPConfig 4 }
+		
+	IPDNS		OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "IP DNS ADDRESS."
+		::= { IPConfig 5 }
+
+	IPConfigAction	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		SubmitOrReset(0),
+		Submit(1),
+		Reset(2)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Default no selection.1-Submit,this will update setting immidiately.
+		2-Reset,this will cacel all related settings in the sub tree" 
+		::= { IPConfig 9 }
+
+	NTPConfig	OBJECT IDENTIFIER ::=	{ NetworkConfig 2 }
+		-- NTPConfig parameter group
+
+	NTPServerName	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "NTP Server Name."
+		::= { NTPConfig 1 }
+
+	NTPServerPort	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "NTP Server Port."
+		::= { NTPConfig 2 }
+
+	NTPConfigAction	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		SubmitOrReset(0),
+		Submit(1),
+		Reset(2)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Default no selection.1-Submit,this will update setting immidiately.
+		2-Reset,this will cacel all related settings in the sub tree" 
+		::= { NTPConfig 3 }
+
+	DHCPConfig	OBJECT IDENTIFIER ::=	{ NetworkConfig 3 }
+		-- DHCPConfig parameter group
+
+	DHCPServerStatus	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		Enable(0),
+		Disable(1)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "NTP Server Status:  0 - Enable 1 - Disable."
+		::= { DHCPConfig 1 }
+
+	DHCPStartAddress	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "DHCP Start Address."
+		::= {DHCPConfig 4 }
+		
+	DHCPAddressLimit	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "DHCP Server Address Limit."
+		::= { DHCPConfig 5 }
+
+	DHCPLeaseTime		OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "DHCP Server Lease Time."
+		::= { DHCPConfig 6 }
+
+	DHCPConfigAction	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		SubmitOrReset(0),
+		Submit(1),
+		Reset(2)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Default no selection.1-Submit,this will update setting immidiately.
+		2-Reset,this will cacel all related settings in the sub tree" 
+		::= {DHCPConfig 24 }
+
+
+	SNMPConfig	OBJECT IDENTIFIER ::=	{ NetworkConfig 4 }
+		-- SNMPConfig parameter group
+
+	SNMPMode	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		Disable(0),
+		Enable(1)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "SNMP Mode: 0 - Disable  1- Enable v1 v2c v3."
+		::= { SNMPConfig 1 }
+
+	SNMPReadCommunityName	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "SNMP Read CommunityName."
+		::= { SNMPConfig 2 }
+
+	SNMPWriteCommunityName	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "SNMP Write Community Name." 
+		::= { SNMPConfig 3 }
+
+	SNMPV3UserName	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "SNMP Version 3 User Name." 
+		::= { SNMPConfig 4 }
+
+	SNMPV3UserReadWriteLimit	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		ReadOnly(0),
+		ReadWrite(1)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "SNMP V3 User Read Write Limit: 0 - Read Only  1 - Read Write." 
+		::= { SNMPConfig 5 }
+
+	SNMPV3UserAuthLevel	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		NoAuthNopriv(0),
+		AuthNoPriv(1),
+		AuthPriv(2)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "SNMP V3 User Authentication Level: 0 - NoAuthNopriv  1 - AuthNoPriv
+		2 - AuthPriv." 
+		::= { SNMPConfig 6 }
+
+	SNMPV3AuthPassword	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "SNMP V3 Authentication Password." 
+		::= { SNMPConfig 7 }
+
+	SNMPV3PrivacyPassword	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "SNMP V3 Privacy Passord." 
+		::= { SNMPConfig 8 }
+
+	SNMPTrapVersion	OBJECT-TYPE
+		SYNTAX	INTEGER {V1Traps(0),V2Traps(1),V3Traps(2),V1V2Traps(3),V1V2V3Traps(4)} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "SNMP Trap Version: 0 - V1 Traps  1 - V2 Traps  2 - V3 Traps  
+		3 - V1&V2 Traps  4 - V1&V2&V3 Traps." 
+		::= { SNMPConfig 9 }
+
+	SNMPAuthTrapStatus	OBJECT-TYPE
+		SYNTAX	INTEGER {Disable(0),Enable(1)} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "SNMP Authentication Traps Status: 0 - Disable  1 - Enable." 
+		::= { SNMPConfig 10 }
+
+	SNMPTrapCommunityName	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "SNMP Trap Community Name." 
+		::= { SNMPConfig 11 }
+
+	SNMPTrapManageHost	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "SNMP Manage Host." 
+		::= { SNMPConfig 12 }
+ 
+	SNMPConfigAction	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		SubmitOrReset(0),
+		Submit(1),
+		Reset(2)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Default no selection.1-Submit,this will update setting immidiately.
+		2-Reset,this will cacel all related settings in the sub tree" 
+		::= { SNMPConfig 13 }
+
+-- Radio0  parameter group 
+	Radio0Config	OBJECT IDENTIFIER ::=	{ RadioConfig 1 }
+		-- Radio0Config parameter group
+	
+	Radio0OperationMode	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		AccessPoint(0),
+		Station(1),
+		Mesh(2),
+		Repeater(3),
+		none(4)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Access Point, 1-Station,2-Mesh,3-Repeater,4-None" 
+		::= { Radio0Config 1 }
+		
+	Radio0NetworkMode	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		80211a(0),
+		80211bg(1),
+		80211g(2),
+		none(3),
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-802.11a, 1-802.11bg, 2-802.11g,3-none" 
+		::= { Radio0Config 2 }
+ 	
+	Radio0NetworkName	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Radio Network Name"
+		::= { Radio0Config 3 }
+	
+	Radio0NetworkBroacast	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		broadcast(0),
+		hidden(1)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Broadcast, 1-Hidden" 
+		::= { Radio0Config 5 }
+	
+--Radio Tx Rate should change according to different product,this is 802.11g   
+
+	Radio0TxPower	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		20dBm(20), 
+		21dBm(21), 
+		22dBm(22), 
+		23dBm(23), 
+		24dBm(24), 
+		25dBm(25), 
+		26dBm(26), 
+		27dBm(27), 
+		28dBm(28) 
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "20-20dBm, 21-21dBm" 
+		::= { Radio0Config 6 }
+
+--Radio Channel should change according to different product,this is 802.11g   
+
+	Radio0Channelbandwidth	OBJECT-TYPE
+		SYNTAX	INTEGER {                
+		20MHz(0), 
+		5MHz(1), 
+		10MHz(2), 
+		40MHz(3),
+		none(4) 
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-20MHz,1-5MHz,2-10MHz,3-40MHz,4-none" 
+		::= { Radio0Config 7 }
+ 
+ 
+	Radio0Channel	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Channel"
+		::= { Radio0Config 8 }
+
+--Radio Tx Rate should change according to different product,this is 802.11g   
+
+	Radio0TxRate	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Tx Rate"
+		::= { Radio0Config 10 }
+
+  	Radio0BasicConfigAction	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		SubmitOrReset(0),
+		Submit(1),
+		Reset(2)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Default no selection.1-Submit,this will update setting immidiately.
+		2-Reset,this will cacel all related settings in the sub tree" 
+		::= { Radio0Config 11 }
+  
+	Radio0FragmentationThreshold	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Fragmentation Threshold"
+		::= { Radio0Config 17 }
+	
+	Radio0RTSThreshold	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "RTS Threshold"
+		::= { Radio0Config 18 }
+
+	Radio0Distance	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Distance"
+		::= { Radio0Config 12 }
+
+	Radio0RadioWds	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		WdsDisabled(0),
+		WdsEnable(1)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Disable, 1-Enable" 
+		::= { Radio0Config 13 }
+
+	 Radio0EncryptionType		OBJECT-TYPE
+		SYNTAX	INTEGER {
+		Disabled(0),
+		WEP(1),
+		WPA(2),
+		WPA2(3),
+		WPAWPA2(4),
+		WPARADIUS(5),
+		WPA2RADIUS(6)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Disable, 1-WEP, 2-WPA, 3-WPA2, 4-WPA+WPA2, 5-WPARADIUS, 6-WPA2RADIUS" 
+		::= { Radio0Config 14 }
+
+	Radio0Key	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Key"
+		::= { Radio0Config 19 }
+				             
+	Radio0Key1	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Key1"
+		::= { Radio0Config 20 }
+	Radio0Key2	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Key2"
+		::= { Radio0Config 21 }
+	Radio0Key3	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Key3"
+		::= { Radio0Config 22 }
+
+	Radio0Key4	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Key4"
+		::= { Radio0Config 23 }
+				             
+				             
+  	Radio0ConfigAction	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		SubmitOrReset(0),
+		Submit(1),
+		Reset(2)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Default no selection.1-Submit,this will update setting immidiately.
+		2-Reset,this will cacel all related settings in the sub tree" 
+		::= { Radio0Config 24 }
+
+-- Radio1  parameter group 
+	Radio1Config	OBJECT IDENTIFIER ::=	{ RadioConfig 2 }
+		-- Radio1Config parameter group
+	
+	Radio1OperationMode	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		AccessPoint(0),
+		Station(1),
+		Mesh(2),
+		Repeater(3),
+		none(4),
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Access Point, 1-Station,2-Mesh,3-Repeater,4-none" 
+		::= { Radio1Config 1 }
+		
+	Radio1NetworkMode	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		80211a(0),
+		80211bg(1),
+		80211g(2),
+		none(3)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-802.11a, 1-802.11bg, 2-802.11g, 3-none" 
+		::= { Radio1Config 2 }
+ 	
+	Radio1NetworkName	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Radio Network Name"
+		::= { Radio1Config 3 }
+	
+	Radio1NetworkBroacast	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		broadcast(0),
+		hidden(1)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Broadcast, 1-Hidden" 
+		::= { Radio1Config 5 }
+	
+	--Radio Tx Rate should change according to different product,this is 802.11g   
+
+	Radio1TxPower	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		20dBm(20), 
+		21dBm(21), 
+		22dBm(22), 
+		23dBm(23), 
+		24dBm(24), 
+		25dBm(25), 
+		26dBm(26), 
+		27dBm(27), 
+		28dBm(28) 
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "20-20dBm, 21-21dBm" 
+		::= { Radio1Config 6 }
+
+	--Radio Channel should change according to different product,this is 802.11g   
+
+	Radio1Channelbandwidth	OBJECT-TYPE
+		SYNTAX	INTEGER {                
+		20MHz(0), 
+		5MHz(1), 
+		10MHz(2), 
+		40MHz(3), 
+		none(4),
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-20MHz,1-5MHz,2-10MHz,3-40MHz,4-none" 
+		::= { Radio1Config 7 }
+ 
+ 
+	Radio1Channel	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Channel"
+		::= { Radio1Config 8 }
+
+	--Radio Tx Rate should change according to different product,this is 802.11g   
+
+	Radio1TxRate	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Tx Rate"
+		::= { Radio1Config 10 }
+
+
+
+  	Radio1BasicConfigAction	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		SubmitOrReset(0),
+		Submit(1),
+		Reset(2)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Default no selection.1-Submit,this will update setting immidiately.
+		2-Reset,this will cacel all related settings in the sub tree" 
+		::= { Radio1Config 11 }
+  
+	Radio1FragmentationThreshold	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Fragmentation Threshold"
+		::= { Radio1Config 17 }
+	
+	Radio1RTSThreshold	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "RTS Threshold"
+		::= { Radio1Config 18 }
+
+	Radio1Distance	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Distance"
+		::= { Radio1Config 12 }
+
+	Radio1RadioWds	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		WdsDisabled(0),
+		WdsEnable(1)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Disable, 1-Enable" 
+		::= { Radio1Config 13 }
+
+	 Radio1EncryptionType		OBJECT-TYPE
+		SYNTAX	INTEGER {
+		Disabled(0),
+		WEP(1),
+		WPA(2),
+		WPA2(3),
+		WPAWPA2(4),
+		WPARADIUS(5),
+		WPA2RADIUS(6)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Disable, 1-WEP, 2-WPA, 3-WPA2, 4-WPA+WPA2, 5-WPARADIUS, 6-WPA2RADIUS" 
+		::= { Radio1Config 14 }
+
+	Radio1Key	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Key"
+		::= { Radio1Config 19 }
+				             
+	Radio1Key1	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Key1"
+		::= { Radio1Config 20 }
+	Radio1Key2	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Key2"
+		::= { Radio1Config 21 }
+	Radio1Key3	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Key3"
+		::= { Radio1Config 22 }
+
+	Radio1Key4	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Key4"
+		::= { Radio1Config 23 }
+				             
+				             
+  	Radio1ConfigAction	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		SubmitOrReset(0),
+		Submit(1),
+		Reset(2)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Default no selection.1-Submit,this will update setting immidiately.
+		2-Reset,this will cacel all related settings in the sub tree" 
+		::= { Radio1Config 24 }
+
+	-- Radio2  parameter group 
+	Radio2Config	OBJECT IDENTIFIER ::=	{ RadioConfig 3 }
+		-- Radio2Config parameter group
+	
+	Radio2OperationMode	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		AccessPoint(0),
+		Station(1),
+		Mesh(2),
+		Repeater(3),
+		none(4)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Access Point, 1-Station,2-Mesh,3-Repeater,4-none" 
+		::= { Radio2Config 1 }
+		
+	Radio2NetworkMode	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		80211a(0),
+		80211bg(1),
+		80211g(2),
+		none(3)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-802.11a, 1-802.11bg, 2-802.11g, 3-none" 
+		::= { Radio2Config 2 }
+ 	
+	Radio2NetworkName	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Radio Network Name"
+		::= { Radio2Config 3 }
+	
+	Radio2NetworkBroacast	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		broadcast(0),
+		hidden(1)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Broadcast, 1-Hidden" 
+		::= { Radio2Config 5 }
+	
+	--Radio Tx Rate should change according to different product,this is 802.11g   
+
+	Radio2TxPower	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		20dBm(20), 
+		21dBm(21), 
+		22dBm(22), 
+		23dBm(23), 
+		24dBm(24), 
+		25dBm(25), 
+		26dBm(26), 
+		27dBm(27), 
+		28dBm(28) 
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "20-20dBm, 21-21dBm" 
+		::= { Radio2Config 6 }
+
+	--Radio Channel should change according to different product,this is 802.11g   
+
+	Radio2Channelbandwidth	OBJECT-TYPE
+		SYNTAX	INTEGER {                
+		20MHz(0), 
+		5MHz(1), 
+		10MHz(2), 
+		40MHz(3),
+		none(4) 
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-20MHz,1-5MHz,2-10MHz,3-40MHz,4-none" 
+		::= { Radio2Config 7 }
+ 
+ 
+	Radio2Channel	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Channel"
+		::= { Radio2Config 8 }
+
+	--Radio Tx Rate should change according to different product,this is 802.11g   
+
+	Radio2TxRate	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Tx Rate"
+		::= { Radio2Config 10 }
+
+
+
+  	Radio2BasicConfigAction	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		SubmitOrReset(0),
+		Submit(1),
+		Reset(2)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Default no selection.1-Submit,this will update setting immidiately.
+		2-Reset,this will cacel all related settings in the sub tree" 
+		::= { Radio2Config 11 }
+  
+	Radio2FragmentationThreshold	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Fragmentation Threshold"
+		::= { Radio2Config 17 }
+	
+	Radio2RTSThreshold	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "RTS Threshold"
+		::= { Radio2Config 18 }
+
+	Radio2Distance	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Distance"
+		::= { Radio2Config 12 }
+
+	Radio2RadioWds	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		WdsDisabled(0),
+		WdsEnable(1)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Disable, 1-Enable" 
+		::= { Radio2Config 13 }
+
+	 Radio2EncryptionType		OBJECT-TYPE
+		SYNTAX	INTEGER {
+		Disabled(0),
+		WEP(1),
+		WPA(2),
+		WPA2(3),
+		WPAWPA2(4),
+		WPARADIUS(5),
+		WPA2RADIUS(6)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Disable, 1-WEP, 2-WPA, 3-WPA2, 4-WPA+WPA2, 5-WPARADIUS, 6-WPA2RADIUS" 
+		::= { Radio2Config 14 }
+
+	Radio2Key	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Key"
+		::= { Radio2Config 19 }
+				             
+	Radio2Key1	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Key1"
+		::= { Radio2Config 20 }
+	Radio2Key2	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Key2"
+		::= { Radio2Config 21 }
+	Radio2Key3	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Key3"
+		::= { Radio2Config 22 }
+
+	Radio2Key4	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Key4"
+		::= { Radio2Config 23 }
+				             
+				             
+  	Radio2ConfigAction	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		SubmitOrReset(0),
+		Submit(1),
+		Reset(2)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Default no selection.1-Submit,this will update setting immidiately.
+		2-Reset,this will cacel all related settings in the sub tree" 
+		::= { Radio2Config 24 }
+
+	-- Radio3  parameter group 
+	Radio3Config	OBJECT IDENTIFIER ::=	{ RadioConfig 4 }
+	-- Radio3Config parameter group
+	
+	Radio3OperationMode	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		AccessPoint(0),
+		Station(1),
+		Mesh(2),
+		Repeater(3),
+		none(4)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Access Point, 1-Station,2-Mesh,3-Repeater,4-none" 
+		::= { Radio3Config 1 }
+		
+	Radio3NetworkMode	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		80211a(0),
+		80211bg(1),
+		80211g(2),
+		none(3),
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-802.11a, 1-802.11bg, 2-802.11g, 3-none" 
+		::= { Radio3Config 2 }
+ 	
+	Radio3NetworkName	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Radio Network Name"
+		::= { Radio3Config 3 }
+	
+	Radio3NetworkBroacast	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		broadcast(0),
+		hidden(1)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Broadcast, 1-Hidden" 
+		::= { Radio3Config 5 }
+	
+	--Radio Tx Rate should change according to different product,this is 802.11g   
+
+	Radio3TxPower	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		20dBm(20), 
+		21dBm(21), 
+		22dBm(22), 
+		23dBm(23), 
+		24dBm(24), 
+		25dBm(25), 
+		26dBm(26), 
+		27dBm(27), 
+		28dBm(28) 
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "20-20dBm, 21-21dBm" 
+		::= { Radio3Config 6 }
+
+	--Radio Channel should change according to different product,this is 802.11g   
+
+	Radio3Channelbandwidth	OBJECT-TYPE
+		SYNTAX	INTEGER {                
+		20MHz(0), 
+		5MHz(1), 
+		10MHz(2), 
+		40MHz(3), 
+		none(4),
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-20MHz,1-5MHz,2-10MHz,3-40MHz" 
+		::= { Radio3Config 7 }
+ 
+ 
+	Radio3Channel	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Channel"
+		::= { Radio3Config 8 }
+
+	--Radio Tx Rate should change according to different product,this is 802.11g   
+
+	Radio3TxRate	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Tx Rate"
+		::= { Radio3Config 10 }
+
+
+  	Radio3BasicConfigAction	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		SubmitOrReset(0),
+		Submit(1),
+		Reset(2)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Default no selection.1-Submit,this will update setting immidiately.
+		2-Reset,this will cacel all related settings in the sub tree" 
+		::= { Radio3Config 11 }
+  
+	Radio3FragmentationThreshold	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Fragmentation Threshold"
+		::= { Radio3Config 17 }
+	
+	Radio3RTSThreshold	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "RTS Threshold"
+		::= { Radio3Config 18 }
+
+	Radio3Distance	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Distance"
+		::= { Radio3Config 12 }
+
+	Radio3RadioWds	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		WdsDisabled(0),
+		WdsEnable(1)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Disable, 1-Enable" 
+		::= { Radio3Config 13 }
+
+	 Radio3EncryptionType		OBJECT-TYPE
+		SYNTAX	INTEGER {
+		Disabled(0),
+		WEP(1),
+		WPA(2),
+		WPA2(3),
+		WPAWPA2(4),
+		WPARADIUS(5),
+		WPA2RADIUS(6)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Disable, 1-WEP, 2-WPA, 3-WPA2, 4-WPA+WPA2, 5-WPARADIUS, 6-WPA2RADIUS" 
+		::= { Radio3Config 14 }
+
+	Radio3Key	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Key"
+		::= { Radio3Config 19 }
+				             
+	Radio3Key1	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Key1"
+		::= { Radio3Config 20 }
+	Radio3Key2	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Key2"
+		::= { Radio3Config 21 }
+	Radio3Key3	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Key3"
+		::= { Radio3Config 22 }
+
+	Radio3Key4	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Key4"
+		::= { Radio3Config 23 }
+				             
+				             
+  	Radio3ConfigAction	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		SubmitOrReset(0),
+		Submit(1),
+		Reset(2)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Default no selection.1-Submit,this will update setting immidiately.
+		2-Reset,this will cacel all related settings in the sub tree" 
+		::= { Radio3Config 24 }
+
+
+
+-- COM1 parameter group
+
+	COM1_Port_Status	OBJECT-TYPE
+		SYNTAX	INTEGER {	Disable(0),	Enable(1)} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 Port Status: 0 - Disable  1 - Enable" 
+		::= { COM1Config 1 }  
+
+	COM1_Chanel_Mode	OBJECT-TYPE
+		SYNTAX	INTEGER {RS232(0),RS485(1),RS422(2)} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 Channel Mode: A - RS232  B - RS485  C - RS422" 
+		::= { COM1Config 2 }  
+
+	COM1_Data_Baud_Rate	OBJECT-TYPE
+		SYNTAX	INTEGER {B300(0),B600(1),B1200(2),B2400(3), B3600(4),B4800(5),
+		B7200(6),B9600(7),B14400(8),B19200(9),B28800(10),B38400(11),B57600(12),
+		B115200(13),B230400(14),B460800(15),B921600(16)} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 Data Baud Rate: 0 - 300  1 - 600  2 - 1200
+		3 - 2400  4 - 3600  5 - 4800  6 - 7200  7 - 9600  8 - 14400  9 - 19200
+		10 - 28800  11 - 38400  12 - 57600  13 - 115200  14 - 230400 15-460800,16-961600"
+		::= { COM1Config 3 }  
+
+	COM1_Data_Format	OBJECT-TYPE
+		SYNTAX	INTEGER {_8N1(0),_8N2(1),_8E1(2),_8O1(3), _7N1(4),
+		_7N2(5),_7E1(6),_7O1(7),_7E2(8), _7O2(9)} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 Data Format: 0 - 8N1  1 - 8N2  2 - 8E1  3 - 8O1
+		4 - 7N1  5 - 7N2  6 - 7E1  7 - 7O1  8 - 7E2  9 - 7O2 " 
+		::= { COM1Config 4 }  
+
+	COM1_Flow_Control	OBJECT-TYPE
+		SYNTAX	INTEGER { None(0),Hardware(1),CTSFraming(2)} 	 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 Flow Control: 0 - None  1 - Hardware 2- CTS Framing" 
+		::= { COM1Config 5 }  
+
+	COM1_PreData_Delay	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))	 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 Pre-frame Delay." 
+		::= { COM1Config 6 }  
+	
+	COM1_PostData_Delay	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))	 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 Post-frame Delay." 
+		::= { COM1Config 7 }  
+		
+	COM1_Data_Mode	OBJECT-TYPE
+		SYNTAX	INTEGER {Modbus(0),Transparent(1)} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 Data Mode: 0 - Modbus  1 - Transparent." 
+		::= { COM1Config 8 }  
+
+	COM1_Character_Timeout	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))	 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 Character Timeout." 
+		::= { COM1Config 9 }  
+
+	COM1_Maximum_Packet_Size	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))	 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 Maxmum Packet Size." 
+		::= { COM1Config 10 }  
+     
+	COM1_Priority	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		Normal(0),
+		Medium(1),
+		High(2),
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 Data Format: 0 - Normal  1 - Medium  2 - High " 
+		::= { COM1Config 21 }  
+ 	
+	COM1_No_Connection_Data_Intake	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		Disable(0),
+		Enable(1),
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 No Connection Data Intake: 0 - Disable  1 - Enable " 
+		::= { COM1Config 22 }  
+
+ 	COM1_Modbus_Status	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		Disable(0),
+		Enable(1),
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 Modbus Status: 0 - Disable  1 - Enable " 
+		::= { COM1Config 23 }     
+
+	COM1_Modbus_Protection_Status	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		Disable(0),
+		Enable(1),
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 Modbus Protection Status: 0 - Disable  1 - Enable " 
+		::= { COM1Config 24 }     
+
+	COM1_Modbus_Protection_Key	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))	 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 Modbus Protection Key" 
+		::= { COM1Config 25 } 
+       
+	COM1_IP_Protocol	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		TCPClient(0),
+		TCPServer(1),
+		TCPClientServer(2),
+		UDPPointtoPoint(3),
+		UDPPointtoMultiPoint_as_point(4),
+		UDPPointtoMultiPoint_as_Multipoint(5),
+		UDPMultiPoint_to_Multipoint(6),
+		smtp(7),
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 IP Protocol: 0 - TCP Client  1 - TCP Server  2 - TCP Client/Server
+		3 - UDP Point to Point  4 - UDP Point to MultiPoint(as point) 
+		5 - UDP Point to MultiPoint(as Multipoint).6-UDP MultiPoint to Multipoint
+		7 - smtp" 
+		::= { COM1Config 11 } 
+
+	COM1AsTCPClientConfig	OBJECT IDENTIFIER ::=	{ COM1Config 12}
+
+		-- COM1TCPClientConfig Command group
+
+	COM1_T_Client_Server_Addr	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))	 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 as TCP Client Remote Server Ip Address." 
+		::= { COM1AsTCPClientConfig 1 }  
+
+	COM1_T_Client_Server_Port	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))	 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 as TCP Client Remote Server Listen Port." 
+		::= { COM1AsTCPClientConfig 2 }  
+
+	COM1_T_Client_Timeout	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))	 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 as TCP Client Connection Timeout." 
+		::= { COM1AsTCPClientConfig 3 }  
+
+	COM1AsTCPServerConfig	OBJECT IDENTIFIER ::=	{ COM1Config 13 }
+
+		-- COM1TCPServerConfig Command group
+
+ 	COM1_T_Server_Listen_Port	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))	 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 as TCP Server Listen Port." 
+		::= { COM1AsTCPServerConfig 1 }  
+
+	COM1_T_Server_Timeout	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))	 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 as TCP Server  Remote Client Connection Timeout." 
+		::= { COM1AsTCPServerConfig 2 }  
+
+	 COM1AsUDPPointToPointConfig		OBJECT IDENTIFIER ::=	{ COM1Config 15 }
+
+		-- COM1UDPPointToPointConfig Command group
+
+	COM1_U_PtoP_Remote_Addr	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))	 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 as UDP Point to Point Remote Ip Address." 
+		::= { COM1AsUDPPointToPointConfig 1 }  
+
+	COM1_U_PtoP_Remote_Port	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))	 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 as UDP Point to Point Remote Server Listen Port." 
+		::= { COM1AsUDPPointToPointConfig 2 }
+
+	COM1_U_PtoP_Listen_Port	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32)) 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "COM1 as UDP Point to Point Connection Local Listen Port." 
+		::= { COM1AsUDPPointToPointConfig 3 }
+
+	COM1AsUDPPointToMultiPointasPointConfig	OBJECT IDENTIFIER ::=	{ COM1Config 16 }
+
+		-- COM1UDPPointToMultiPointasPointConfig Command group
+
+	COM1_UM_P_Multicast_Addr	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32)) 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Multicast Address." 
+		::= { COM1AsUDPPointToMultiPointasPointConfig 1 }
+
+	COM1_UM_P_Multicast_Port	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32)) 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Multicast Port." 
+		::= { COM1AsUDPPointToMultiPointasPointConfig 2 }  
+
+	COM1_UM_P_Listen_Port	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Local Listen Port." 
+		::= { COM1AsUDPPointToMultiPointasPointConfig 3 }
+
+	COM1_UM_P_TTL 	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Multicast TTL Value." 
+		::= { COM1AsUDPPointToMultiPointasPointConfig 4 }
+
+	COM1AsUDPPointToMultiPointasMultiPointConfig	OBJECT IDENTIFIER ::=	{ COM1Config 17 }
+		-- COM1UDPPointToMultiPointasMultiPointConfig Command group
+
+	COM1_UM_M_Remote_Addr	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Remote IP Address."
+		::= { COM1AsUDPPointToMultiPointasMultiPointConfig 1 }
+
+	COM1_UM_M_Remote_Port	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Remote Port." 
+		::= { COM1AsUDPPointToMultiPointasMultiPointConfig 2 }  
+
+	COM1_UM_M_Multicast_Addr	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Multicast Address." 
+		::= { COM1AsUDPPointToMultiPointasMultiPointConfig 3 }  
+
+	COM1_UM_M_Multicast_Port 	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))	 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Multicast Port." 
+		::= { COM1AsUDPPointToMultiPointasMultiPointConfig 4 }
+
+	COM1AsUDPMultiPointToMultiPointConfig	OBJECT IDENTIFIER ::=	{ COM1Config 18 }
+		-- COM1AsUDPMultiPointToMultiPointConfig Command group  
+	
+	COM1_UMtoM_Multicast_IP	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Multicast Port." 
+		::= { COM1AsUDPMultiPointToMultiPointConfig 1 }
+
+	COM1_UMtoM_Multicast_Port	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Local Listen Port." 
+		::= { COM1AsUDPMultiPointToMultiPointConfig 2 }
+
+	COM1_UMtoM_Multicast_TTL 	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Multicast TTL Value." 
+		::= { COM1AsUDPMultiPointToMultiPointConfig 3 }
+
+	COM1_UMtoM_Listen_Multicast_IP	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Multicast Address." 
+		::= { COM1AsUDPMultiPointToMultiPointConfig 4 }
+
+	COM1_UMtoM_Listen_Multicast_Port 	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Multicast Port." 
+		::= { COM1AsUDPMultiPointToMultiPointConfig 5 }
+
+	COM1AsSMTPClientConfig	OBJECT IDENTIFIER ::=	{ COM1Config 19 }          
+	-- COM1AsSMTPClientConfig Command group
+	
+	COM1_SMTP_Mail_Subject 	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Multicast Port." 
+		::= { COM1AsSMTPClientConfig 1 }  
+ 	 
+	COM1_SMTP_Mail_Server 	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Multicast Port." 
+		::= { COM1AsSMTPClientConfig 2 }  
+		
+	COM1_SMTP_Mail_Recipient	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Multicast Port."
+		::= { COM1AsSMTPClientConfig 3 }
+ 	 
+	COM1_SMTP_Mail_MaxSize 	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))	 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Multicast Port."
+		::= { COM1AsSMTPClientConfig 4 }  
+ 	 
+	COM1_SMTP_Mail_Timeout 	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))	 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Multicast Port."
+		::= { COM1AsSMTPClientConfig 5 }  
+ 	 
+	COM1_SMTP_Mail_TransferMode	OBJECT-TYPE
+		 SYNTAX	INTEGER {
+		Text(0),
+		Attached(1),
+		Hex(2),
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "Multicast Port."
+		::= { COM1AsSMTPClientConfig 6 }  
+
+	 COM1_Config_ACTION	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		SubmitOrReset(0),
+		Submit(1),
+		Reset(2),
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Default no selection.1-Submit,this will update setting immidiately.
+		2-Reset,this will cacel all related settings in the sub tree" 
+		::= { COM1Config 20}
+
+-- SystemInformation Command group
+
+	 Ethernet0Information	OBJECT IDENTIFIER ::=	{ SystemInformation 1 }
+	 Ethernet1Information	OBJECT IDENTIFIER ::=	{ SystemInformation 2 }
+	 RadioInformation	OBJECT IDENTIFIER ::=	{ SystemInformation 3 }
+	 Com1Information	OBJECT IDENTIFIER ::=	{ SystemInformation 4 }
+
+	-- Ethernet0Information group
+
+	Ethernet0ReceivedBytes	OBJECT-TYPE
+		SYNTAX	INTEGER  
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Ethernet0 Received bytes"
+		::= { Ethernet0Information 1 }
+
+	Ethernet0ReceivedPackets	 OBJECT-TYPE
+		SYNTAX	INTEGER  
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Ethernet0 Received packets"
+		::= { Ethernet0Information 2 }
+
+	Ethernet0TransmittedBytes	OBJECT-TYPE
+		SYNTAX	INTEGER  
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Ethernet0 Transmitted bytes"
+		::= { Ethernet0Information 9 }
+
+	Ethernet0TransmittedPackets	OBJECT-TYPE
+		SYNTAX	INTEGER  
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Ethernet0 Transmitted packets"
+		::= { Ethernet0Information 10 }
+
+      -- Ethernet1Information group
+
+	Ethernet1ReceivedBytes	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Ethernet1 Received bytes"
+		::= { Ethernet1Information 1 }
+
+	Ethernet1ReceivedPackets	 OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Ethernet1 Received packets"
+		::= { Ethernet1Information 2 }
+	Ethernet1TransmittedBytes	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Ethernet1 Transmitted bytes"
+		::= { Ethernet1Information 9 }
+
+	Ethernet1TransmittedPackets	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Ethernet1 Transmitted packets"
+		::= { Ethernet1Information 10 }
+
+-- Radio0Information group
+
+	Radio0ReceivedBytes	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Radio Received bytes"
+		::= { RadioInformation 1 }
+
+	Radio0ReceivedPackets	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Radio Received packets"
+		::= { RadioInformation 2 }
+
+	Radio0TransmittedBytes	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Radio Transmitted bytes"
+		::= { RadioInformation 3 }
+
+	Radio0TransmittedPackets	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Radio Transmitted packets"
+		::= { RadioInformation 4 }
+
+-- Radio1Information group
+
+	Radio1ReceivedBytes	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Radio Received bytes"
+		::= { RadioInformation 5 }
+
+	Radio1ReceivedPackets	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Radio Received packets"
+		::= { RadioInformation 6 }
+
+	Radio1TransmittedBytes	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Radio Transmitted bytes"
+		::= { RadioInformation 7 }
+
+	Radio1TransmittedPackets	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Radio Transmitted packets"
+		::= { RadioInformation 8 }
+
+
+-- Radio2Information group
+
+	Radio2ReceivedBytes	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Radio Received bytes"
+		::= { RadioInformation 9 }
+
+	Radio2ReceivedPackets	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Radio Received packets"
+		::= { RadioInformation 10 }
+
+	Radio2TransmittedBytes	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Radio Transmitted bytes"
+		::= { RadioInformation 11 }
+
+	Radio2TransmittedPackets	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Radio Transmitted packets"
+		::= { RadioInformation 12 }
+
+
+-- Radio3Information group
+
+	Radio3ReceivedBytes	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Radio Received bytes"
+		::= { RadioInformation 13 }
+
+	Radio3ReceivedPackets	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Radio Received packets"
+		::= { RadioInformation 14 }
+
+	Radio3TransmittedBytes	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Radio Transmitted bytes"
+		::= { RadioInformation 15 }
+
+	Radio3TransmittedPackets	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Radio Transmitted packets"
+		::= { RadioInformation 16 }
+
+	-- Com1Information group
+
+ 	Com1ReceivedBytes	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Com1 Received bytes"
+		::= { Com1Information 1 }
+
+	Com1ReceivedPackets	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Com1 Received packets"
+		::= { Com1Information 2 }
+
+	Com1ReceivedErrors	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Com1 Received errors"
+		::= { Com1Information 3 }
+
+	Com1ReceivedDroppedPackets	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Com1 Received droped packets"
+		::= { Com1Information 4 }	 
+
+	Com1ReceivedFifo	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Com1 Received fifo"
+		::= { Com1Information 5 }
+
+	Com1ReceivedFrame	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Com1 Received frame"
+		::= { Com1Information 6 }
+
+	Com1Compressed	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Com1 Compressed"
+		::= { Com1Information 7 }
+
+	Com1ReceivedMulticast	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Com1 Received multicast"
+		::= { Com1Information 8 }
+
+	Com1TransmittedBytes	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Com1 Transmitted bytes"
+		::= { Com1Information 9 }
+
+ 	Com1TransmittedPackets	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Com1 Transmitted packets"
+		::= { Com1Information 10 }
+ 
+	Com1TransmittedErrors	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Com1 Transmitted errors"
+		::= { Com1Information 11 }
+
+	Com1TransmittedDropedPackets OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Com1 Transmitted droped packets"
+		::= { Com1Information 12 }
+ 
+	Com1TransmittedFifo	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Com1 Transmitted fifo"
+		::= { Com1Information 13 }
+ 
+	Com1TransmittedCollisions	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Com1 Transmitted collisions"
+		::= { Com1Information 14 }
+ 
+	Com1TransmittedCarrier	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Com1 Transmitted carrier"
+		::= { Com1Information 15 }
+
+	Com1TransmittedCompress	OBJECT-TYPE
+		SYNTAX	INTEGER 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Com1 Transmitted compress"
+		::= { Com1Information 16 }
+
+	-- Tool_ResetSystem group
+
+	ToolRebootSystem	OBJECT IDENTIFIER ::=	{ SystemTools 2 }
+
+	Tool_Reset_SystemAction	OBJECT-TYPE
+		SYNTAX	INTEGER {
+		SubmitOrReset(0),
+		Submit(1),
+		Reset(2)
+		} 
+		ACCESS	read-write
+		STATUS	mandatory
+		DESCRIPTION "0-Default no selection.1-Submit,this will update setting immidiately.
+		2-Reset,this will cacel all related settings in the sub tree" 
+		::= { ToolRebootSystem 1 }
+
+-- Misc_Config Command group, this group is the misc staff required by different customers.
+
+	Radio0AssociationInfo	OBJECT-TYPE
+		SYNTAX	DisplayString 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Radio Association Information."
+		::= { Misc 1 }
+
+	Radio1AssociationInfo	OBJECT-TYPE
+		SYNTAX	DisplayString 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Radio Association Information."
+		::= { Misc 2 }
+
+	Radio2AssociationInfo	OBJECT-TYPE
+		SYNTAX	DisplayString 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Radio Association Information."
+		::= { Misc 3 }
+
+	Radio3AssociationInfo	OBJECT-TYPE
+		SYNTAX	DisplayString 
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Radio Association Information."
+		::= { Misc 4 }
+
+	Version_Info		OBJECT IDENTIFIER ::=	{ VIPNNNN 30 }
+	Hardware_Type		OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))   
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Hardware Type"
+		::= { Version_Info 1 }
+
+
+	Software_Version	OBJECT-TYPE
+		SYNTAX	DisplayString (SIZE (0..32))   
+		ACCESS	read-only
+		STATUS	mandatory
+		DESCRIPTION "Software Version"
+		::= { Version_Info 2 }
+
+END
+

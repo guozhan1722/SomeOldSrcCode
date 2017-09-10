@@ -1,0 +1,10 @@
+#!/bin/sh
+DAEMON=/usr/sbin/sendmail
+
+if [ -f /tmp/email.dat ]; then
+    $DAEMON $1 < /tmp/email.dat
+    rm /tmp/email.dat
+fi
+
+exit 0
+

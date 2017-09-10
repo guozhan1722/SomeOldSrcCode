@@ -1,0 +1,5 @@
+
+config 'timezone'
+	option 'posixtz' 'MST7MDT,M3.2.0,M11.1.0'
+	option 'zoneinfo' 'America/Denver'
+

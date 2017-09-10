@@ -1,0 +1,20 @@
+Source-Makefile: package/art_legacy_code/Makefile
+Package: kmod-at-legacy-art
+Submenu: Wireless Drivers
+Version: <LINUX_VERSION>+5.4b7--1
+Depends: +libpthread
+Provides: 
+Section: kernel
+Category: Kernel modules
+Title: Atheros Radio Test for Linux for 802.11a/b/g (legacy)
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  Atheros Radio Test for Linux (legacy).  Builds ART for an PB44-ish platform.
+http://www.cardaccess-inc.com/
+@@
+Config:
+	source package/art_legacy_code/Config.in
+@@
+
+

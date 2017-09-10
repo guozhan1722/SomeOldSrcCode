@@ -1,0 +1,24 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008-2011 OpenWrt.org
+
+START=52
+
+start() {
+        enabled=$(uci get tinyproxy.@tinyproxy[0].enabled)
+        [ "$enabled" = "1" ] && {
+	    mkdir -m0755 -p /var/log/dansguardian
+	    [ -x /usr/sbin/dansguardian ] && /usr/sbin/dansguardian > /dev/null && echo -e ' dansguardian started.'
+        }
+}
+
+stop() {
+	[ -x /usr/sbin/dansguardian ] && /usr/sbin/dansguardian -q > /dev/null && echo -e ' dansguardian stopped.'
+	rm -rf /var/run/dansguardian.pid
+	rm -rf /var/log/dansguardian
+}
+
+restart() {
+	stop
+        sleep 1
+	start
+}

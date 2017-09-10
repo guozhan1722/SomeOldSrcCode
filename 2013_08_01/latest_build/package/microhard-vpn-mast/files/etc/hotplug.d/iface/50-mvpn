@@ -1,0 +1,23 @@
+#!/bin/sh
+# Copyright (C) 2012 Microhard
+
+. /etc/functions.sh
+
+logger -p local0.error "iface.50mvpn $ACTION $INTERFACE"
+case "${ACTION:-ifup}" in
+    ifup)
+
+	   [ "$INTERFACE" = "wan" -o "$INTERFACE" = "wan2" ] && {
+	          logger -p local0.error "call mifupdown up"
+                  /sbin/mifupdown up $INTERFACE &
+            }		
+
+    ;;
+    ifdown)
+	[ "$INTERFACE" = "wan" -o "$INTERFACE" = "wan2" ] && {
+	    logger -p local0.error "call mifupdown down"
+	    /sbin/mifupdown down $INTERFACE &
+	} 
+
+     ;;
+esac

@@ -1,0 +1,16 @@
+Source-Makefile: package/GobiNet/Makefile
+Package: kmod-GobiNet
+Submenu: Other modules
+Version: <LINUX_VERSION>-1
+Depends: +kmod-usb-net
+Provides: 
+Section: kernel
+Category: Kernel modules
+Title: GobiNet kernel driver modules support
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  Kernel modules to support GobiNet radio network.
+@@
+
+

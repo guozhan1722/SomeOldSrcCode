@@ -1,0 +1,22 @@
+/Makefile/1.1.2.1/Tue Jul  3 20:43:36 2012/-ko/Tar71xx_4g
+/cfgreader.c/1.1.2.1/Tue Jul  3 20:43:36 2012/-ko/Tar71xx_4g
+/compat.c/1.1.2.1/Tue Jul  3 20:43:36 2012/-ko/Tar71xx_4g
+/device.c/1.1.2.1/Tue Jul  3 20:43:36 2012/-ko/Tar71xx_4g
+/gnokii.pc/1.1.2.1/Tue Jul  3 20:43:36 2012/-ko/Tar71xx_4g
+/gnokii.pc.in/1.1.2.1/Tue Jul  3 20:43:36 2012/-ko/Tar71xx_4g
+/gsm-api.c/1.1.2.1/Tue Jul  3 20:43:36 2012/-ko/Tar71xx_4g
+/gsm-bitmaps.c/1.1.2.1/Tue Jul  3 20:43:36 2012/-ko/Tar71xx_4g
+/gsm-common.c/1.1.2.1/Tue Jul  3 20:43:36 2012/-ko/Tar71xx_4g
+/gsm-encoding.c/1.1.2.1/Tue Jul  3 20:43:36 2012/-ko/Tar71xx_4g
+/gsm-error.c/1.1.2.1/Tue Jul  3 20:43:36 2012/-ko/Tar71xx_4g
+/gsm-networks.c/1.1.2.1/Tue Jul  3 20:43:36 2012/-ko/Tar71xx_4g
+/gsm-sms.c/1.1.2.1/Tue Jul  3 20:43:36 2012/-ko/Tar71xx_4g
+/gsm-statemachine.c/1.1.2.1/Tue Jul  3 20:43:36 2012/-ko/Tar71xx_4g
+/libfunctions.c/1.1.2.1/Tue Jul  3 20:43:36 2012/-ko/Tar71xx_4g
+/misc.c/1.1.2.1/Tue Jul  3 20:43:36 2012/-ko/Tar71xx_4g
+/pkt.c/1.1.2.1/Tue Jul  3 20:43:36 2012/-ko/Tar71xx_4g
+/snprintf.c/1.1.2.1/Tue Jul  3 20:43:36 2012/-ko/Tar71xx_4g
+D/data////
+D/devices////
+D/links////
+D/phones////

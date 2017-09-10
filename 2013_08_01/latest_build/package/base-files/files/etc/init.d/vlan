@@ -1,0 +1,14 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2011 Microhard Systems Inc.
+
+START=43
+
+start() {
+	. /lib/vlan/uci_vlan.sh
+	vlan_init
+}
+
+stop() {
+	. /lib/vlan/uci_vlan.sh
+	vlan_stop	
+}

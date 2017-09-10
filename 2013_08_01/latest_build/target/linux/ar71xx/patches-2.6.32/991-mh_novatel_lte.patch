@@ -1,0 +1,296 @@
+diff -Nuar linux_old/arch/mips/ar71xx/machtype.h linux_new/arch/mips/ar71xx/machtype.h
+--- linux_old/arch/mips/ar71xx/machtype.h	2012-03-22 14:59:02.838598807 -0600
++++ linux_new/arch/mips/ar71xx/machtype.h	2012-03-22 14:58:02.000224550 -0600
+@@ -31,6 +31,7 @@
+ 	AR71XX_MACH_RB_493,	/* Mikrotik RouterBOARD 493/493AH */
+ 	AR71XX_MACH_RB_750,	/* MikroTik RouterBOARD 750 */
+ 	AR71XX_MACH_PB42,	/* Atheros PB42 */
++	AR71XX_MACH_VIP4G,	/* Microhard VIP4G */
+ 	AR71XX_MACH_PB44,	/* Atheros PB44 */
+ 	AR71XX_MACH_MZK_W04NU,	/* Planex MZK-W04NU */
+ 	AR71XX_MACH_MZK_W300NH,	/* Planex MZK-W300NH */
+diff -Nuar linux_old/arch/mips/ar71xx/mach-VIP4G.c linux_new/arch/mips/ar71xx/mach-VIP4G.c
+--- linux_old/arch/mips/ar71xx/mach-VIP4G.c	1969-12-31 17:00:00.000000000 -0700
++++ linux_new/arch/mips/ar71xx/mach-VIP4G.c	2012-03-22 14:57:11.349224292 -0600
+@@ -0,0 +1,248 @@
++/*
++ *  Microhard VIP4G board support
++ *
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2 as published
++ *  by the Free Software Foundation.
++ */
++
++
++#include <linux/init.h>
++#include <linux/bitops.h>
++#include <linux/delay.h>
++#include <linux/platform_device.h>
++
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/partitions.h>
++
++#include <asm/mach-ar71xx/ar71xx.h>
++#include <linux/i2c.h>
++#include <linux/i2c-gpio.h>
++#include <linux/i2c/pca953x.h>
++
++#include "machtype.h"
++#include "devices.h"
++#include "dev-m25p80.h"
++#include "dev-gpio-buttons.h"
++#include "dev-pb42-pci.h"
++#include "dev-usb.h"
++#include "dev-leds-gpio.h"
++
++#define VIP4G_BUTTONS_POLL_INTERVAL	20
++
++#define VIP4G_GPIO_BTN_SW4	7
++
++//#define VIP4G_GPIO_I2C_SCL	2
++//#define VIP4G_GPIO_I2C_SDA	4	
++#define VIP4G_GPIO_I2C_SCL	5
++#define VIP4G_GPIO_I2C_SDA	4
++
++/*here just for test led rx and tx*/
++#define VIP4G_GPIO_LED_RX	2
++#define VIP4G_GPIO_LED_TX	3
++
++#define VIP4G_GPIO_EXP_BASE	16
++#define VIP4G_GPIO_LED_RSSI_LOW 21	
++#define VIP4G_GPIO_LED_RSSI_MID 22	
++#define VIP4G_GPIO_LED_RSSI_HIGH 23	
++
++/*udelay= 200 put i2c clk to 2.5kHz*/
++#if 0
++static struct gpio_led VIP4G_leds_gpio[] __initdata = {
++	{
++		.name		= "ledrx",
++		.gpio		= VIP4G_GPIO_LED_RX,
++	}, {
++		.name		= "ledtx",
++		.gpio		= VIP4G_GPIO_LED_TX,
++	}
++};
++#endif
++
++static struct i2c_gpio_platform_data VIP4G_i2c_gpio_data = {
++	.sda_pin        = VIP4G_GPIO_I2C_SDA,
++	.scl_pin        = VIP4G_GPIO_I2C_SCL,
++	.scl_is_output_only	= 1,
++	.udelay=50,
++	.sda_is_open_drain = 0,
++};
++
++static struct platform_device VIP4G_i2c_gpio_device = {
++	.name		= "i2c-gpio",
++	.id		= 0,
++	.dev = {
++		.platform_data	= &VIP4G_i2c_gpio_data,
++	}
++};
++
++static struct pca953x_platform_data VIP4G_pca9557_data = {
++	    .gpio_base    = VIP4G_GPIO_EXP_BASE
++	};
++#if 0
++#include <linux/input/adxl34x.h>
++
++
++static const struct adxl34x_platform_data adxl34x_info = {
++	.x_axis_offset = 0,
++	.y_axis_offset = 0,
++	.z_axis_offset = 0,
++	.tap_threshold = 0x31,
++	.tap_duration = 0x10,
++	.tap_latency = 0x60,
++	.tap_window = 0xF0,
++	.tap_axis_control = ADXL_TAP_X_EN | ADXL_TAP_Y_EN | ADXL_TAP_Z_EN,
++	.act_axis_control = 0xFF,
++	.activity_threshold = 5,
++	.inactivity_threshold = 3,
++	.inactivity_time = 4,
++	.free_fall_threshold = 0x7,
++	.free_fall_time = 0x20,
++	.data_rate = 0x8,
++	.data_range = ADXL_FULL_RES,
++
++	.ev_type = EV_ABS,
++	.ev_code_x = ABS_X,		/* EV_REL */
++	.ev_code_y = ABS_Y,		/* EV_REL */
++	.ev_code_z = ABS_Z,		/* EV_REL */
++
++	.ev_code_tap = {BTN_TOUCH, BTN_TOUCH, BTN_TOUCH}, /* EV_KEY x,y,z */
++
++/*	.ev_code_ff = KEY_F,*/		/* EV_KEY */
++/*	.ev_code_act_inactivity = KEY_A,*/	/* EV_KEY */
++	.power_mode = ADXL_AUTO_SLEEP | ADXL_LINK,
++	.fifo_mode = ADXL_FIFO_STREAM,
++	.orientation_enable = ADXL_EN_ORIENTATION_3D,
++	.deadzone_angle = ADXL_DEADZONE_ANGLE_10p8,
++	.divisor_length = ADXL_LP_FILTER_DIVISOR_16,
++	/* EV_KEY {+Z, +Y, +X, -X, -Y, -Z} */
++	.ev_codes_orient_3d = {BTN_Z, BTN_Y, BTN_X, BTN_A, BTN_B, BTN_C},
++};
++    	
++#endif    	
++static struct i2c_board_info VIP4G_i2c_board_info[] __initdata = {
++	{
++		I2C_BOARD_INFO("pca9557", 0x18),
++		.platform_data  = &VIP4G_pca9557_data,
++	},
++#if 0
++    {
++        I2C_BOARD_INFO("adxl34x", 0x53),
++//        .platform_data = (void *)&adxl34x_info,
++        .irq = AR71XX_GPIO_IRQ(6),
++    },
++#endif
++};
++
++static struct gpio_button VIP4G_gpio_buttons[] __initdata = {
++	{
++		.desc		= "sw4",
++		.type		= EV_KEY,
++		.code		= BTN_0,
++		.threshold	= 3,
++		.gpio		= VIP4G_GPIO_BTN_SW4,
++		.active_low	= 1,
++	} 
++};
++
++#define VIP4G_1_PHYMASK	BIT(1)
++#define VIP4G_2_PHYMASK	BIT(2)
++#define VIP4G_3_PHYMASK	BIT(3)
++#define VIP4G_4_PHYMASK	BIT(4)
++#define VIP4G_LAN_PHYMASK	VIP4G_1_PHYMASK
++//#define VIP4G_LAN_PHYMASK	(BIT(16) | BIT(17) | BIT(18) | BIT(19))
++//#define VIP4G_LAN_PHYMASK	BIT(2)
++#define VIP4G_MDIO_PHYMASK	(VIP4G_1_PHYMASK | VIP4G_2_PHYMASK| VIP4G_3_PHYMASK| VIP4G_4_PHYMASK)
++
++static struct mtd_partition VIP4G_partitions[] = {
++	{
++		.name		= "u-boot",
++		.offset		= 0,
++		.size		= 0x040000,
++		.mask_flags	= MTD_WRITEABLE,
++	} , {
++		.name		= "params",
++		.offset		= 0x040000,
++		.size		= 0x040000,
++	} , {
++		.name		= "kernel",
++		.offset		= 0x080000,
++		.size		= 0x200000,
++	} , {
++		.name		= "rootfs",
++		.offset		= 0x280000,
++		.size		= 0xd80000,
++	} 
++};
++
++static struct flash_platform_data VIP4G_flash_data = {
++        .parts          = VIP4G_partitions,
++        .nr_parts       = ARRAY_SIZE(VIP4G_partitions),
++};
++
++static void __init VIP4G_init(void)
++{
++#if 0
++    int reg_old;
++
++//    reg_old=ar71xx_gpio_rr(GPIO_REG_OE)	;
++//    reg_old &= ~(1<<6);
++//    ar71xx_gpio_wr(GPIO_REG_OE,reg_old);	
++//    printk(KERN_INFO "JDBG: set GPIO 6 to input enable, reg=%d val=0x%x\n",GPIO_REG_OE,reg_old);
++    
++    reg_old=ar71xx_gpio_rr(GPIO_REG_INT_MODE);
++    reg_old |= (1<<6);
++    ar71xx_gpio_wr(GPIO_REG_INT_MODE,reg_old);	
++    printk(KERN_INFO "JDBG: set GPIO 6 to interrupt enable, reg=%d val=0x%x\n",GPIO_REG_INT_MODE,reg_old);
++
++    reg_old=ar71xx_gpio_rr(GPIO_REG_INT_ENABLE);
++    reg_old |= (1<<6);
++    ar71xx_gpio_wr(GPIO_REG_INT_ENABLE,reg_old);	
++    printk(KERN_INFO "JDBG: set GPIO 6 to interrupt enable, reg=%d val=0x%x\n",GPIO_REG_INT_ENABLE,reg_old);
++//#else
++    int reg_old;
++
++    reg_old=ar71xx_gpio_rr(GPIO_REG_OE)	;
++    printk(KERN_INFO "JDBG: get GPIO 6 to input enable, reg=%d val=0x%x\n",GPIO_REG_OE,reg_old);
++
++    reg_old=ar71xx_gpio_rr(GPIO_REG_INT_MODE);
++    printk(KERN_INFO "JDBG: get GPIO 6 to interrupt enable, reg=%d val=0x%x\n",GPIO_REG_INT_MODE,reg_old);
++
++    reg_old=ar71xx_gpio_rr(GPIO_REG_INT_ENABLE);
++    printk(KERN_INFO "JDBG: get GPIO 6 to interrupt mask , reg=%d val=0x%x\n",GPIO_REG_INT_ENABLE,reg_old);
++#endif
++    ar71xx_add_device_m25p80(&VIP4G_flash_data);
++
++    ar71xx_add_device_mdio(~VIP4G_MDIO_PHYMASK);
++
++	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
++	ar71xx_eth0_data.phy_mask = VIP4G_LAN_PHYMASK ;
++    ar71xx_eth0_data.speed = SPEED_1000;
++    ar71xx_eth0_data.duplex = DUPLEX_FULL;
++
++	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
++	ar71xx_eth1_data.phy_mask = VIP4G_4_PHYMASK;
++	ar71xx_eth1_data.speed = SPEED_1000;
++	ar71xx_eth1_data.duplex = DUPLEX_FULL;
++
++	ar71xx_add_device_eth(0);
++	ar71xx_add_device_eth(1);
++
++    i2c_register_board_info(0, VIP4G_i2c_board_info,
++				ARRAY_SIZE(VIP4G_i2c_board_info));
++	platform_device_register(&VIP4G_i2c_gpio_device);
++
++    ar71xx_add_device_usb();
++
++    pb42_pci_init();
++
++	ar71xx_add_device_gpio_buttons(-1, VIP4G_BUTTONS_POLL_INTERVAL,
++				       ARRAY_SIZE(VIP4G_gpio_buttons),
++				       VIP4G_gpio_buttons);
++
++#if 0
++    ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(VIP4G_leds_gpio),
++					VIP4G_leds_gpio);
++#endif
++}
++
++MIPS_MACHINE(AR71XX_MACH_VIP4G, "VIP4G", "Microhard VIP4G", VIP4G_init);
+diff -Nuar linux_old/drivers/usb/serial/option.c linux_new/drivers/usb/serial/option.c
+--- linux_old/drivers/usb/serial/option.c	2012-03-22 14:33:58.258224270 -0600
++++ linux_new/drivers/usb/serial/option.c	2012-03-22 14:33:58.236223989 -0600
+@@ -218,7 +218,8 @@
+ #define NOVATELWIRELESS_PRODUCT_EVDO_EMBEDDED_FULLSPEED	0X8000
+ #define NOVATELWIRELESS_PRODUCT_EVDO_EMBEDDED_HIGHSPEED	0X8001
+ #define NOVATELWIRELESS_PRODUCT_HSPA_EMBEDDED_FULLSPEED	0X9000
+-#define NOVATELWIRELESS_PRODUCT_HSPA_EMBEDDED_HIGHSPEED	0X9001
++#define NOVATELWIRELESS_PRODUCT_HSPA_EMBEDDED_HIGHSPEED	0X9011
++#define NOVATELWIRELESS_PRODUCT_E362 0X9010
+ #define NOVATELWIRELESS_PRODUCT_GLOBAL		0XA001
+ 
+ /* AMOI PRODUCTS */
+@@ -441,7 +442,8 @@
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(HUAWEI_VENDOR_ID, HUAWEI_PRODUCT_E143D, 0xff, 0xff, 0xff) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(HUAWEI_VENDOR_ID, HUAWEI_PRODUCT_E143E, 0xff, 0xff, 0xff) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(HUAWEI_VENDOR_ID, HUAWEI_PRODUCT_E143F, 0xff, 0xff, 0xff) },
+-	{ USB_DEVICE(HUAWEI_VENDOR_ID, HUAWEI_PRODUCT_E14AC) },
++    { USB_DEVICE_AND_INTERFACE_INFO(NOVATELWIRELESS_VENDOR_ID, NOVATELWIRELESS_PRODUCT_E362, 0xff, 0xff, 0xff) },
++    { USB_DEVICE(HUAWEI_VENDOR_ID, HUAWEI_PRODUCT_E14AC) },
+ 	{ USB_DEVICE(AMOI_VENDOR_ID, AMOI_PRODUCT_9508) },
+ 	{ USB_DEVICE(NOVATELWIRELESS_VENDOR_ID, NOVATELWIRELESS_PRODUCT_V640) }, /* Novatel Merlin V640/XV620 */
+ 	{ USB_DEVICE(NOVATELWIRELESS_VENDOR_ID, NOVATELWIRELESS_PRODUCT_V620) }, /* Novatel Merlin V620/S620 */
+@@ -472,7 +474,8 @@
+ 	{ USB_DEVICE(NOVATELWIRELESS_VENDOR_ID, NOVATELWIRELESS_PRODUCT_HSPA_HIGHSPEED) }, /* Novatel HSPA product */
+ 	{ USB_DEVICE(NOVATELWIRELESS_VENDOR_ID, NOVATELWIRELESS_PRODUCT_EVDO_EMBEDDED_HIGHSPEED) }, /* Novatel EVDO Embedded product */
+ 	{ USB_DEVICE(NOVATELWIRELESS_VENDOR_ID, NOVATELWIRELESS_PRODUCT_HSPA_EMBEDDED_HIGHSPEED) }, /* Novatel HSPA Embedded product */
+-	{ USB_DEVICE(NOVATELWIRELESS_VENDOR_ID, NOVATELWIRELESS_PRODUCT_GLOBAL) }, /* Novatel Global product */
++
++    { USB_DEVICE(NOVATELWIRELESS_VENDOR_ID, NOVATELWIRELESS_PRODUCT_GLOBAL) }, /* Novatel Global product */
+ 
+ 	{ USB_DEVICE(AMOI_VENDOR_ID, AMOI_PRODUCT_H01) },
+ 	{ USB_DEVICE(AMOI_VENDOR_ID, AMOI_PRODUCT_H01A) },

@@ -1,0 +1,6 @@
+/010-no-docs-and-tests.patch/1.1.2.1/Thu Apr 11 20:07:49 2013/-kkv/Tar71xx_4g
+/020-config_and_pid-path.patch/1.1.2.1/Thu Apr 11 20:07:49 2013/-kkv/Tar71xx_4g
+/030-allow_bind_in_transparent_mode.patch/1.1.2.1/Thu Apr 11 20:07:49 2013/-kkv/Tar71xx_4g
+/040-fix_url_filter_in_transparent_mode.patch/1.1.2.1/Thu Apr 11 20:07:49 2013/-kkv/Tar71xx_4g
+/120-fix_INET6.patch/1.1.2.1/Thu Apr 11 20:07:49 2013/-kkv/Tar71xx_4g
+D

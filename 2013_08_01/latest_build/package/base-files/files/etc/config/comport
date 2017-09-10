@@ -1,0 +1,65 @@
+# Copyright (C) 2010 Microhard Systems Inc.
+
+config port com1
+	option COM1_Port_Status                 B
+	option COM1_Chanel_Mode                 A	
+	option COM1_Data_Baud_Rate	        H
+	option COM1_Data_Format 	        A
+
+	option COM1_Flow_Control	        A
+	option COM1_Pre_Data_Delay 	        100
+	option COM1_Post_Data_Delay	        100
+	option COM1_Data_Mode	                B
+	option COM1_Character_Timeout           20
+        option COM1_Max_Packet_Len              1024
+        option COM1_QoS                         A
+        option COM1_NoConnect_Data_Intake       A
+        option COM1_MODBUS_Mode                 A
+        option COM1_Modbus_Protect_Status       A
+        option COM1_Modbus_Protect_Key          1234
+        option COM1_IP_Protocol                 F
+
+        option COM1_T_Client_Server_Addr        0.0.0.0
+        option COM1_T_Client_Server_Port        20001
+        option COM1_T_Client_Timeout            60
+
+        option COM1_T_Server_Listen_Port        20001
+        option COM1_T_Server_Timeout            300
+
+	option COM1_U_PtoP_Remote_Addr          0.0.0.0
+        option COM1_U_PtoP_Remote_Port          20001
+        option COM1_U_PtoP_Listen_Port          20001
+         
+	option COM1_UM_P_Multicast_Addr         224.1.1.1
+        option COM1_UM_P_Multicast_Port         20001
+        option COM1_UM_P_Listen_Port            20011
+        option COM1_UM_P_TTL                    1
+
+	option COM1_UM_M_Remote_Addr            0.0.0.0
+        option COM1_UM_M_Remote_Port            20011
+        option COM1_UM_M_Multicast_Addr         224.1.1.1
+        option COM1_UM_M_Multicast_Port         20001
+        
+   
+	option COM1_UMtoM_Multicast_Addr        224.1.1.1
+        option COM1_UMtoM_Multicast_Port        20011
+        option COM1_UMtoM_Multicast_TTL         1
+
+        option COM1_UMtoM_Listen_Multicast_Addr 224.1.1.1
+        option COM1_UMtoM_Listen_Multicast_Port 20011
+           
+	option COM1_SMTP_Mail_Subject           COM1-Message
+        option COM1_SMTP_Server                 0.0.0.0
+        option COM1_SMTP_Recipient              host@
+        option COM1_SMTP_Buffer                 1024
+        option COM1_SMTP_Timeout                10
+        option COM1_SMTP_Transfer_Mode          A
+
+	option COM1_C1222_Reg_to_Net            A
+        option COM1_C1222_Log_Net_Comm          A
+        option COM1_C1222_Diff_Socket           A
+        option COM1_C1222_Reassembly_Packet     A
+        option COM1_C1222_Host_IP               192.168.2.2
+        option COM1_C1222_Host_Port             27016
+        option COM1_C1222_Local_Port            27015
+

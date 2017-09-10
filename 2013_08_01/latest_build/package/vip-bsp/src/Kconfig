@@ -1,0 +1,3 @@
+config VIP_BSP
+	tristate "BSP support for the VIP2.0 board"
+	depends on @TARGET_ixp4xx

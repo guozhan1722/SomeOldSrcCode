@@ -1,0 +1,12 @@
+TIMEOUT         12
+ABORT           'BUSY'
+ABORT           'ERROR'
+ABORT           'NO ANSWER'
+ABORT           'NO CARRIER'
+ABORT           'NO DIALTONE'
+''              AT
+TIMEOUT         12
+OK              ATE0
+OK              'AT+CGDCONT=1,"IP","webtrial.globalm2m.net"'
+OK              ATD*99***1#
+

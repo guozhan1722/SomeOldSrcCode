@@ -1,0 +1,60 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=90
+#STOP=90
+
+
+#port should come from UCI configuration 
+DEFAULT_DATA_PORT=30000
+DEFAULT_DIAG_PORT=30001
+
+start() {
+
+    MODULE_IS_EXIST=$(sed -n -e '/^2: /p' /proc/tty/driver/serial |grep -c "CTS")
+    if [ 1 == $MODULE_IS_EXIST ]; then
+          if [ -f /etc/config/smodem ]; then
+            	if [ 1 == $(uci get smodem.port.Enable) ]; then
+                    	DATA_PORT=$(uci get smodem.port.Data_Port_Number)
+                    	if [ -z $DATA_PORT ] || [ $DATA_PORT -gt 65536 ] || [ $DATA_PORT -lt 30000 ]; then
+                    		echo "Valid Port Number configuration, range should between [30000, 65536]."
+                    		echo "Using $DEFAULT_DATA_PORT as Port Number."
+                    		DATA_PORT=$DEFAULT_DATA_PORT
+                    		uci set smodem.port.Data_Port_Number=$DEFAULT_DATA_PORT
+                    		uci commit smodem
+                    	fi
+                    	echo "Map serial data port $DATA_PORT. (mtip)"
+                    	/bin/mtip -s 115200 -l /dev/ttyS2 -p $DATA_PORT >/dev/null 2>&1 &
+                   
+                    	DIAG_PORT=$(uci get smodem.port.Diag_Port_Number)
+                    	if [ -z $DIAG_PORT ] || [ $DIAG_PORT -gt 65536 ] || [ $DIAG_PORT -lt 30000 ]; then
+                    		echo "Valid Port Number configuration, range should between [30000, 65536]."
+                    		echo "Using $DEFAULT_DIAG_PORT as Port Number."
+                    		DIAG_PORT=$DEFAULT_DIAG_PORT
+                    		uci set smodem.port.Diag_Port_Number=$DEFAULT_DIAG_PORT
+                    		uci commit smodem
+                    	fi
+                    	echo "Map serial diagnostic port $DIAG_PORT (mdtip)."
+                    	/bin/mdtip -s 115200 -l /dev/ttyS3 -p $DIAG_PORT >/dev/null 2>&1 &
+            	fi
+             
+          else 
+           	echo "Serial ports be mapped to $DEFAULT_DATA_PORT and $DEFAULT_DIAG_PORT."
+        
+           	uci set smodem.port.Data_Port_Number=$DEFAULT_DATA_PORT
+           	uci commit smodem
+           	/bin/mtip -s 115200 -l /dev/ttyS2 -p $DATA_PORT >/dev/null 2>&1 &
+           	
+           	uci set smodem.port.Diag_Port_Number=$DEFAULT_DIAG_PORT
+           	uci commit smodem
+           	/bin/mdtip -s 115200 -l /dev/ttyS3 -p $DIAG_PORT >/dev/null 2>&1 &
+          fi
+    fi    
+}
+
+stop() {
+	echo "Release mapped serial port."
+	killall -9 mdtip
+        killall -9 mtip
+}
+

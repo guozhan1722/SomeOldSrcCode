@@ -1,0 +1,15 @@
+Source-Makefile: package/vip-utils/Makefile
+Package: vip-utils
+Version: 1
+Depends: +kmod-vip-bsp
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Microhard vip-utils utility
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  This package contains the microhard home grown vip-utils utility.
+@@
+
+

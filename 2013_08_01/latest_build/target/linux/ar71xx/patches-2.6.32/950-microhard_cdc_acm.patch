@@ -1,0 +1,22 @@
+diff -Nuar linux_old/drivers/usb/class/cdc-acm.c linux_new/drivers/usb/class/cdc-acm.c
+--- linux_old/drivers/usb/class/cdc-acm.c	2010-12-03 16:28:03.000000000 -0700
++++ linux_new/drivers/usb/class/cdc-acm.c	2010-12-03 16:30:28.000000000 -0700
+@@ -1508,6 +1508,18 @@
+ 	},
+ 	{ USB_DEVICE(0x22b8, 0x6425), /* Motorola MOTOMAGX phones */
+ 	},
++
++	{ USB_DEVICE(0x22b8, 0x2d91), /* Motorola H24 wireless modules */
++	},
++	{ USB_DEVICE(0x22b8, 0x2d92), /* Motorola H24 wireless modules */
++	},
++	{ USB_DEVICE(0x22b8, 0x2d93), /* Motorola H24 wireless modules */
++	},
++	{ USB_DEVICE(0x22b8, 0x2d94), /* Motorola H24 wireless modules */
++	},
++	{ USB_DEVICE(0x22b8, 0x2d95), /* Motorola H24 wireless modules */
++	},
++
+ 	{ USB_DEVICE(0x0572, 0x1329), /* Hummingbird huc56s (Conexant) */
+ 	.driver_info = NO_UNION_NORMAL, /* union descriptor misplaced on
+ 					   data interface instead of

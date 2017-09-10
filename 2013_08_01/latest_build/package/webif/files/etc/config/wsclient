@@ -1,0 +1,8 @@
+config client general
+    option wsvrtype https
+    option wserverip nms.microhardcorp.com
+    option wsport 9998
+    option wsusr admin
+    option wspasswd admin 
+    option period 1800
+    option status disable

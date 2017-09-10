@@ -1,0 +1,628 @@
+diff -Nuar linux_old/arch/mips/ar71xx/mach-VIP4G.c linux_new/arch/mips/ar71xx/mach-VIP4G.c
+--- linux_old/arch/mips/ar71xx/mach-VIP4G.c	2012-06-25 08:35:59.938469745 -0600
++++ linux_new/arch/mips/ar71xx/mach-VIP4G.c	2012-10-26 13:18:34.940852364 -0600
+@@ -20,6 +20,10 @@
+ #include <linux/i2c-gpio.h>
+ #include <linux/i2c/pca953x.h>
+ 
++#include <linux/gpio.h>
++#include <linux/io.h>
++#include <linux/device.h>
++
+ #include "machtype.h"
+ #include "devices.h"
+ #include "dev-m25p80.h"
+@@ -28,7 +32,7 @@
+ #include "dev-usb.h"
+ #include "dev-leds-gpio.h"
+ 
+-#define VIP4G_BUTTONS_POLL_INTERVAL	20
++#define VIP4G_BUTTONS_POLL_INTERVAL	500
+ 
+ #define VIP4G_GPIO_BTN_SW4	7
+ 
+@@ -38,50 +42,225 @@
+ #define VIP4G_GPIO_I2C_SDA	4
+ 
+ /*here just for test led rx and tx*/
+-#define VIP4G_GPIO_LED_RX	2
+-#define VIP4G_GPIO_LED_TX	3
++//#define VIP4G_GPIO_LED_RX	2
++//#define VIP4G_GPIO_LED_TX	3
++#define VIP4G_GPIO_LED_CPU_STATUS	11
+ 
+ #define VIP4G_GPIO_EXP_BASE	16
+ #define VIP4G_GPIO_LED_RSSI_LOW 21	
+ #define VIP4G_GPIO_LED_RSSI_MID 22	
+-#define VIP4G_GPIO_LED_RSSI_HIGH 23	
++#define VIP4G_GPIO_LED_RSSI_HIGH 23
++
++	
+ 
+ /*udelay= 200 put i2c clk to 2.5kHz*/
+-#if 0
++
+ static struct gpio_led VIP4G_leds_gpio[] __initdata = {
+-	{
++/*	{
+ 		.name		= "ledrx",
+ 		.gpio		= VIP4G_GPIO_LED_RX,
+-	}, {
++	}, 
++    {
+ 		.name		= "ledtx",
+ 		.gpio		= VIP4G_GPIO_LED_TX,
+-	}
++	},*/
++/*  We don't register RE_485 and DE_485, since error happen if data coming from serial port when system booting  */
++/*   {
++        .name		= "RE_485",
++        .gpio		= 0,
++        .default_state = 1,
++    }, 
++    {
++        .name		= "DE_485",
++        .gpio		= 1,
++        .default_state = 0,
++    },	*/     
++    {
++		.name		= "cpustatus",
++		.gpio		= VIP4G_GPIO_LED_CPU_STATUS,
++        .default_state = 1,
++	}, 
++    {
++		.name		= "celluarON",
++		.gpio		= 8,
++        .default_state = 1,
++	}, 
++	{
++		.name		= "RSSIMAX",
++		.gpio		= 17,
++        .default_state = 1,
++	},    
++	{
++		.name		= "RSSIMID",
++		.gpio		= 18,
++        .default_state = 1,
++	},    
++	{
++		.name		= "RSSIMIN",
++		.gpio		= 19,
++        .default_state = 1,
++	},    
++	{
++		.name		= "RF_ACT",
++		.gpio		= 20,
++        .default_state = 1,
++        .default_trigger = "phy0tpt"
++	},    
++	{
++		.name		= "UART_DTR",
++		.gpio		= 21,
++	},	
++	{
++		.name		= "UART_DCD",
++		.gpio		= 22,
++	},	
++	{
++		.name		= "RS232_RS485",
++		.gpio		= 23,
++	},
++	{
++		.name		= "OUTPUT1",
++		.gpio		= 28,
++	},
++	{
++		.name		= "OUTPUT2",
++		.gpio		= 29,
++	},
++	{
++		.name		= "OUTPUT3",
++		.gpio		= 30,
++	},
++	{
++		.name		= "OUTPUT4",
++		.gpio		= 31,
++    }
+ };
+-#endif
++
++static struct gpio_button VIP4G_gpio_buttons[] __initdata = {
++	{
++		.desc		= "sw4",
++		.type		= EV_KEY,
++		.code		= BTN_0,
++		.threshold	= 3,
++		.gpio		= VIP4G_GPIO_BTN_SW4,
++		.active_low	= 1,
++	},
++	{
++		.desc		= "SIM_STAT",
++		.type		= EV_KEY,
++		.code		= BTN_1,
++		.threshold	= 3,
++		.gpio		= 16,
++		.active_low	= 1,
++	},
++	{
++		.desc		= "INPUT1",
++		.type		= EV_KEY,
++		.code		= BTN_2,
++		.threshold	= 3,
++		.gpio		= 24,
++		.active_low	= 1,
++	},	
++	{
++		.desc		= "INPUT2",
++		.type		= EV_KEY,
++		.code		= BTN_3,
++		.threshold	= 3,
++		.gpio		= 25,
++		.active_low	= 1,
++	},	
++	{
++		.desc		= "INPUT3",
++		.type		= EV_KEY,
++		.code		= BTN_4,
++		.threshold	= 3,
++		.gpio		= 26,
++		.active_low	= 1,
++	},	
++	{
++		.desc		= "INPUT4",
++		.type		= EV_KEY,
++		.code		= BTN_5,
++		.threshold	= 3,
++		.gpio		= 27,
++		.active_low	= 1,
++	} 
++};
++
++
+ 
+ static struct i2c_gpio_platform_data VIP4G_i2c_gpio_data = {
+-	.sda_pin        = VIP4G_GPIO_I2C_SDA,
+-	.scl_pin        = VIP4G_GPIO_I2C_SCL,
++	.sda_pin            = VIP4G_GPIO_I2C_SDA,
++	.scl_pin            = VIP4G_GPIO_I2C_SCL,
+ 	.scl_is_output_only	= 1,
+-	.udelay=50,
+-	.sda_is_open_drain = 0,
++	.udelay             = 50,
++	.sda_is_open_drain  = 0,
+ };
+ 
+ static struct platform_device VIP4G_i2c_gpio_device = {
+-	.name		= "i2c-gpio",
++	.name	= "i2c-gpio",
+ 	.id		= 0,
+-	.dev = {
++	.dev 	= {
+ 		.platform_data	= &VIP4G_i2c_gpio_data,
+ 	}
+ };
+ 
++
++
++static int pca9557_setup_18(struct i2c_client *client, unsigned gpio_base, unsigned ngpio, void *context)
++{
++        static int gpio_value[] = { -1, 1, 1, 1, 1, 1, 1, 1};
++        int n;
++		char *gpioname[] = {"SIM_STAT", "RSSIMAX", "RSSIMID", "RSSIMIN", "RF_ACT", "UART_DTR", "UART_DCD", "RS232_RS485"};
++		//printk(KERN_ALERT "JDBG: pca9557_setup_18\n");
++
++        for (n = 0; n < ARRAY_SIZE(gpio_value); ++n) {
++                gpio_request(gpio_base + n, gpioname[n] );
++                if (gpio_value[n] < 0)
++                        gpio_direction_input(gpio_base + n);
++                else
++                        gpio_direction_output(gpio_base + n, gpio_value[n]);
++
++                gpio_export(gpio_base + n, 0);
++        }		
++
++        return 0;
++}
++
++static int pca9557_setup_19(struct i2c_client *client, unsigned gpio_base, unsigned ngpio, void *context)
++{
++        static int gpio_value[] = { -1, -1, -1, -1, 0, 0, 0, 0};
++		char *gpioname[] = {"INPUT1", "INPUT2", "INPUT3", "INPUT4", "OUTPUT1", "OUTPUT2", "OUTPUT3", "OUTPUT4"};
++        int n;
++		//printk(KERN_ALERT "JDBG: pca9557_setup_19\n");
++
++        for (n = 0; n < ARRAY_SIZE(gpio_value); ++n) {
++                gpio_request(gpio_base + n, gpioname[n] );
++                if (gpio_value[n] < 0)
++                        gpio_direction_input(gpio_base + n);
++                else
++                        gpio_direction_output(gpio_base + n, gpio_value[n]);
++
++                gpio_export(gpio_base + n, 0);
++        }   
++
++        return 0;
++}
++
++/* .setup can be use to create node under /sys/class/gpio/ */
+ static struct pca953x_platform_data VIP4G_pca9557_data = {
+-	    .gpio_base    = VIP4G_GPIO_EXP_BASE
++	    .gpio_base  = VIP4G_GPIO_EXP_BASE,
++		//.setup    = pca9557_setup_18,
++	};
++
++static struct pca953x_platform_data VIP4G_pca9557_data_1 = {
++	    .gpio_base  = 24,
++		//.setup    = pca9557_setup_19,
+ 	};
++
+ #if 0
+ #include <linux/input/adxl34x.h>
+ 
+-
+ static const struct adxl34x_platform_data adxl34x_info = {
+ 	.x_axis_offset = 0,
+ 	.y_axis_offset = 0,
+@@ -116,14 +295,18 @@
+ 	.divisor_length = ADXL_LP_FILTER_DIVISOR_16,
+ 	/* EV_KEY {+Z, +Y, +X, -X, -Y, -Z} */
+ 	.ev_codes_orient_3d = {BTN_Z, BTN_Y, BTN_X, BTN_A, BTN_B, BTN_C},
+-};
+-    	
+-#endif    	
++};    	
++#endif 
++   	
+ static struct i2c_board_info VIP4G_i2c_board_info[] __initdata = {
+ 	{
+ 		I2C_BOARD_INFO("pca9557", 0x18),
+ 		.platform_data  = &VIP4G_pca9557_data,
+ 	},
++	{
++		I2C_BOARD_INFO("pca9557", 0x19),
++		.platform_data  = &VIP4G_pca9557_data_1,
++	},
+ #if 0
+     {
+         I2C_BOARD_INFO("adxl34x", 0x53),
+@@ -133,16 +316,7 @@
+ #endif
+ };
+ 
+-static struct gpio_button VIP4G_gpio_buttons[] __initdata = {
+-	{
+-		.desc		= "sw4",
+-		.type		= EV_KEY,
+-		.code		= BTN_0,
+-		.threshold	= 3,
+-		.gpio		= VIP4G_GPIO_BTN_SW4,
+-		.active_low	= 1,
+-	} 
+-};
++
+ 
+ #define VIP4G_1_PHYMASK	BIT(1)
+ #define VIP4G_2_PHYMASK	BIT(2)
+@@ -181,35 +355,6 @@
+ 
+ static void __init VIP4G_init(void)
+ {
+-#if 0
+-    int reg_old;
+-
+-//    reg_old=ar71xx_gpio_rr(GPIO_REG_OE)	;
+-//    reg_old &= ~(1<<6);
+-//    ar71xx_gpio_wr(GPIO_REG_OE,reg_old);	
+-//    printk(KERN_INFO "JDBG: set GPIO 6 to input enable, reg=%d val=0x%x\n",GPIO_REG_OE,reg_old);
+-    
+-    reg_old=ar71xx_gpio_rr(GPIO_REG_INT_MODE);
+-    reg_old |= (1<<6);
+-    ar71xx_gpio_wr(GPIO_REG_INT_MODE,reg_old);	
+-    printk(KERN_INFO "JDBG: set GPIO 6 to interrupt enable, reg=%d val=0x%x\n",GPIO_REG_INT_MODE,reg_old);
+-
+-    reg_old=ar71xx_gpio_rr(GPIO_REG_INT_ENABLE);
+-    reg_old |= (1<<6);
+-    ar71xx_gpio_wr(GPIO_REG_INT_ENABLE,reg_old);	
+-    printk(KERN_INFO "JDBG: set GPIO 6 to interrupt enable, reg=%d val=0x%x\n",GPIO_REG_INT_ENABLE,reg_old);
+-//#else
+-    int reg_old;
+-
+-    reg_old=ar71xx_gpio_rr(GPIO_REG_OE)	;
+-    printk(KERN_INFO "JDBG: get GPIO 6 to input enable, reg=%d val=0x%x\n",GPIO_REG_OE,reg_old);
+-
+-    reg_old=ar71xx_gpio_rr(GPIO_REG_INT_MODE);
+-    printk(KERN_INFO "JDBG: get GPIO 6 to interrupt enable, reg=%d val=0x%x\n",GPIO_REG_INT_MODE,reg_old);
+-
+-    reg_old=ar71xx_gpio_rr(GPIO_REG_INT_ENABLE);
+-    printk(KERN_INFO "JDBG: get GPIO 6 to interrupt mask , reg=%d val=0x%x\n",GPIO_REG_INT_ENABLE,reg_old);
+-#endif
+     ar71xx_add_device_m25p80(&VIP4G_flash_data);
+ 
+     ar71xx_add_device_mdio(~VIP4G_MDIO_PHYMASK);
+@@ -236,13 +381,11 @@
+     pb42_pci_init();
+ 
+ 	ar71xx_add_device_gpio_buttons(-1, VIP4G_BUTTONS_POLL_INTERVAL,
+-				       ARRAY_SIZE(VIP4G_gpio_buttons),
+-				       VIP4G_gpio_buttons);
++						   ARRAY_SIZE(VIP4G_gpio_buttons),
++						   VIP4G_gpio_buttons);
+ 
+-#if 0
+-    ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(VIP4G_leds_gpio),
+-					VIP4G_leds_gpio);
+-#endif
++	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(VIP4G_leds_gpio),
++						VIP4G_leds_gpio);
+ }
+ 
+ MIPS_MACHINE(AR71XX_MACH_VIP4G, "VIP4G", "Microhard VIP4G", VIP4G_init);
+diff -Nuar linux_old/drivers/gpio/gpiolib.c linux_new/drivers/gpio/gpiolib.c
+--- linux_old/drivers/gpio/gpiolib.c	2012-06-28 15:20:14.626069118 -0600
++++ linux_new/drivers/gpio/gpiolib.c	2012-06-28 15:28:23.633047579 -0600
+@@ -97,8 +97,9 @@
+ 	const struct gpio_chip *chip = desc->chip;
+ 	const int gpio = chip->base + offset;
+ 
+-	if (WARN(test_and_set_bit(FLAG_REQUESTED, &desc->flags) == 0,
+-			"autorequest GPIO-%d\n", gpio)) {
++	//if (WARN(test_and_set_bit(FLAG_REQUESTED, &desc->flags) == 0,
++	//		"autorequest GPIO-%d\n", gpio)) {
++	if (test_and_set_bit(FLAG_REQUESTED, &desc->flags) == 0) {
+ 		if (!try_module_get(chip->owner)) {
+ 			pr_err("GPIO-%d: module can't be gotten \n", gpio);
+ 			clear_bit(FLAG_REQUESTED, &desc->flags);
+diff -Nuar linux_old/drivers/input/misc/gpio_buttons.c linux_new/drivers/input/misc/gpio_buttons.c
+--- linux_old/drivers/input/misc/gpio_buttons.c	2012-06-25 08:35:59.916297140 -0600
++++ linux_new/drivers/input/misc/gpio_buttons.c	2012-10-26 13:29:01.783852615 -0600
+@@ -20,6 +20,9 @@
+ #include <linux/module.h>
+ #include <linux/init.h>
+ 
++#include <linux/sysfs.h>
++#include <linux/kobject.h>
++
+ #include <linux/input.h>
+ #include <linux/input-polldev.h>
+ #include <linux/ioport.h>
+@@ -44,6 +47,113 @@
+ 	struct gpio_button_data *data;
+ };
+ 
++
++#ifdef MICROHARD_BTN
++
++static struct class *buttons_class;
++/* We set button number 32 here, however VIP4G board only have 7 button */
++#define MICROHARD_BTN_NUMS  32
++static struct button_classdev btn_classdev[MICROHARD_BTN_NUMS];
++
++static int gpio_button_status_get(struct button_classdev *button_cdev)
++{
++    return gpio_get_value(button_cdev->gpio) ? 1 : 0;
++}
++
++static void button_update_status(struct button_classdev *button_cdev)
++{
++	if (button_cdev->button_status_get)
++		button_cdev->status = button_cdev->button_status_get(button_cdev);
++}
++
++
++static ssize_t button_status_show(struct device *dev, 
++		struct device_attribute *attr, char *buf)
++{
++
++    struct button_classdev *button_cdev = dev_get_drvdata(dev);
++
++	/* no lock needed for this */
++	button_update_status(button_cdev);
++    
++    //printk(KERN_INFO "<button_status_show> %s %d\n", button_cdev->name, button_cdev->gpio);
++	return sprintf(buf, "%u\n", button_cdev->status);
++}
++
++static ssize_t button_status_store(struct device *dev,
++		struct device_attribute *attr, const char *buf, size_t size)
++{	
++	ssize_t ret = -EINVAL;
++/*  struct button_classdev *button_cdev = dev_get_drvdata(dev);
++    char *after;
++	unsigned long state = simple_strtoul(buf, &after, 10);
++	size_t count = after - buf;
++
++	if (*after && isspace(*after))
++		count++;
++
++	if (count == size) {
++		ret = count;
++
++		led_set_brightness(led_cdev, state);
++	}
++*/
++	return ret; 
++}
++
++static DEVICE_ATTR(status, 0644, button_status_show, button_status_store);
++/**
++ * button_classdev_register - register a new object of 
++ * button_classdev class. 
++ * @parent: The device to register.
++ * @button_cdev: the button_classdev structure for this device.
++ */
++int button_classdev_register(struct device *parent, struct button_classdev *button_cdev)
++{
++	int rc;
++
++	button_cdev->dev = device_create(buttons_class, parent, 0, button_cdev,
++				      "%s", button_cdev->name);
++	if (IS_ERR(button_cdev->dev))
++		return PTR_ERR(button_cdev->dev);
++
++	/* register the attributes */
++	rc = device_create_file(button_cdev->dev, &dev_attr_status);
++	if (rc)
++		goto err_out;
++
++	/* add to the list of leds */
++//	down_write(&buttons_list_lock);
++//	list_add_tail(&button_cdev->node, &gpio_buttons_list);
++//	up_write(&gpio_buttons_list_lock);
++
++	button_update_status(button_cdev);
++
++	//printk(KERN_INFO "Registered button device, pin: %d name: %s\n", button_cdev->gpio, button_cdev->name);
++
++	return 0;
++
++err_out:
++	device_unregister(button_cdev->dev);
++	return rc;
++}
++
++void button_classdev_unregister(struct button_classdev *button_cdev)
++{
++	
++	device_remove_file(button_cdev->dev, &dev_attr_status);
++
++	device_unregister(button_cdev->dev);
++
++//	down_write(&gpio_buttons_list_lock);
++//	list_del(&button_cdev->node);
++//	up_write(&gpio_buttons_list_lock);
++}
++
++
++
++#endif
++
+ static void gpio_buttons_poll(struct input_polled_dev *dev)
+ {
+ 	struct gpio_buttons_dev *bdev = dev->private;
+@@ -80,6 +190,7 @@
+ 	struct input_dev *input;
+ 	int error, i;
+ 
++
+ 	if (!pdata)
+ 		return -ENXIO;
+ 
+@@ -138,6 +249,21 @@
+ 
+ 		input_set_capability(input, type, button->code);
+ 		bdev->data[i].last_state = gpio_get_value(button->gpio) ? 1 : 0;
++
++#ifdef MICROHARD_BTN
++        btn_classdev[i].dev = &pdev->dev;
++        btn_classdev[i].name = button->desc;
++        btn_classdev[i].gpio = button->gpio;
++        btn_classdev[i].status = bdev->data[i].last_state;
++        //btn_classdev.button_status_set = button_status_set;
++        btn_classdev[i].button_status_get = gpio_button_status_get;
++        //printk(KERN_ERR "<gpio_buttons>%s:%d \n", btn_classdev[i].name, btn_classdev[i].gpio); 
++        
++        error = button_classdev_register(btn_classdev[i].dev, &btn_classdev[i]);
++        if (error) {
++                printk(KERN_ERR "<gpio_buttons> could not create /sys/class/button/%s:%d \n", btn_classdev[i].name, btn_classdev[i].gpio);                
++        }
++#endif
+ 	}
+ 
+ 	bdev->poll_dev = poll_dev;
+@@ -182,6 +308,16 @@
+ 	kfree(bdev);
+ 	platform_set_drvdata(pdev, NULL);
+ 
++
++#ifdef MICROHARD_BTN
++	for (i = 0; i < pdata->nbuttons; i++) {
++		button_classdev_unregister(&btn_classdev[i]);
++	}
++#if 0
++    kobject_put(example_kobj);
++#endif
++#endif
++
+ 	return 0;
+ }
+ 
+@@ -197,12 +333,18 @@
+ static int __init gpio_buttons_init(void)
+ {
+ 	//printk(KERN_INFO DRV_NAME " driver version " DRV_VERSION "\n");
++#ifdef MICROHARD_BTN
++    buttons_class = class_create(THIS_MODULE, "button");
++#endif
+ 	return platform_driver_register(&gpio_buttons_driver);
+ }
+ 
+ static void __exit gpio_buttons_exit(void)
+ {
+ 	platform_driver_unregister(&gpio_buttons_driver);
++#ifdef MICROHARD_BTN
++    class_destroy(buttons_class);
++#endif
+ }
+ 
+ module_init(gpio_buttons_init);
+diff -Nuar linux_old/include/linux/gpio_buttons.h linux_new/include/linux/gpio_buttons.h
+--- linux_old/include/linux/gpio_buttons.h	2012-06-25 08:35:59.898469304 -0600
++++ linux_new/include/linux/gpio_buttons.h	2012-06-25 08:35:51.934046956 -0600
+@@ -15,6 +15,49 @@
+ #ifndef _GPIO_BUTTONS_H_
+ #define _GPIO_BUTTONS_H_
+ 
++#define MICROHARD_BTN   1
++
++#ifdef MICROHARD_BTN
++ 
++#include <linux/list.h>
++#include <linux/rwsem.h>
++
++  
++//DECLARE_RWSEM(gpio_buttons_list_lock);
++//EXPORT_SYMBOL_GPL(gpio_buttons_list_lock);
++        
++//LIST_HEAD(gpio_buttons_list);
++//EXPORT_SYMBOL_GPL(gpio_buttons_list);  
++  
++enum button_status {
++	BUTTON_OFF		= 0,
++	BUTTON_ON       = 1,
++};
++
++struct button_classdev {
++	const char		*name;
++    int	gpio;		/* GPIO line number */
++	int			 status;
++	int			 flags;
++	/* Lower 16 bits reflect status */
++#define BUTTON_SUSPENDED		(1 << 0)
++	/* Upper 16 bits reflect control information */
++#define BUTTON_CORE_SUSPENDRESUME	(1 << 16)
++
++	/* Set BUTTON status */
++	/* Must not sleep, use a workqueue if needed */
++	void		(*button_status_set)(struct button_classdev *button_cdev,
++					  enum button_status status);
++	/* Get BUTTON status */
++	enum button_status (*button_status_get)(struct button_classdev *button_cdev);
++
++	struct device		*dev;
++	struct list_head	 node;			/* LED Device list */
++
++};
++#endif
++
++
+ struct gpio_button {
+ 	int	gpio;		/* GPIO line number */
+ 	int	active_low;
+@@ -28,6 +71,7 @@
+ 	struct gpio_button *buttons;
+ 	int	nbuttons;		/* number of buttons */
+ 	int	poll_interval;		/* polling interval */
++    struct button_classdev *btn_classdev;
+ };
+ 
+ #endif /* _GPIO_BUTTONS_H_ */

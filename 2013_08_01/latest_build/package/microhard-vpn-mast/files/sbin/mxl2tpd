@@ -1,0 +1,111 @@
+#!/bin/sh
+ 
+ 
+logger -p local0.error -t "mxl2tpd[$$]" "$@"
+     
+case "$1" in 
+
+call_xl2tp)
+    tname="$2"
+    interface=$(/sbin/uci get ipsec.${tname}.interface)
+    ipsec=$(/sbin/uci get ipsec.${tname}.ipsec)
+    [ "$ipsec" = "disable" ] || ipsec="enable"
+    if [ $interface = "br-wan" ]; then
+         if [ "$ipsec" = "enable" ]; then
+         ctlfile="/var/run/xl2tpd/wan-control"
+         xinitd="/etc/init.d/xl2tpd-wan"
+         else
+         ctlfile="/var/run/xl2tpd/nwan-control"
+         xinitd="/etc/init.d/nxl2tpd-wan"
+         fi
+    else
+         if [ "$ipsec" = "enable" ]; then
+         ctlfile="/var/run/xl2tpd/wan2-control"
+         xinitd="/etc/init.d/xl2tpd-wan2"
+         else
+         ctlfile="/var/run/xl2tpd/nwan2-control"
+         xinitd="/etc/init.d/nxl2tpd-wan2"
+         fi
+    fi
+    [ -p $ctlfile ] || $xinitd restart >/dev/null 2>&1
+    opts=$(cat /etc/xl2tpclient/${tname}.conf)
+
+    if [ "$ipsec" = "enable" ]; then
+         echo "a $tname $opts;refme=$3;refhim=$4;" > $ctlfile
+    else
+         echo "a $tname $opts;" > $ctlfile
+    fi
+    ;;
+
+ppp_ip_up)
+    local PPP_IFACE="$2"
+    local PPP_LOCAL="$3"
+    local PPP_REMOTE="$4"
+    local PPP_IPPARAM="$5"
+    [ -d /var/run/ipsecfirewall ] || mkdir /var/run/ipsecfirewall
+    echo "iptables -A forwarding_rule -i $PPP_IFACE -j ACCEPT" > /var/run/ipsecfirewall/firewall.$PPP_IFACE
+    echo "iptables -A forwarding_rule -o $PPP_IFACE -j ACCEPT" >> /var/run/ipsecfirewall/firewall.$PPP_IFACE
+    iptables -A forwarding_rule -i $PPP_IFACE -j ACCEPT
+    iptables -A forwarding_rule -o $PPP_IFACE -j ACCEPT
+    rm -f /var/run/"$PPP_IFACE".status
+    st=$(date +"%c")
+    echo "starttime=$st" >> /var/run/"$PPP_IFACE".status
+    st=$(date +"%s")
+    echo "stime=$st" >> /var/run/"$PPP_IFACE".status
+    echo "lip=$PPP_LOCAL" >> /var/run/"$PPP_IFACE".status
+    echo "remoteip=$PPP_REMOTE" >> /var/run/"$PPP_IFACE".status
+    echo "remotegateway=$PPP_IPPARAM" >> /var/run/"$PPP_IFACE".status
+    ttype=$(/sbin/uci get ipsec.$PPP_IPPARAM)
+    if [ $ttype = "x2ctunnel" ]; then
+         [ -f "/var/run/${PPP_IPPARAM}.ctl" ] && rm -f /var/run/${PPP_IPPARAM}.ctl
+         echo "action=ipup" > /var/run/mipsec/$PPP_IPPARAM
+         echo "status=connected" >> /var/run/mipsec/$PPP_IPPARAM
+         echo "constat=Disconnect" >> /var/run/mipsec/$PPP_IPPARAM
+         echo "inf=$PPP_IFACE" >> /var/run/mipsec/$PPP_IPPARAM
+         echo "localip=$PPP_LOCAL" >> /var/run/mipsec/$PPP_IPPARAM
+         echo "serverip=$PPP_REMOTE" >> /var/run/mipsec/$PPP_IPPARAM
+         echo "$PPP_IPPARAM" > /var/run/"$PPP_IFACE".x2c
+         subnet=$(/sbin/uci get ipsec.${PPP_IPPARAM}.rightsubnet)
+         mask=$(/sbin/uci get ipsec.${PPP_IPPARAM}.rightmask)
+         /sbin/route add -net $subnet netmask $mask gw $PPP_REMOTE dev $PPP_IFACE
+    fi
+    ;;
+
+ppp_ip_down)
+    local PPP_IFACE="$2"
+    local PPP_IPPARAM="$3"
+    rm -f /var/run/"$PPP_IFACE".status
+    [ -f /var/run/ipsecfirewall/firewall.$PPP_IFACE ] && rm -f /var/run/ipsecfirewall/firewall.$PPP_IFACE
+    iptables -D forwarding_rule -i $PPP_IFACE -j ACCEPT
+    iptables -D forwarding_rule -o $PPP_IFACE -j ACCEPT
+    if [ -f /var/run/"$PPP_IFACE".x2c ]
+    then
+        PPP_IPPARAM=$(cat /var/run/"$PPP_IFACE".x2c)
+        rm -f /var/run/"$PPP_IFACE".x2c
+        if [ -f /var/run/${PPP_IPPARAM}.ctl ]; then
+                logger -p local0.error -t "mxl2tpd[$$]" "$@ exit because /var/run/${PPP_IPPARAM}.ctl"
+                rm -f /var/run/${PPP_IPPARAM}.ctl
+                exit 0
+        else
+                echo "status=waiting for connection" > /var/run/mipsec/$PPP_IPPARAM
+        echo "constat=Connect" >> /var/run/mipsec/$PPP_IPPARAM
+        echo "inf=" >> /var/run/mipsec/$PPP_IPPARAM
+        fi
+        [ -p /var/run/xl2tpd/wan-control ] && echo "r $PPP_IPPARAM" > /var/run/xl2tpd/wan-control
+        [ -p /var/run/xl2tpd/wan2-control ] && echo "r $PPP_IPPARAM" > /var/run/xl2tpd/wan2-control
+        [ -p /var/run/xl2tpd/nwan-control ] && echo "r $PPP_IPPARAM" > /var/run/xl2tpd/nwan-control
+        [ -p /var/run/xl2tpd/nwan2-control ] && echo "r $PPP_IPPARAM" > /var/run/xl2tpd/nwan2-control
+        sleep 30
+        ttype=$(/sbin/uci get ipsec.${PPP_IPPARAM})
+        ipsec=$(/sbin/uci get ipsec.${PPP_IPPARAM}.ipsec)
+        if [ "$ttype" = "x2ctunnel" ]; then
+           logger -p local0.error -t "mxl2tpd[$$]" "$@ sleep 30s and mre_x2c $PPP_IPPARAM"
+           [ "$ipsec" = "disable" ] || /sbin/mipsec.sh mre_x2c $PPP_IPPARAM >/dev/null 2>&1 &
+        fi
+    fi
+    ;;
+*)
+   ;;
+esac 
+exit 0
+

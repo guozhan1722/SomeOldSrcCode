@@ -1,0 +1,15 @@
+#!/bin/sh /etc/rc.common
+
+START=99 
+
+start(){
+    /usr/bin/ntr >/dev/null 2>&1 &
+}
+
+stop(){
+    count=`ps|grep -v grep|grep -c fprobe`
+    [ $count -ge 1 ] && killall -9 fprobe
+}
+
+
+

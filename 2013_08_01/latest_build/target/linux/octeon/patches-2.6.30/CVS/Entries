@@ -1,0 +1,21 @@
+/001-handle_removal_h_constraint.patch/1.1/Thu Apr  1 22:08:38 2010/-kkv/Tar71xx_4g
+/002-register_defs_pci.patch/1.1/Thu Apr  1 22:08:37 2010/-kkv/Tar71xx_4g
+/003_pci_pcie_support.patch/1.1/Thu Apr  1 22:08:37 2010/-kkv/Tar71xx_4g
+/004-named_alloc_function.patch/1.1/Thu Apr  1 22:08:37 2010/-kkv/Tar71xx_4g
+/005-register_defs_octeon_mgmt.patch/1.1/Thu Apr  1 22:08:37 2010/-kkv/Tar71xx_4g
+/006-octeon_mgmt_driver.patch/1.1/Thu Apr  1 22:08:38 2010/-kkv/Tar71xx_4g
+/007-export_cvmx_sysinfo.patch/1.1/Thu Apr  1 22:08:38 2010/-kkv/Tar71xx_4g
+/008-more_board_types_constraints.patch/1.1/Thu Apr  1 22:08:38 2010/-kkv/Tar71xx_4g
+/009-more_chip_specific_feature_tests.patch/1.1/Thu Apr  1 22:08:38 2010/-kkv/Tar71xx_4g
+/010-export_erratum_function.patch/1.1/Thu Apr  1 22:08:37 2010/-kkv/Tar71xx_4g
+/011-octeon_ethernet_driver.patch/1.1/Thu Apr  1 22:08:37 2010/-kkv/Tar71xx_4g
+/012-hook_up_eth_driver.patch/1.1/Thu Apr  1 22:08:38 2010/-kkv/Tar71xx_4g
+/013-compile_fixes.patch/1.1/Thu Apr  1 22:08:37 2010/-kkv/Tar71xx_4g
+/015-no_werror.patch/1.1/Thu Apr  1 22:08:38 2010/-kkv/Tar71xx_4g
+/016-octeon_hw_rng.patch/1.1/Thu Apr  1 22:08:38 2010/-kkv/Tar71xx_4g
+/017-platform_devices.patch/1.1/Thu Apr  1 22:08:38 2010/-kkv/Tar71xx_4g
+/018-dwc_otg.patch/1.1/Thu Apr  1 22:08:36 2010/-kkv/Tar71xx_4g
+/100-wndap330_hacks.patch/1.1/Thu Apr  1 22:08:37 2010/-kkv/Tar71xx_4g
+/105-nb5_fixup.patch/1.1/Thu Apr  1 22:08:37 2010/-kkv/Tar71xx_4g
+/106-no_module_reloc.patch/1.1/Thu Apr  1 22:08:38 2010/-kkv/Tar71xx_4g
+D

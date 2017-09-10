@@ -1,0 +1,15 @@
+Source-Makefile: package/localmonitor/Makefile
+Package: localmonitor
+Version: 1
+Depends: 
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Microhard local device monitor
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  This package contains the microhard home grown serial/net daemon
+@@
+
+

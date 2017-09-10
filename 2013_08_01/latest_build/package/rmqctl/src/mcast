@@ -1,0 +1,9 @@
+# file name /etc/config/mcast, this is an example.
+
+config 'mcontrol'                                                                          
+        option 'enable' '0'
+
+config 'mrate' 'mrate_0'                                                                           
+	option 'iface' 'wlan0'
+	option 'rate' '5'
+

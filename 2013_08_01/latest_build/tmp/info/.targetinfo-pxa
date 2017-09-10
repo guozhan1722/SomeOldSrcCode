@@ -1,0 +1,18 @@
+Source-Makefile: target/linux/pxa/Makefile
+Target: pxa
+Target-Board: pxa
+Target-Kernel: 2.6
+Target-Name: Marvell/Intel PXA2xx
+Target-Path: /home/zguo/project/2013_08_01/latest_build
+Target-Arch: arm
+Target-Features: gpio pcmcia squashfs
+Target-Depends: 
+Target-Optimization: -Os -pipe -march=armv5te -mtune=xscale -funit-at-a-time
+Linux-Version: 2.6.32.9
+Linux-Release: 1
+Linux-Kernel-Arch: arm
+Target-Description:
+	Build images for PXA2xx systems, eg. Gumstix.
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall
+

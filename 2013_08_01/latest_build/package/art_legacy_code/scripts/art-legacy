@@ -1,0 +1,18 @@
+#!/bin/sh
+
+if [ ! -e /dev/dk0 ]; then
+  for a in $(seq 0 3); do
+    mknod /dev/dk$a c 63 $a
+  done
+fi
+
+rmmod ath5k
+for a in ath_pci ath_rate_amrr \
+  ath_rate_onoe ath_rate_sample ath_rate_minstrel wlan_wep wlan_tkip \
+  wlan_ccmp wlan_acl wlan_xauth wlan_scan_sta wlan_scan_ap wlan ath_hal; do
+  rmmod $a
+done
+rmmod art_legacy
+insmod /lib/modules/$(uname -r)/art_legacy.ko
+killall -9 mdk_client-legacy
+/usr/bin/mdk_client-legacy

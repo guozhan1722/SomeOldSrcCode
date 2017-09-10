@@ -1,0 +1,6 @@
+VENDOR="2010- Microhard Systems Inc."
+PRODUCT="VIP421"
+HARDWARE="`vip -rev get|awk '{print $4}'`.0.0"
+SOFTWARE="v2.1.10"
+BUILD="1082"
+EXPORT="0"

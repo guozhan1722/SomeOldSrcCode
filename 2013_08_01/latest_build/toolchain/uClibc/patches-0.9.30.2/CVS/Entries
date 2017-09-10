@@ -1,0 +1,10 @@
+/110-compat_macros.patch/1.1/Thu Apr  1 22:11:25 2010/-kkv/Tar71xx_4g
+/120-adjtimex.patch/1.1/Thu Apr  1 22:11:25 2010/-kkv/Tar71xx_4g
+/130-pthread_weak_binding.patch/1.1/Thu Apr  1 22:11:25 2010/-kkv/Tar71xx_4g
+/140-math_decl.patch/1.1/Thu Apr  1 22:11:25 2010/-kkv/Tar71xx_4g
+/170-math_finite.patch/1.1/Thu Apr  1 22:11:25 2010/-kkv/Tar71xx_4g
+/410-llvm_workaround.patch/1.1/Thu Apr  1 22:11:25 2010/-kkv/Tar71xx_4g
+/450-powerpc_copysignl.patch/1.1/Thu Apr  1 22:11:25 2010/-kkv/Tar71xx_4g
+/600-ubicom32-uClibc.patch/1.1/Thu Apr  1 22:11:25 2010/-kkv/Tar71xx_4g
+/700-mips_nptl_dl_find_hash_fix.patch/1.1/Thu Apr  1 22:11:25 2010/-kkv/Tar71xx_4g
+D

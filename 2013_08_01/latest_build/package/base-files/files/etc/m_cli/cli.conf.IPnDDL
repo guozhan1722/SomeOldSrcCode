@@ -1,0 +1,63 @@
+#################################################################
+## fichier de configure pour CLI
+#
+#prompt
+prompt IPnDDL
+#
+#banner
+banner Command Line Interface
+
+#authentification
+enable_auth no
+user_name admin
+passwd admin 
+enable_pw
+
+#################################################################
+#### format: cmd [command] [descrpition du commande] #########
+
+#commande à exécuter
+#cmd main_menu:mainmenu desc:submenu:submenu desc:cmd:cmd dec
+
+#info
+#cmd info:System info:system:system information:info.sh:
+#cmd info:System info:about:system information:info-about.sh:
+
+#status
+cmd tools:system tools:diagnostic:Make Networking diagnostic:ping:send ping to destination:ping:
+cmd tools:system tools:diagnostic:Networking diagnostic:traceroute:the connection route:traceroute:
+
+cmd status:Display the system status:connection:Show connnection:status-connection.sh:
+
+#system
+cmd system:Setting system configurations:logout:Logout Command line Interface:exit.sh:
+cmd system:Setting system configurations:reboot:Reboot Command line interface:reboot.sh:
+
+## network status
+cmd status:Display the system status:network:Show network status:status-network.sh:
+
+###lan protocol
+cmd network:Set or Get network config:lan:lan interface:proto:protocol for lan:set:setting the value for lan:static:set proto to static:set-network-lan-proto-static:
+#cmd network:Set or Get network config:lan:lan interface:set:setting the value for lan:proto:setting protocol for lan:disabled:set proto to diabled:set-network-lan-proto-none:
+cmd network:Set or Get network config:lan:lan interface:proto:protocol for lan:set:setting the value for lan:dhcp:set proto to dhcp:set-network-lan-proto-dhcp:
+cmd network:Set or Get network config:lan:lan interface:proto:protocol for lan:get:getting the value for lan:get-network-lan-proto:
+
+###lan ipaddr
+cmd network:Set or Get network config:lan:lan interface:ip-addr:ip address for lan:set:setting the value for lan:set-network-lan-ipaddr:
+cmd network:Set or Get network config:lan:lan interface:ip-addr:ip address for lan:get:getting the value for lan:get-network-lan-ipaddr:
+
+###lan netmask
+cmd network:Set or Get network config:lan:lan interface:netmask:netmask for network:set:setting the value for lan:set-network-lan-netmask:
+cmd network:Set or Get network config:lan:lan interface:netmask:netmask for network:get:getting the value for lan:get-network-lan-netmask:
+
+###lan dns
+cmd network:Set or Get network config:lan:lan interface:dns:dns for network:set:setting the value for lan:set-network-lan-dns:
+cmd network:Set or Get network config:lan:lan interface:dns:dns for network:get:getting the value for lan:get-network-lan-dns:
+
+###lan gateway
+cmd network:Set or Get network config:lan:lan interface:gateway:gateway for network:set:setting the value for lan:set-network-lan-gateway:
+cmd network:Set or Get network config:lan:lan interface:gateway:gateway for network:get:getting the value for lan:get-network-lan-gateway:
+
+#exit
+cmd exit:Logout Command line Interface:exit.sh:
+

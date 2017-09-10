@@ -1,0 +1,15 @@
+Source-Makefile: package/VIP4G/Makefile
+Package: VIP4G
+Version: 1
+Depends: +kmod-mpci-bsp +i2c-tools +libuci +libpthread
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Microhard VIP4G utility
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  This package contains the microhard home grown VIP4G utility.
+@@
+
+

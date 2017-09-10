@@ -1,0 +1,15 @@
+Source-Makefile: package/microhard-vpn/Makefile
+Package: microhard-vpn
+Version: 1
+Depends: +libuci +openswan
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Microhard VPN Utility
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  Microhard VPN utility
+@@
+
+

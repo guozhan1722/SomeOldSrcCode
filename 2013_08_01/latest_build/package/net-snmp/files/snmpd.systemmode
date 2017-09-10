@@ -1,0 +1,149 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+. /etc/version
+
+STOP=90
+config_cb() {
+	local cfg_type="$1"
+	local cfg_name="$2"
+
+	case "$cfg_type" in
+	        interface)
+			if [ "wan" = "$cfg_name" ]; then
+			   wan_cfg="$cfg_name" 
+		        fi
+	        ;;
+
+	        wifi-iface)
+	                append vface "$cfg_name" "$N"
+	        ;;
+
+	        wifi-device)
+	                echo "$cfg_name" |grep -q "0"
+			if [ "$?" = "0" ]; then
+   			   primary_wlan_phy="$cfg_name"
+			fi
+
+	                echo "$cfg_name" |grep -q "1"
+			if [ "$?" = "0" ]; then
+   			   secondary_wlan_phy="$cfg_name"
+			fi
+	        ;;
+
+	esac
+}
+
+load_systemmode(){
+	local cfg="$1"
+	local systemmode 
+	
+	uci_load network
+	uci_load wireless
+	config_get systemmode "$cfg" systemmode
+	
+	case "$systemmode" in
+	ap_bridge)
+		if [ "$wan_cfg" != "" ] ;then 
+			uci_remove "network" "wan"
+		fi
+		# SVIP has only 1 eth port
+		if [ "$HARDWARE" = "3.0.0" ]; then
+			uci_set "network" "lan" "ifname" "eth0"
+		else
+			uci_set "network" "lan" "ifname" "eth0 eth1"
+		fi
+		for vcfg in $vface;do
+			uci_set "wireless" "$vcfg" "mode" "ap"
+			uci_set "wireless" "$vcfg" "network" "lan"
+		done 
+	;;
+
+	client_bridge)
+		if [ "$wan_cfg" != "" ] ;then 
+			uci_remove "network" "wan"
+		fi
+		# SVIP has only 1 eth port
+		if [ "$HARDWARE" = "3.0.0" ]; then
+			uci_set "network" "lan" "ifname" "eth0"
+		else
+			uci_set "network" "lan" "ifname" "eth0 eth1"
+		fi
+
+		for vcfg in $vface;do
+			uci_set "wireless" "$vcfg" "mode" "sta"
+			uci_set "wireless" "$vcfg" "network" "lan" 
+		done 
+	;;
+
+	ap_router)
+		if [ "$wan_cfg" = "" ] ;then 
+			uci_add "network" "interface" "wan"
+			wan_cfg="wan"
+		fi
+
+		uci_set "network" "$wan_cfg" "ifname" "eth0"
+		uci_set "network" "$wan_cfg" "type" "bridge"
+		uci_set "network" "$wan_cfg" "proto" "dhcp"
+			      		
+		# SVIP has only 1 eth port
+		if [ "$HARDWARE" = "3.0.0" ]; then
+   			uci_set "network" "lan" "ifname" "wlan0"
+		else
+			uci_set "network" "lan" "ifname" "eth1"
+		fi
+
+		for vcfg in $vface;do
+			uci_set "wireless" "$vcfg" "mode" "ap"
+			uci_set "wireless" "$vcfg" "network" "lan" 
+		done 
+	     ;;
+
+	client_router)
+		if [ "$wan_cfg" = "" ] ;then 
+			uci_add "network" "interface" "wan"
+			wan_cfg="wan"
+		fi
+
+		uci_set "network" "$wan_cfg" "ifname" "wlan0"
+		uci_set "network" "$wan_cfg" "type" "bridge"
+		uci_set "network" "$wan_cfg" "proto" "dhcp"
+
+		# SVIP has only 1 eth port
+		if [ "$HARDWARE" = "3.0.0" ]; then
+			uci_set "network" "lan" "ifname" "eth0"
+		else
+			uci_set "network" "lan" "ifname" "eth0 eth1"
+		fi
+
+		for vcfg in $vface;do
+			uci_set "wireless" "$vcfg" "mode" "sta"
+			uci_set "wireless" "$vcfg" "network" "wan" 
+		done 
+	;;
+
+	mp_bridge)
+		if [ "$wan_cfg" != "" ] ;then 
+			uci_remove "network" "wan"
+		fi
+		# SVIP has only 1 eth port
+		if [ "$HARDWARE" = "3.0.0" ]; then
+			uci_set "network" "lan" "ifname" "eth0"
+		else
+			uci_set "network" "lan" "ifname" "eth0 eth1"
+		fi
+
+		for vcfg in $vface;do
+			uci_set "wireless" "$vcfg" "mode" "mesh"
+			uci_set "wireless" "$vcfg" "mesh_id" "VIPnnnn" 
+			uci_set "wireless" "$vcfg" "network" "lan" 
+		done 
+	;;
+	esac
+
+}
+
+start() {
+	config_load system
+	config_foreach load_systemmode system
+}
+

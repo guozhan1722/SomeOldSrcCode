@@ -1,0 +1,9 @@
+/100-board_support.patch/1.1/Thu Apr  1 22:13:52 2010/-kkv/Tar71xx_4g
+/110-flash.patch/1.1/Thu Apr  1 22:13:52 2010/-kkv/Tar71xx_4g
+/120-gpio_chrdev.patch/1.1/Thu Apr  1 22:13:52 2010/-kkv/Tar71xx_4g
+/130-vlynq.patch/1.1/Thu Apr  1 22:13:52 2010/-kkv/Tar71xx_4g
+/150-cpmac_not_broken.patch/1.1/Thu Apr  1 22:13:52 2010/-kkv/Tar71xx_4g
+/160-vlynq-bus_id_removal.patch/1.1/Thu Apr  1 22:13:52 2010/-kkv/Tar71xx_4g
+/500-serial_kludge.patch/1.1/Thu Apr  1 22:13:52 2010/-kkv/Tar71xx_4g
+/900-cpmac_multiqueue.patch/1.1/Thu Apr  1 22:13:52 2010/-kkv/Tar71xx_4g
+D

@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common 
+# Copyright (C) 2012 Microhard Syetems Inc.
+START=99
+
+#################################################
+# Main script
+#################################################
+start() {
+    /usr/bin/wsBoot & 
+}
+
+stop() {
+  killall wsBoot
+}
+
+
+

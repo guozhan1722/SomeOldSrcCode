@@ -1,0 +1,185 @@
+#!/bin/sh 
+# Copyright (C) 2006 OpenWrt.org
+
+. /etc/functions.sh
+. /etc/version
+
+DESC_FILE="/usr/lib/hardware_desc"
+
+detect_wifi()
+{
+    devidx=0
+    for dev in $(ls /sys/class/ieee80211); do
+        devidx=$((devidx + 1))
+    done
+    logger -t "MH_prodect detect WIFI" "Detected wifi number is $devidx"
+}
+
+get_radio_ml()
+{
+    if [ ! -f $DESC_FILE ]; then
+        logger -t "exdiscovery" "No hardware descriptor file be found, will create new one for wificard"
+        detect_wifi
+        echo "wificard=\"${devidx}\"" > $DESC_FILE
+    else
+        logger -t "exdiscovery" "Get hardware descriptor file"
+        . $DESC_FILE
+        if [ ! -n "$wificard" ]; then
+            logger -t "exdiscovery" "Get hardware descriptor file, but can not find wificard number. Add it into desc file"
+            detect_wifi
+            echo "wificard=\"${devidx}\"" >> $DESC_FILE
+        else
+            devidx="$wificard"
+        fi
+    fi
+    ml_radio="${devidx}"
+    if [ "$PRODUCTSKU" = "MHS116505" ];then
+        ml_radio="0"
+    fi
+}
+
+config_load wireless
+if [ "$HARDWARE" = "5.0.0" ]; then
+	productname="IPMESH"
+	for dev in $(ls /sys/class/ieee80211); do
+		devidx=$(echo $dev|cut -c 4)
+                disabled=`uci get wireless.radio$devidx.disabled`
+		wconfig=$(iwconfig wlan$devidx 2>/dev/null)
+
+                wlan_ssid=$(echo "$wconfig" | grep "ESSID:" | grep -v off | cut -d'"' -f 2 | cut -d'"' -f 1)
+                for cfgsec in $CONFIG_SECTIONS; do
+                    eval "wdevice=\"\$CONFIG_${cfgsec}_device\""
+                    [ "$wdevice" = "radio$devidx" ] && {
+                        eval "wlan_mode=\"\$CONFIG_${cfgsec}_mode\""
+                        if [ "$wlan_ssid" = "" ] ;then
+                            if [ "$wlan_mode" = "mesh" ];then
+                                eval "wlan_ssid=\"\$CONFIG_${cfgsec}_mesh_id\""
+                            else
+                                eval "wlan_ssid=\"\$CONFIG_${cfgsec}_ssid\""
+                            fi
+                        fi                         
+                        break
+                    }
+                done    
+
+                if [ "$disabled" != "1" ]; then
+        		if [ "$mode" = "" ]; then
+        			mode="$wlan_mode"
+        		else
+        			mode="${mode},${wlan_mode}"
+        		fi
+
+                        if [ "$ssid" = "" ];then 
+                            ssid="$wlan_ssid"
+                        else
+                            ssid="${ssid},${wlan_ssid}"
+                        fi
+
+                fi
+	done
+
+elif [ "$HARDWARE" = "3.0.0" ]; then
+        disabled=`uci get wireless.radio0.disabled`
+        curmode=`uci get wireless.@wifi-iface[0].mode`
+	productname="SVIP"
+
+        if [ "$disabled" != "1" ]; then
+        	mode=`uci get wireless.@wifi-iface[0].mode`
+        
+                if [ "$curmode" = "mesh" ];then
+                    ssid=`uci get wireless.@wifi-iface[$devidx].mesh_id`
+                else
+                    ssid=`uci get wireless.@wifi-iface[$devidx].ssid`
+                fi
+        fi
+elif [ "$HARDWARE" = "v1.0.0" ]; then
+        disabled=`uci get wireless.radio0.disabled`
+	productname="$PRODUCTNAME"
+        wlan_mode=`uci get wireless.@wifi-iface[0].mode`
+        mode="$wlan_mode"
+
+        if [ "$PRODUCT" = "IPnDDL" ];then
+            case "$wlan_mode" in
+   		ap)
+   		    mode="Master"
+                    ;;
+   		sta)
+   		    mode="Slave"
+	            ;;
+   		mesh)
+   		    mode="Mesh"
+	            ;;
+   	        repeater)
+   		    mode="Repeater"
+                    ;;
+   	        *)
+   		    mode="Unknow"
+	            ;;
+	    esac
+        fi
+        if [ "$disabled" != "1" ]; then
+        	wlan_mode=`uci get wireless.@wifi-iface[0].mode`
+                if [ "$wlan_mode" = "mesh" ];then
+                    ssid=`uci get wireless.@wifi-iface[$devidx].mesh_id`
+                else
+                    ssid=`uci get wireless.@wifi-iface[$devidx].ssid`
+                fi
+        fi
+
+        get_radio_ml
+        
+       	imagename="$PRODUCT"
+        mlradio="$ml_radio"
+        mlethernet="1"
+        mlcarrier="1"
+        mlusb="0"
+        mlcom="2"
+
+elif [ "$HARDWARE" = "v2.0.0" ]; then
+        disabled=`uci get wireless.radio0.disabled`
+	productname="$PRODUCTNAME"
+        wlan_mode=`uci get wireless.@wifi-iface[0].mode`
+        mode="$wlan_mode"
+
+        if [ "$disabled" != "1" ]; then
+        	wlan_mode=`uci get wireless.@wifi-iface[0].mode`
+                if [ "$wlan_mode" = "mesh" ];then
+                    ssid=`uci get wireless.@wifi-iface[$devidx].mesh_id`
+                else
+                    ssid=`uci get wireless.@wifi-iface[$devidx].ssid`
+                fi
+        fi
+
+        get_radio_ml
+
+	imagename="$PRODUCT"
+        mlradio="$ml_radio"
+        mlethernet="2"
+        mlcarrier="1"
+        mlusb="0"
+        mlcom="1"
+else
+        disabled=`uci get wireless.radio0.disabled`
+	productname="VIP"
+        curmode=`uci get wireless.@wifi-iface[0].mode`
+        if [ "$disabled" != "1" ]; then
+        	mode=`uci get wireless.@wifi-iface[0].mode`
+                if [ "$curmode" = "mesh" ];then
+                    ssid=`uci get wireless.@wifi-iface[$devidx].mesh_id`
+                else
+                    ssid=`uci get wireless.@wifi-iface[$devidx].ssid`
+                fi
+        fi
+fi
+
+uci_set "sdpServer" "discovery" "productname" "$productname"
+uci_set "sdpServer" "discovery" "firmware" "$SOFTWARE-r$BUILD"
+uci_set "sdpServer" "discovery" "mode" "$mode"
+uci_set "sdpServer" "discovery" "ssid" "$ssid"
+uci_set "sdpServer" "discovery" "imagename" "$imagename"
+uci_set "sdpServer" "discovery" "mlradio" "$mlradio"
+uci_set "sdpServer" "discovery" "mlethernet" "$mlethernet"
+uci_set "sdpServer" "discovery" "mlcarrier" "$mlcarrier"
+uci_set "sdpServer" "discovery" "mlusb" "$mlusb"
+uci_set "sdpServer" "discovery" "mlcom" "$mlcom"
+uci_commit sdpServer 

@@ -1,0 +1,108 @@
+diff -Nuar busybox_old/loginutils/getty.c busybox_new/loginutils/getty.c
+--- busybox_old/loginutils/getty.c	2011-12-12 13:26:52.673046532 -0700
++++ busybox_new/loginutils/getty.c	2011-12-12 14:26:19.518049280 -0700
+@@ -630,6 +630,79 @@
+ }
+ #endif /* CONFIG_FEATURE_UTMP */
+ 
++#if defined(MH_IXP4XX_COM2) || defined(MH_NanoPCI_COM2)
++#define MAX_ARGS 8
++static void com2_enable_process(void)
++
++{
++	int i;
++	FILE* fp;
++	char space_str[]="        ";       
++	char string_star[]="*********************";
++	char Data_string[]=" Data Mode, Speed ";
++	char esc_string[]="Press +++ to Console Mode";
++	char speed[10];  
++	char console_string[]=" Console Mode, Speed 115200 ";
++
++	int  sub_status; 
++	char * pArgs[MAX_ARGS];
++	// unsigned long ulNumArgs = 0;
++	//   char tmpArgs[MAX_STRING];
++	//  char *pArg = NULL;
++	int pid = 0;
++
++	i = access ( "/etc/soipd2_runing", F_OK );   
++	if (i!=0)  /*com2 not enable*/
++		{
++		return;
++		}
++	fp=fopen("/etc/soipd2_runing","r");
++	fgets(speed,20,fp);
++	fclose(fp);
++	/*sleep 50 second so that in dhcp mode to get ip address*/
++	write(1,"\n",1);
++	write(1,space_str,strlen(space_str)); 
++	write(1,string_star,strlen(string_star));
++ 	write(1,Data_string,strlen(Data_string));  
++	write(1,speed,strlen(speed)); 
++	for (i=0;i<7-strlen(speed);i++)
++	 {
++	 write(1," ",1);       
++	 }   
++	write(1,string_star,strlen(string_star));  
++	write(1,"\n\n",2);  
++	write(1,space_str,strlen(space_str));    
++	write(1,string_star,strlen(string_star));  
++	write(1,esc_string,strlen(esc_string));  
++	write(1,string_star,strlen(string_star)); 
++
++	pArgs[0]=(char *) "/etc/init.d/soip2.getty";    
++
++	pArgs[1]=(char *) "start";
++
++	pArgs[2] = NULL;    
++	//  pArgs[ulNumArgs] = NULL;
++
++	if (!(pid = vfork()))
++		{
++
++
++		if (execvp("/etc/init.d/soip2.getty", pArgs) == -1)
++			{
++			//  exit(1);
++			}
++
++		}
++	else
++		{
++		waitpid(pid,&sub_status,0);
++		//wait(&sub_status);    
++		}
++	return;
++}
++
++#endif
++
+ int getty_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
+ int getty_main(int argc UNUSED_PARAM, char **argv)
+ {
+@@ -656,7 +729,23 @@
+ 	/* Parse command-line arguments. */
+ 	parse_args(argv, &options, &fakehost);
+ 
+-	logmode = LOGMODE_NONE;
++#ifdef MH_IXP4XX_COM2
++	//(void) sleep((unsigned) 16);	/* be kind to init(8) */
++    if ( !strcmp(options.tty, "ttyS1") )
++    {	 
++		com2_enable_process();
++	}
++#endif
++
++#ifdef MH_NanoPCI_COM2
++	//(void) sleep((unsigned) 16);	/* be kind to init(8) */
++    if ( !strcmp(options.tty, "ttyS0") )
++    {	 
++		com2_enable_process();
++	}
++#endif
++
++    logmode = LOGMODE_NONE;
+ 
+ 	/* Create new session, lose controlling tty, if any */
+ 	/* docs/ctty.htm says:

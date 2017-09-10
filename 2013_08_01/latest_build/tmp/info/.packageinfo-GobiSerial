@@ -1,0 +1,16 @@
+Source-Makefile: package/GobiSerial/Makefile
+Package: kmod-GobiSerial
+Submenu: Other modules
+Version: <LINUX_VERSION>-1
+Depends: 
+Provides: 
+Section: kernel
+Category: Kernel modules
+Title: Radio kernel driver modules support
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  Kernel modules to support GobiSerial radio network.
+@@
+
+

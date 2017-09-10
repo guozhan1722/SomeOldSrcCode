@@ -1,0 +1,337 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+. /etc/version
+START=90
+STOP=90
+
+#ATCMD="echo /lib/atcmd.sh"
+config_load lte
+DESC_FILE="/usr/lib/hardware_desc"
+CLEAN_STATE="/bin/setnv_4g_default"
+
+get_modem_info()
+{
+    modem_type_V="Unknown"
+    usbcnt=$(cat /tmp/run/usbcnt)
+    [ -n $usbcnt ] && {
+        if [ $usbcnt -gt 1111 ];then
+            rm -rf /tmp/run/usbcnt
+            local E362modem=$(cat /sys/devices/platform/ar71xx-ehci/usb1/1-1/idProduct |grep 9010)
+            local E371modem=$(cat /sys/devices/platform/ar71xx-ehci/usb1/1-1/idProduct |grep 9011)
+            logger -t "LTE start get_modem_info " "E362 is $E362modem E371 is $E371modem"
+            #E362modem=$(lsusb|grep Novatel|grep 1410:9010)
+            #E371modem=$(lsusb|grep Novatel|grep 1410:9011)
+            [ -n "$E362modem" ] && modem_type_V="E362"
+            [ -n "$E371modem" ] && modem_type_V="E371"
+    
+        fi
+    }
+}
+
+detect_modem(){
+    if [ ! -f $DESC_FILE ]; then
+        logger -t "LTE start" "No hardware descriptor file be found, will create new one"
+        get_modem_info
+        echo "modem_type=\"${modem_type_V}\"" > $DESC_FILE
+    else
+        logger -t "LTE start" "Get hardware descriptor file"
+        . $DESC_FILE
+        if [ ! -n "$modem_type" ]; then
+            logger -t "LTE start" "Get hardware descriptor file, but can not find modem_type. Add it into desc file"
+            get_modem_info
+            echo "modem_type=\"${modem_type_V}\"" >> $DESC_FILE
+        elif [ "$modem_type" = "Unknown" ]; then
+            logger -t "LTE start" "Get hardware descriptor file, but it is Unknown state"
+            sed -i '/'"`grep modem_type= $DESC_FILE`"'/d' $DESC_FILE
+            get_modem_info
+            echo "modem_type=\"${modem_type_V}\"" >> $DESC_FILE
+        fi
+        sleep 2
+    fi
+    . $DESC_FILE
+}
+
+get_port_info()
+{
+    lte_atcommand_port="Unknown"
+    lte_diag_port="Unknown"
+    if [ "$PRODUCT" = "VIP4G" -o "$PRODUCT" = "VIP4GEXP" ]; then
+        logger -t "lte start detect port" "find PRODUCT is $PRODUCT "
+        lte_atcommand_port="/dev/ttyUSB0"
+        lte_diag_port="/dev/ttyUSB1"
+    elif [ "$PRODUCT" = "IPn4G" -o "$PRODUCT" = "IPn4GEXP" ]; then
+        logger -t "lte start detect port" "find PRODUCT is $PRODUCT "
+        cnt=0
+        logger -t "LTE start" "Please wait for ttyUSB0 device ready ."
+        while [ ! -e "/dev/ttyUSB0" -a "$cnt" -lt "30" ] ;do
+            cnt=$(( $cnt + 1 ))
+            sleep 1
+        done
+
+        cnt=0
+        logger -t "LTE start" "Please wait for ttyUSB4 device ready ."
+        while [ ! -e "/dev/ttyUSB4" -a "$cnt" -lt "30" ] ;do
+            cnt=$(( $cnt + 1 ))
+            sleep 1
+        done
+
+        is_4port_serial=$(cat /sys/devices/platform/ar71xx-ohci/usb2/2-2/product |grep 'FT4232H')
+        is_2port_serial=$(cat /sys/devices/platform/ar71xx-ohci/usb2/2-2/product |grep 'FT232')
+    
+        if [ -n "$is_4port_serial" ] ;then
+            logger "lte server detect port FT4232H use ttyUSB4"
+            lte_atcommand_port="/dev/ttyUSB4"
+            lte_diag_port="/dev/ttyUSB5"   
+        elif [ -n "$is_2port_serial" ];then
+            logger "lte server detect port FT232 use ttyUSB1"
+            lte_atcommand_port="/dev/ttyUSB1"
+            lte_diag_port="/dev/ttyUSB2"
+        else
+            logger "lte server detect unknown port use ttyUSB1"
+        fi   
+    else
+        logger -t "lte start detect port" "PRODUCT is unknown"
+    fi
+
+}
+
+detect_port(){
+    if [ ! -f $DESC_FILE ]; then
+        logger -t "LTE start" "No hardware descriptor file be found, will create new one for ports define"
+        get_port_info
+        echo "LTE_ATCOMMAND_PORT=\"${lte_atcommand_port}\"" > $DESC_FILE
+        echo "LTE_DIAG_PORT=\"${lte_diag_port}\"" >> $DESC_FILE
+    else
+        logger -t "LTE start" "Get hardware descriptor file"
+        . $DESC_FILE
+        if [ ! -n "$LTE_ATCOMMAND_PORT" -o ! -n "$LTE_DIAG_PORT" ]; then
+            logger -t "LTE start" "Get hardware descriptor file, but can not find LTE_PORT. Add it into desc file"
+            get_port_info
+            echo "LTE_ATCOMMAND_PORT=\"${lte_atcommand_port}\"" >> $DESC_FILE
+            echo "LTE_DIAG_PORT=\"${lte_diag_port}\"" >> $DESC_FILE
+        elif [ "$LTE_ATCOMMAND_PORT" = "Unknown" -o "$LTE_DIAG_PORT" = "Unknown" ]; then
+            logger -t "LTE start" "Get hardware descriptor file, but PORTS is Unknown state"
+            sed -i '/'"`grep LTE_ATCOMMAND_PORT= $DESC_FILE`"'/d' $DESC_FILE
+            sed -i '/'"`grep LTE_DIAG_PORT= $DESC_FILE`"'/d' $DESC_FILE
+            get_port_info
+            echo "LTE_ATCOMMAND_PORT=\"${lte_atcommand_port}\"" >> $DESC_FILE
+            echo "LTE_DIAG_PORT=\"${lte_diag_port}\"" >> $DESC_FILE
+        fi
+    fi
+
+    if [ "$PRODUCT" = "VIP4G" -o "$PRODUCT" = "VIP4GEXP" ]; then
+        cnt=0
+        logger -t "LTE start" "Please wait for ttyUSB0 device ready ."
+        while [ ! -e "/dev/ttyUSB0" -a "$cnt" -lt "30" ] ;do
+            cnt=$(( $cnt + 1 ))
+            sleep 1
+        done
+    fi
+    . $DESC_FILE
+}
+
+active_gps_nw(){
+	config_load "gpsd"
+        config_get GPS_STATUS "gpsd_conf" status
+    	if [ "${GPS_STATUS}" = "1" ]; then
+            config_get GPS_CARR "gpsd_conf" Carrier_GPS_Data
+            config_get GPS_S "gpsd_conf" GPS_Source
+            if [ "$GPS_S" ]; then
+                if [ "$GPS_S" = "$GPS_CARR" ]; then
+                    E362_S=`cat /usr/lib/hardware_desc | grep E362`
+                    if [ "$E362_S" ]; then
+                        killall -9 /bin/gpscarrstart
+                    else
+                       /bin/gpscarrstart
+                    fi
+                 fi
+            fi
+	fi
+}
+
+start() {
+        local disabled
+        local req_state
+	config_get disabled connect disabled "0"
+	config_get req_state connect req_state "6"
+	config_get ippassthrough connect ippassthrough "Disable"
+
+        UB_CONFIG=$(grep params /proc/mtd | cut -d: -f1)
+        Testlab=$(grep "TESTLAB" /dev/$UB_CONFIG | cut -d= -f2)
+
+        if [ "$Testlab" = "1" ]; then 
+            if [ "$disabled" = "1" ]; then
+                logger -t "mpci-4g_server" "Testlab board shutdown the lte module"
+                mpci -gpio set 8 0 
+                exit 0
+            else
+                mpci -gpio set 8 1 
+                logger -t "mpci-4g_server" "Testlab board turn on the lte module"
+                exit 0
+            fi
+        fi
+
+        if [ "$disabled" = "1" ]; then
+            logger "lte init.d disabled"
+            mpci -gpio set 8 0 
+            if [ "$PRODUCT" = "VIP4G" -o "$PRODUCT" = "VIP4GEXP" ]; then
+               mutiwan_enable=$(uci get multiwan.config.enabled)
+            wan_bridge=$(uci get network.lan.bridge_wan)
+            [ "$mutiwan_enable" != "1" ] && [ "$wan_bridge" = "1" ] || ifup wan
+            fi
+            #uci_set "lte" "connect" "req_state" "6"
+            #uci_commit lte
+            #ifup wan
+            exit 0
+        else
+            if [ "$req_state" != "0" ]; then
+                uci_set "lte" "connect" "req_state" "0"
+                uci_commit lte
+                rm /tmp/.uci/* >&- 2>&-
+            fi
+            mpci -gpio set 8 1
+            sleep 3
+
+            detect_modem
+            if [ -z "$modem_type" -o "$modem_type" = "Unknown" ]; then
+                logger -t "LTE start" "exit here because of no modem_type found"
+                stop
+                exit 0
+            fi 
+
+            if [ "$PRODUCT" = "VIP4G" -o "$PRODUCT" = "VIP4GEXP" ];then
+               if [ -f "/tmp/run/ippth_4g" ];then
+                  pre_pass_lan=$(cat /tmp/run/ippth_4g |grep "on LAN")
+                  pre_pass_wan=$(cat /tmp/run/ippth_4g |grep "on WAN")
+                  [ -n "$pre_pass_lan" ] && pre_passthrough="Ethernet"
+                  [ -n "$pre_pass_wan" ] && pre_passthrough="WANport"
+               else             
+                  pre_passthrough="Disable"
+               fi
+   
+               #if the dhcp_ippbackup file exist and not ippassthrou mode ,restore everything first
+               if [ -f "/etc/dhcp_ippbackup" -a "$ippassthrough" != "$pre_passthrough" ] ;then
+                  logger -t "ippassthrough" "From ip passthrough to normal mode will restore everything"
+                  mv /etc/dhcp_ippbackup /etc/config/dhcp
+                  #restore firewall
+                  /etc/init.d/firewall stop
+                  /etc/init.d/firewall start
+                  #restore network
+                  /etc/init.d/network stop
+                  /etc/init.d/network start
+                  #restore dnsmasq
+                  /etc/init.d/dnsmasq stop
+                  #just make sure dnsmasq is totolly stopped
+                  killall -9 dnsmasq  2>/dev/null
+                  rm /tmp/dhcp.leases
+                  sleep 1
+                  /etc/init.d/dnsmasq start
+               fi
+            elif [ "$PRODUCT" = "IPn4G" -o "$PRODUCT" = "IPn4GEXP" ];then
+               #if the dhcp_ippbackup file exist and not ippassthrou mode ,restore everything first
+               if [ -f "/etc/dhcp_ippbackup" -a "$ippassthrough" = "Disable" ] ;then
+                  logger -t "ippassthrough" "From ip passthrough to normal mode will restore everything"
+                  mv /etc/dhcp_ippbackup /etc/config/dhcp
+                  #restore firewall
+                  /etc/init.d/firewall stop
+                  /etc/init.d/firewall start
+                  #restore network
+                  /etc/init.d/network stop
+                  /etc/init.d/network start
+                  #restore dnsmasq
+                  /etc/init.d/dnsmasq stop
+                  #just make sure dnsmasq is totolly stopped
+                  killall -9 dnsmasq  2>/dev/null
+                  rm /tmp/dhcp.leases
+                  sleep 1
+                  /etc/init.d/dnsmasq start
+               fi
+            fi
+            serpid=$(ps aux|grep mpci-4g_server|grep -v grep)
+            if [ -z "$serpid" ] ;then
+                active_gps_nw
+                detect_port
+                [ ! -f "/var/run/ltereset" ] && {
+                    #if [ "$modem_type" = "E371" ];then
+                    #    logger -t "LTE start" "Here will clean state for E371 cmd: $CLEAN_STATE $LTE_DIAG_PORT"
+                      #  $CLEAN_STATE $LTE_DIAG_PORT
+                    #else
+                    #    logger -t "LTE start" "Do not clean state for E362"
+                    #fi 
+                    logger "The first time start need soft reset LTE "
+                    echo "reset" >/var/run/ltereset
+                     if [ "$PRODUCT" = "VIP4G" -o "$PRODUCT" = "VIP4GEXP" ];then
+                         ifconfig eth2 down
+                         ifdown wan2
+                     elif [ "$PRODUCT" = "IPn4G" -o "$PRODUCT" = "IPn4GEXP" ];then
+                         ifconfig eth1 down
+                         ifdown wan
+                     fi
+                    /lib/atcmd.sh --port $LTE_ATCOMMAND_PORT  --reset
+                }  || {
+                    if [ "$modem_type" = "E371" ];then
+                        logger -t "LTE start" "Here will clean state for E371 cmd: $CLEAN_STATE $LTE_DIAG_PORT"
+                        /bin/setnv_4g_default $LTE_DIAG_PORT > /var/run/nvset_result
+                    else
+                        logger -t "LTE start" "Do not clean state for E362"
+                    fi 
+
+                    mpci-4g_server -l $LTE_ATCOMMAND_PORT -b &
+                    logger -t "start LTE server" "starting server by port $lte_atcommand_port ..."
+                }
+                
+            fi
+            sleep 3 
+        fi
+}
+
+stop() {
+        local req_state
+	config_get req_state connect req_state "0"
+
+        logger "lte stopped"
+        if [ "$PRODUCT" = "IPn4G" -o "$PRODUCT" = "IPn4GEXP" ];then
+            #make DCD line to be deassert
+            DCD_select=$(uci get comport.com1.COM1_DCD_Assert)
+            if [ "$DCD_select" = "C" ];then
+               mpci -gpio set 18 1
+            fi
+        fi        
+        
+        if [ "$req_state" != "6" ]; then
+            uci_set "lte" "connect" "req_state" "6"
+            uci_commit lte
+            rm /tmp/.uci/* >&- 2>&-
+        fi
+
+        #sleep 1
+        serpid=$(ps aux|grep mpci-4g_server|grep -v grep|awk '{print $1}')
+        i=0
+        while [ $((i++)) -lt "10" ]; do 
+            if [ -z "$serpid" ]; then
+                break;
+            else
+                serpid=$(ps aux|grep mpci-4g_server|grep -v grep|awk '{print $1}')
+                sleep 1
+            fi
+        done
+
+        if [ ! -z "$serpid" ]; then
+            logger -t "mpci-4g_server" "force stop mpci-4g_server"
+            /etc/init.d/dhcp_client stop
+            if [ "$PRODUCT" = "VIP4G" -o "$PRODUCT" = "VIP4GEXP" ];then
+                ifconfig eth2 down
+                ifdown wan2
+            elif [ "$PRODUCT" = "IPn4G" -o "$PRODUCT" = "IPn4GEXP" ];then
+                ifconfig eth1 down
+                ifdown wan
+            fi
+            kill -9 $serpid        
+        fi
+}
+
+restart() {
+	stop
+	start
+}

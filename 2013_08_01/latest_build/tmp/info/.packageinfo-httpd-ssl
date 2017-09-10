@@ -1,0 +1,15 @@
+Source-Makefile: package/httpd-ssl/Makefile
+Package: httpd-ssl
+Version: 1.0.0-1
+Depends: +libmatrixssl-nothread
+Provides: 
+Section: net
+Category: Network
+Title: A small web server based on mini_httpd
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:   A small web server based on mini_httpd
+@@
+
+

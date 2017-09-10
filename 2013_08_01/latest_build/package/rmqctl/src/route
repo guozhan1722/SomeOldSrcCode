@@ -1,0 +1,8 @@
+# file name /etc/config/route, this is an example.
+
+# the select can be enable or disable
+# version can be 1 or 2
+
+config 'rtpro' 'protocol_0'                                                                          
+        option 'select' 'disable'
+	option 'version' '2'

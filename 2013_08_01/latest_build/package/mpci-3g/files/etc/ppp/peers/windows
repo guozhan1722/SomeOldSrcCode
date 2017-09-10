@@ -1,0 +1,9 @@
+/dev/ttyS0
+debug
+#nodetach
+noauth
+connect "/bin/chat -v -f /etc/ppp/chatscripts/windows"
+defaultroute
+usepeerdns
+persist
+

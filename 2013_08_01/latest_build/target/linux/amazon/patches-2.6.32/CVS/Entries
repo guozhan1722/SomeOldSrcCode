@@ -1,0 +1,9 @@
+/000-mips-bad-intctl.patch/1.1/Thu Apr  1 22:15:28 2010/-kkv/Tar71xx_4g
+/010-mips_clocksource_init_war.patch/1.1/Thu Apr  1 22:15:28 2010/-kkv/Tar71xx_4g
+/017-wdt-driver.patch/1.1/Thu Apr  1 22:15:28 2010/-kkv/Tar71xx_4g
+/100-board.patch/1.1/Thu Apr  1 22:15:28 2010/-kkv/Tar71xx_4g
+/130-mtd_drivers.patch/1.1/Thu Apr  1 22:15:28 2010/-kkv/Tar71xx_4g
+/140-net_drivers.patch/1.1/Thu Apr  1 22:15:28 2010/-kkv/Tar71xx_4g
+/150-serial_driver.patch/1.1/Thu Apr  1 22:15:28 2010/-kkv/Tar71xx_4g
+/160-cfi-swap.patch/1.1/Thu Apr  1 22:15:28 2010/-kkv/Tar71xx_4g
+D

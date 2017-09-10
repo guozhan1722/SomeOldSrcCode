@@ -1,0 +1,1277 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2009 NexAira Inc.
+# Copyright (C) 2010 Adam Porter <porter.adam@gmail.com>
+
+#START=99
+STOP=40
+
+netmask2bin() {
+   local mask="$1"
+   local mask1=$(echo $mask | cut -d '.' -f 1)
+   local mask2=$(echo $mask | cut -d '.' -f 2)
+   local mask3=$(echo $mask | cut -d '.' -f 3)
+   local mask4=$(echo $mask | cut -d '.' -f 4)
+   local rem=1
+   local result=0
+   while [ $mask1 -gt 0 ] 
+   do
+       rem=`expr $mask1 % 2`
+       [ $rem -eq 1 ] && let "result+=1"
+       mask1=`expr $mask1 / 2`
+   done
+   while [ $mask2 -gt 0 ] 
+   do
+       rem=`expr $mask2 % 2`
+       [ $rem -eq 1 ] && let "result+=1"
+       mask2=`expr $mask2 / 2`
+   done
+   while [ $mask3 -gt 0 ] 
+   do
+       rem=`expr $mask3 % 2`
+       [ $rem -eq 1 ] && let "result+=1"
+       mask3=`expr $mask3 / 2`
+   done  
+   while [ $mask4 -gt 0 ] 
+   do
+       rem=`expr $mask4 % 2`
+       [ $rem -eq 1 ] && let "result+=1"
+       mask4=`expr $mask4 / 2`
+   done    
+   [ -f "/etc/debugipsec" ] && logger -t "netmask2bin" "mask=$mask result=$result"
+   return $result   
+}
+
+setup_ipsec_s2s() {
+    local s2s="$1"
+    local auto authby enabled leftcert rightcert leftpkey
+    local left leftsubnet leftsourceip leftnexthop leftid lefttype
+    local right rightsubnet rightid rightnexthop righttype
+    local tunnel_type interface
+    local keyingtries rekey
+    local ike_alg ike_auth ike_dh ikelifetime
+    local esp_alg esp_auth esp_dh keylife
+    local key pfs
+    local dpdtimeout dpddelay dpdaction
+    local localip
+    local leftmask rightmask aggrmode
+
+         
+         config_get enabled           $s2s enabled
+         [ "$enabled" = "0" ] && {
+         #create run files
+         rm -f /var/run/mipsec/"$s2s".status
+cat > /var/run/mipsec/"$s2s".status <<EOF
+action=configed
+status=disable
+constat=N/A
+EOF
+         return
+         }
+         config_get esp_alg           $s2s esp_alg  
+         config_get esp_auth          $s2s esp_auth 
+         config_get esp_dh            $s2s esp_dh
+         config_get interface         $s2s interface
+         config_get leftnexthop       $s2s leftnexthop
+         config_get rightnexthop      $s2s rightnexthop    
+         config_get leftsubnet        $s2s leftsubnet
+         config_get leftsourceip      $s2s leftsourceip
+         config_get rightsubnet       $s2s rightsubnet 
+         config_get leftmask          $s2s leftmask 
+         config_get rightmask         $s2s rightmask           
+         config_get right             $s2s right 
+         config_get rightid           $s2s rightid 
+         config_get leftid            $s2s leftid 
+         config_get ike_alg           $s2s ike_alg  
+         config_get ike_auth          $s2s ike_auth 
+         config_get ike_dh            $s2s ike_dh
+         config_get authby            $s2s authby
+         config_get auto              $s2s auto
+         config_get tunnel_type       $s2s tunnel_type
+         config_get pfs               $s2s pfs
+         config_get key               $s2s key
+         config_get rekey             $s2s rekey
+         config_get keyingtries       $s2s keyingtries
+         config_get ikelifetime       $s2s ikelifetime
+         config_get keylife           $s2s keylife
+         config_get dpdtimeout        $s2s dpdtimeout
+         config_get dpddelay          $s2s dpddelay
+         config_get dpdaction         $s2s dpdaction
+         config_get localip           $s2s localip
+         config_get aggrmode          $s2s aggrmode
+         config_get rightcert         $s2s rightcert
+         config_get leftcert          $s2s leftcert
+         config_get leftpkey          $s2s leftpkey
+
+         [ -z "$aggrmode" ] && aggrmode="no"
+         if [ "$aggrmode" = "yes" ]; then
+             aggressive="aggrmode=yes"
+         else
+             aggressive=""
+         fi 
+
+         if [ -z "$rightcert" ]; then
+              rcert=""
+         else
+              rcert="rightcert=$rightcert"
+         fi
+         if [ -z "$leftcert" ]; then
+              lcert=""
+         else
+              lcert="leftcert=$leftcert"
+         fi 
+        if [ "$ike_alg" = "auto" ]; then
+            ike="auto"
+        else
+            ike="${ike_alg:-aes128}-${ike_auth:-sha1}-${ike_dh:-modp1024}"
+        fi
+        if [ "$esp_alg" = "auto" ]; then
+            esp="auto"
+        else
+            esp="${esp_alg:-aes128}-${esp_auth:-sha1};${esp_dh:-modp1024}"
+        fi
+        netmask2bin "$rightmask"
+        rightmask="$?"
+        netmask2bin "$leftmask"
+        leftmask="$?"    
+
+        case $interface in
+            "br-wan")
+               left=$wan_ip
+               let "ws2scnt+=1"
+               ;;
+            "br-wan2")
+               left=$wan2_ip
+               let "w2s2scnt+=1"
+               ;;
+        esac
+        if [ $left = "x" ]; then
+         rm -f /var/run/mipsec/"$s2s".status
+cat > /var/run/mipsec/"$s2s".status <<EOF
+action=configed
+status=interface down
+constat=N/A
+EOF
+            return
+        fi 
+
+    config_get righttype "$s2s" righttype
+    config_get lefttype "$s2s" lefttype
+    [ -z "$lefttype" ] && lefttype="ip-id"
+    [ -z "$righttype" ] && righttype="ip-id"
+    if [ "$lefttype" = "ip-only" ]; then
+         leftstate="left=$left"
+         leftidstate=""
+         leftsecrets="$left"
+    fi
+    if [ "$lefttype" = "ip-id" ]; then
+         leftstate="left=$left"
+         leftidstate="leftid=$leftid"
+         leftsecrets="$left"
+    fi
+    if [ "$lefttype" = "dip-id" ]; then
+         leftstate="left=$left"
+         leftidstate="leftid=$leftid"
+         leftsecrets="$leftid"
+    fi
+    if [ "$righttype" = "ip-only" ]; then
+         rightstate="right=$right"
+         rightidstate=""
+         [ "$authby" = "secret" ] && {
+    cat >> /etc/ipsec.secrets <<EOF
+$leftsecrets $right : PSK "$key"
+EOF
+         if [ "$lefttype" = "ip-id" ]; then
+    cat >> /etc/ipsec.secrets <<EOF
+$leftid $right : PSK "$key"
+EOF
+         fi
+         }
+    fi
+    if [ "$righttype" = "ip-id" ]; then
+         rightstate="right=$right"
+         rightidstate="rightid=$rightid"
+         [ "$authby" = "secret" ] && {
+         if [ "$right" = "$rightid" ]; then
+    cat >> /etc/ipsec.secrets <<EOF
+$leftsecrets $rightid : PSK "$key"
+EOF
+            if [ "$lefttype" = "ip-id" ]; then
+    cat >> /etc/ipsec.secrets <<EOF
+$leftid $rightid : PSK "$key"
+EOF
+            fi
+         else
+    cat >> /etc/ipsec.secrets <<EOF
+$leftsecrets $rightid : PSK "$key"
+$leftsecrets $right : PSK "$key"
+EOF
+            if [ "$lefttype" = "ip-id" ]; then
+    cat >> /etc/ipsec.secrets <<EOF
+$leftid $rightid : PSK "$key"
+$leftid $right : PSK "$key"
+EOF
+            fi
+         fi
+         }
+    fi
+    if [ "$righttype" = "dip-id" ]; then
+         rightstate="right=%any"
+         rightidstate="rightid=$rightid"
+         [ "$authby" = "secret" ] && {
+    cat >> /etc/ipsec.secrets <<EOF
+$leftsecrets $rightid : PSK "$key"
+EOF
+         if [ "$lefttype" = "ip-id" ]; then
+    cat >> /etc/ipsec.secrets <<EOF
+$leftid $rightid : PSK "$key"
+EOF
+         fi
+         }
+    fi
+                           
+    [ "$authby" = "rsasig" ] && {
+    cat >> /etc/ipsec.secrets <<EOF
+: RSA /etc/ipsec.d/private/${leftpkey} "$key"
+EOF
+    }
+                               
+    cat >> /etc/ipsec.conf <<EOF
+conn $s2s
+    authby=$authby
+    auto=${auto:-route}
+    type=$tunnel_type
+
+    pfs=${pfs:-no}                   
+    $aggressive
+    keyingtries=%forever
+    rekey=$rekey
+
+    ike=$ike
+    ikelifetime=${ikelifetime}s
+
+    esp=$esp
+    keylife=${keylife}s
+
+    $leftstate
+    $leftidstate
+    leftsubnet=${leftsubnet}/${leftmask}
+    leftnexthop=$leftnexthop
+    leftsourceip=$leftsourceip
+    
+    $rightstate
+    $rightidstate
+    rightsubnet=${rightsubnet}/${rightmask}
+    rightnexthop=$rightnexthop
+
+    dpddelay=$dpddelay
+    dpdtimeout=$dpdtimeout
+    dpdaction=$dpdaction
+
+EOF
+
+[ "$authby" = "rsasig" ] && {
+    cat >> /etc/ipsec.conf <<EOF
+    leftrsasigkey=%cert
+    rightrsasigkey=%cert
+    disablearrivalcheck=no
+    $lcert
+    $rcert
+EOF
+    }
+
+}
+
+setup_ipsec_x2s() {
+    local x2s="$1"
+    local auto authby enabled advanced
+    local left interface leftid leftcert leftpkey lefttype
+    local tunnel_type
+    local keyingtries rekey
+    local ike_alg ike_auth ike_dh ikelifetime
+    local esp_alg esp_auth esp_dh keylife
+    local key pfs
+    local dpdtimeout dpddelay dpdaction
+    local localip startip endip
+
+         
+         config_get enabled           $x2s enabled
+         [ "$enabled" = "0" ] && {
+         #create run files
+         rm -f /var/run/mipsec/"$x2s".status
+cat >> /var/run/mipsec/"$x2s".status <<EOF
+action=configed
+status=disable
+serstat=N/A
+EOF
+         return
+         }
+         config_get esp_alg           $x2s esp_alg  
+         config_get esp_auth          $x2s esp_auth 
+         config_get esp_dh            $x2s esp_dh
+         config_get interface         $x2s interface    
+         config_get ike_alg           $x2s ike_alg  
+         config_get ike_auth          $x2s ike_auth 
+         config_get ike_dh            $x2s ike_dh
+         config_get authby            $x2s authby
+         config_get auto              $x2s auto
+         config_get tunnel_type       $x2s tunnel_type
+         config_get pfs               $x2s pfs
+         config_get key               $x2s key
+         config_get rekey             $x2s rekey
+         config_get keyingtries       $x2s keyingtries
+         config_get ikelifetime       $x2s ikelifetime
+         config_get keylife           $x2s keylife
+         config_get dpdtimeout        $x2s dpdtimeout
+         config_get dpddelay          $x2s dpddelay
+         config_get dpdaction         $x2s dpdaction
+         config_get startip           $x2s startip
+         config_get endip             $x2s endip
+         config_get localip           $x2s localip
+
+         config_get advanced          $x2s advanced
+         config_get leftid            $x2s leftid
+         config_get leftcert          $x2s leftcert
+         config_get leftpkey          $x2s leftpkey
+         config_get lefttype          $x2s lefttype
+
+    if [ "$advanced" = "yes" ]; then 
+        if [ "$ike_alg" = "auto" ]; then
+            ike="ike=auto"
+        else
+            ike="ike=${ike_alg:-aes128}-${ike_auth:-sha1}-${ike_dh:-modp1024}"
+        fi
+        if [ "$esp_alg" = "auto" ]; then
+            esp="esp=auto"
+        else
+            esp="esp=${esp_alg:-aes128}-${esp_auth:-sha1};${esp_dh:-modp1024}"
+        fi
+    else
+        ike=""
+        esp=""
+    fi
+    if [ "$lefttype" = "ip-only" ]; then
+        lid=""
+    else
+        if [ -z "$leftid" ]; then
+             lid=""
+        else
+             lid="leftid=$leftid"
+        fi
+    fi
+        case $interface in
+            "br-wan")
+               left=$wan_ip
+               let "wx2scnt+=1"
+               ;;
+            "br-wan2")
+               left=$wan2_ip
+               let "w2x2scnt+=1"
+               ;;
+        esac
+
+        if [ $left = "x" ]; then
+         rm -f /var/run/mipsec/"$x2s".status
+cat >> /var/run/mipsec/"$x2s".status <<EOF
+action=configed
+status=interface down
+constat=N/A
+EOF
+            return
+        fi  
+    cat >> /etc/ipsec.conf <<EOF
+
+conn roadwarrior-l2tp-updatedwin
+    leftprotoport=17/1701
+    rightprotoport=17/1701
+    also=$x2s
+
+conn roadwarrior-l2tp
+    leftprotoport=17/0
+    rightprotoport=17/1701
+    also=$x2s
+
+conn macintosh-l2tp
+    leftprotoport=17/1701
+    rightprotoport=17/%any
+    also=$x2s
+
+conn $x2s
+    authby=$authby
+    auto=add
+    type=$tunnel_type
+
+    pfs=${pfs:-no}                   
+
+    keyingtries=$keyingtries
+    rekey=no
+
+    $ike
+    ikelifetime=${ikelifetime}s
+
+    $esp
+    keylife=${keylife}s
+
+    left=$left
+    leftnexthop=$left 
+    $lid
+
+    right=%any
+    rightnexthop=$left
+    
+    rightsubnet=vhost:%priv,%no
+
+    dpddelay=$dpddelay
+    dpdtimeout=$dpdtimeout
+    dpdaction=$dpdaction
+
+EOF
+
+    if [ "$authby" = "rsasig" ]; then
+    cat >> /etc/ipsec.conf <<EOF
+    leftrsasigkey=%cert
+    rightrsasigkey=%cert
+    disablearrivalcheck=no
+    leftcert=$leftcert
+    rightca=%same
+EOF
+
+    cat >> /etc/ipsec.secrets <<EOF
+: RSA /etc/ipsec.d/private/${leftpkey} "$key"
+EOF
+    else
+cat >> /etc/ipsec.secrets <<EOF
+$left %any : PSK "$key"
+EOF
+        if [ "$lefttype" = "ip-id" ]; then
+             [ -z "$leftid" ] || {
+                [ "$leftid" = "$left" ] || {
+cat >> /etc/ipsec.secrets <<EOF
+$leftid %any : PSK "$key"
+EOF
+                }
+             }
+        fi
+    fi
+
+#create xl2tpd.conf
+    cat > /etc/xl2tpd/xl2tpd.conf <<EOF
+
+[global]
+listen-addr = $left
+port = 1701
+access control = no
+ipsec saref = no
+force userspace = yes
+
+[lns default]
+;exclusive = yes
+ip range = $startip-$endip
+local ip = $localip
+hidden bit = no
+length bit = yes
+require authentication = yes
+require chap = yes
+require pap = yes
+name = VIP4G
+ppp debug = yes
+pppoptfile = /etc/ppp/options.xl2tpd
+
+EOF
+
+#create run files
+rm -f /var/run/mipsec/"$x2s".status
+cat >> /var/run/mipsec/"$x2s".status <<EOF
+action=configed
+status=waiting for start
+serstat=Start
+EOF
+
+}
+
+setup_ipsec_x2c() {
+    local x2c="$1"
+    local auto authby enabled
+    local left interface leftid lefttype leftcert leftpkey leftnexthop
+    local right rightid righttype rightcert rightnexthop
+    local tunnel_type
+    local keyingtries rekey
+    local ike_alg ike_auth ike_dh ikelifetime
+    local esp_alg esp_auth esp_dh keylife
+    local key pfs
+    local dpdtimeout dpddelay dpdaction
+    local localip
+    local pap chap authname pppidle pppauth ipsecadvanced
+    local rightmask
+    local redial maxredial rtimeout
+
+         
+         config_get enabled           $x2c enabled
+         [ "$enabled" = "0" ] && {
+         #create run files
+         rm -f /var/run/mipsec/$x2c
+cat >> /var/run/mipsec/$x2c <<EOF
+action=configed
+status=disable
+constat=N/A
+EOF
+         return
+         }
+         config_get esp_alg           $x2c esp_alg  
+         config_get esp_auth          $x2c esp_auth 
+         config_get esp_dh            $x2c esp_dh
+         config_get interface         $x2c interface
+         config_get right             $x2c right 
+         config_get rightmask         $x2c rightmask
+         config_get ike_alg           $x2c ike_alg  
+         config_get ike_auth          $x2c ike_auth 
+         config_get ike_dh            $x2c ike_dh
+         config_get authby            $x2c authby
+         config_get auto              $x2c auto
+         config_get tunnel_type       $x2c tunnel_type
+         config_get pfs               $x2c pfs
+         config_get key               $x2c key
+         config_get rekey             $x2c rekey
+         config_get keyingtries       $x2c keyingtries
+         config_get ikelifetime       $x2c ikelifetime
+         config_get keylife           $x2c keylife
+         config_get dpdtimeout        $x2c dpdtimeout
+         config_get dpddelay          $x2c dpddelay
+         config_get dpdaction         $x2c dpdaction
+         config_get advanced          $x2c advanced
+         config_get rightid           $x2c rightid
+         config_get localip           $x2c localip
+         config_get pap               $x2c pap
+         config_get chap              $x2c chap
+         config_get authname          $x2c authname
+         config_get pppidle           $x2c pppidle
+         config_get pppauth           $x2c pppauth
+         config_get redial            $x2c redial
+         config_get maxredial         $x2c maxredial
+         config_get rtimeout          $x2c rtimeout
+         config_get leftid            $x2c leftid
+         config_get leftcert          $x2c leftcert
+         config_get leftpkey          $x2c leftpkey
+         config_get lefttype          $x2c lefttype
+         config_get righttype         $x2c righttype
+         config_get rightcert         $x2c rightcert
+         config_get leftnexthop       $x2c leftnexthop
+         config_get rightnexthop      $x2c rightnexthop  
+   
+    if [ "$redial" != "yes" ]; then
+          redial="no"
+    fi
+    if [ "$advanced" = "no" ]; then
+        ike=""
+        esp=""
+    else
+        ike="ike=${ike_alg:-aes128}-${ike_auth:-sha1}-${ike_dh:-modp1024}"
+        esp="esp=${esp_alg:-aes128}-${esp_auth:-sha1};${esp_dh:-modp1024}"
+    fi
+    netmask2bin "$rightmask"
+    rightmask="$?"
+        case $interface in
+            "br-wan")
+               left=$wan_ip
+               let "wx2ccnt+=1"
+               ;;
+            "br-wan2")
+               left=$wan2_ip
+               let "w2x2ccnt+=1"
+               ;;
+        esac
+
+        if [ $left = "x" ]; then
+         rm -f /var/run/mipsec/$x2c
+cat >> /var/run/mipsec/$x2c <<EOF
+action=configed
+status=interface down
+constat=N/A
+EOF
+            return
+        fi  
+
+         if [ -z "$rightcert" ]; then
+              rcert=""
+         else
+              rcert="rightcert=$rightcert"
+         fi
+         if [ -z "$leftcert" ]; then
+              lcert=""
+         else
+              lcert="leftcert=$leftcert"
+         fi
+
+    [ -z "$lefttype" ] && lefttype="ip-only"
+    [ -z "$righttype" ] && righttype="ip-id"
+
+    if [ "$lefttype" = "ip-only" ]; then
+         leftstate="left=$left"
+         leftidstate=""
+         leftsecrets="$left"
+    fi
+    if [ "$lefttype" = "ip-id" ]; then
+         leftstate="left=$left"
+         leftidstate="leftid=$leftid"
+         leftsecrets="$left"
+    fi
+    if [ "$lefttype" = "dip-id" ]; then
+         leftstate="left=$left"
+         leftidstate="leftid=$leftid"
+         leftsecrets="$leftid"
+    fi
+    if [ "$righttype" = "ip-only" ]; then
+         rightstate="right=$right"
+         rightidstate=""
+         [ "$authby" = "secret" ] && {
+    cat >> /etc/ipsec.secrets <<EOF
+$leftsecrets $right : PSK "$key"
+EOF
+
+if [ "$lefttype" = "ip-id" ]; then
+cat >> /etc/ipsec.secrets <<EOF
+$leftid $right : PSK "$key"
+EOF
+         fi
+         }
+    fi
+    if [ "$righttype" = "ip-id" ]; then
+         rightstate="right=$right"
+         rightidstate="rightid=$rightid"
+         [ "$authby" = "secret" ] && {
+         if [ "$right" = "$rightid" ]; then
+    cat >> /etc/ipsec.secrets <<EOF
+$leftsecrets $rightid : PSK "$key"
+EOF
+            if [ "$lefttype" = "ip-id" ]; then
+    cat >> /etc/ipsec.secrets <<EOF
+$leftid $rightid : PSK "$key"
+EOF
+            fi
+        else
+cat >> /etc/ipsec.secrets <<EOF
+$leftsecrets $rightid : PSK "$key"
+$leftsecrets $right : PSK "$key"
+EOF
+            if [ "$lefttype" = "ip-id" ]; then
+    cat >> /etc/ipsec.secrets <<EOF
+$leftid $rightid : PSK "$key"
+$leftid $right : PSK "$key"
+EOF
+            fi
+         fi
+         }
+    fi
+                           
+    [ "$authby" = "rsasig" ] && {
+    cat >> /etc/ipsec.secrets <<EOF
+: RSA /etc/ipsec.d/private/${leftpkey} "$key"
+EOF
+    }
+
+    if [ -z "$leftnexthop" ]; then
+          leftnexthop="$left"
+    fi
+
+    if [ -z "$rightnexthop" ]; then
+          rightnexthop="$left"
+    fi
+
+    cat >> /etc/ipsec.conf <<EOF
+
+conn $x2c
+    authby=$authby
+    auto=add
+    type=$tunnel_type
+
+    pfs=${pfs:-no}                   
+
+    keyingtries=%forever
+    rekey=$rekey                
+
+    $ike
+    ikelifetime=${ikelifetime}s
+
+    $esp
+    keylife=${keylife}s
+
+
+    $leftstate
+    $leftidstate
+    leftnexthop=$leftnexthop
+
+    $rightstate
+    $rightidstate
+    rightnexthop=$rightnexthop
+    leftprotoport=17/1701
+    rightprotoport=17/1701
+
+    dpddelay=$dpddelay
+    dpdtimeout=$dpdtimeout
+    dpdaction=$dpdaction
+EOF
+
+[ "$authby" = "rsasig" ] && {
+    cat >> /etc/ipsec.conf <<EOF
+    leftrsasigkey=%cert
+    rightrsasigkey=%cert
+    disablearrivalcheck=no
+    $lcert
+    $rcert
+EOF
+    }
+
+#create xl2tpd.conf
+[ -f "/etc/xl2tpd/xl2tpd.conf" ] || {
+    cat > /etc/xl2tpd/xl2tpd.conf <<EOF
+[global]
+port = 1701
+access control = no
+ipsec saref = no
+force userspace = yes
+EOF
+}
+[ -d /etc/xl2tpclient ] || mkdir /etc/xl2tpclient
+cat > /etc/xl2tpclient/${x2c}.conf <<EOF
+lns=$right length bit=yes require authentication=$pppauth require chap=$chap require pap=$pap name=$authname ppp debug=yes redial=$redial redial timeout=$rtimeout max redials=$maxredial pppoptfile=/etc/ppp/options.l2tpd.$x2c
+EOF
+#create ppp options
+rm -f /etc/ppp/options.l2tpd.$x2c
+cat >> /etc/ppp/options.l2tpd.$x2c <<EOF
+ipcp-accept-local
+ipcp-accept-remote
+refuse-eap
+noccp
+noauth
+crtscts
+mtu 1410
+mru 1410
+nodefaultroute
+lock
+connect-delay 5000
+idle $pppidle
+logfile /var/log/mipsec.$x2c
+ipparam $x2c
+EOF
+
+}
+
+setup_ipsec_gre() {
+
+    local cfg="$1"
+    local ipsec_enable local_status interface
+    config_get local_status "$cfg" local_status
+    [ "$local_status" == "Disable" ] && {
+         return
+    }
+    config_get enableipsec "$cfg" enableipsec
+    [ "$enableipsec" == "Disable" ] && {
+         return
+    }
+
+    local ipsec_localgwip ipsec_localsid
+    local ipsec_remotegwip ipsec_remotesid
+    local ipsec_key ipsec_mode
+    local ikelifetime keylife
+    local pfs aggrmode lefttype righttype
+    local ike_alg ike_auth ike_dh
+    local esp_alg esp_auth esp_dh
+    local dpddelay dpdtimeout dpdaction
+    local local_subnet_ip local_subnet_mask remote_netmask remote_subnet
+    local ipsec_localsbip ipsec_localsbmask ipsec_remotesbip ipsec_remotesbmask ipsec_localsip ipsec_localnext ipsec_remotenext
+
+    config_get ipsec_localsbip         $cfg ipsec_localsbip
+    config_get ipsec_localsbmask       $cfg ipsec_localsbmask
+    config_get ipsec_remotesbip        $cfg ipsec_remotesbip
+    config_get ipsec_remotesbmask      $cfg ipsec_remotesbmask
+    config_get ipsec_localsip          $cfg ipsec_localsip
+    config_get ipsec_localnext         $cfg ipsec_localnext
+    config_get ipsec_remotenext        $cfg ipsec_remotenext
+    config_get ipsec_localgwip         $cfg ipsec_localgwip
+    config_get ipsec_localsid          $cfg ipsec_localsid
+    config_get ipsec_remotegwip        $cfg ipsec_remotegwip
+    config_get ipsec_remotesid         $cfg ipsec_remotesid
+    config_get pfs                     $cfg pfs
+    config_get ike_alg                 $cfg ike_alg
+    config_get ike_auth                $cfg ike_auth
+    config_get ike_dh                  $cfg ike_dh
+    config_get ikelifetime             $cfg ikelifetime
+    config_get esp_alg                 $cfg esp_alg
+    config_get esp_auth                $cfg esp_auth
+    config_get esp_dh                  $cfg esp_dh
+    config_get keylife                 $cfg keylife
+    config_get ipsec_key               $cfg ipsec_key
+    config_get ipsec_mode              $cfg ipsec_mode
+    config_get dpddelay                $cfg dpddelay
+    config_get dpdtimeout              $cfg dpdtimeout
+    config_get dpdaction               $cfg dpdaction
+    config_get local_subnet_ip         $cfg local_subnet_ip
+    config_get local_subnet_mask       $cfg local_subnet_mask
+    config_get remote_subnet           $cfg remote_subnet
+    config_get remote_netmask          $cfg remote_netmask
+    config_get interface               $cfg interface
+    config_get aggrmode                $cfg aggrmode   
+    config_get lefttype                $cfg lefttype
+    config_get righttype               $cfg righttype      
+
+         [ -z "$aggrmode" ] && aggrmode="no"
+         if [ "$aggrmode" = "yes" ]; then
+             aggressive="aggrmode=yes"
+         else
+             aggressive=""
+         fi 
+    if [ "$ike_alg" = "auto" ]; then
+        ike="auto"
+    else
+        ike="${ike_alg:-aes128}-${ike_auth:-sha1}-${ike_dh:-modp1024}"
+    fi
+    if [ "$esp_alg" = "auto" ]; then
+        esp="auto"
+    else
+        esp="${esp_alg:-aes128}-${esp_auth:-sha1};${esp_dh:-modp1024}"
+    fi
+    if [ "$interface" == "br-wan2" ]; then
+        left=$wan2_ip
+        let "w2grecnt+=1"
+    else
+        left=$wan_ip
+        let "wgrecnt+=1" 
+    fi
+    if [ $left = "x" ]; then
+        rm -f /var/run/mipsec/$cfg
+cat >> /var/run/mipsec/$cfg <<EOF
+action=configed
+status=interface down
+constat=N/A
+EOF
+            return
+    fi 
+    netmask2bin "$local_subnet_mask"
+    local_subnet_mask="$?"
+    netmask2bin "$remote_netmask"
+    remote_netmask="$?"
+    netmask2bin "$ipsec_localsbmask"
+    ipsec_localsbmask="$?"
+    netmask2bin "$ipsec_remotesbmask"
+    ipsec_remotesbmask="$?"
+
+    [ -z "$lefttype" ] && lefttype="ip-id"
+    [ -z "$righttype" ] && righttype="ip-id"
+    if [ "$lefttype" = "ip-only" ]; then
+         leftstate="left=$ipsec_localgwip"
+         leftidstate=""
+         leftsecrets="$ipsec_localgwip"
+    fi
+    if [ "$lefttype" = "ip-id" ]; then
+         leftstate="left=$ipsec_localgwip"
+         leftidstate="leftid=$ipsec_localsid"
+         leftsecrets="$ipsec_localgwip"
+    fi
+    if [ "$lefttype" = "dip-id" ]; then
+         leftstate="left=$left"
+         leftidstate="leftid=$ipsec_localsid"
+         leftsecrets="$ipsec_localsid"
+    fi
+    if [ "$righttype" = "ip-only" ]; then
+         rightstate="right=$ipsec_remotegwip"
+         rightidstate=""
+
+    cat >> /etc/ipsec.secrets <<EOF
+$leftsecrets $ipsec_remotegwip : PSK "$ipsec_key"
+EOF
+         if [ "$lefttype" = "ip-id" ]; then
+    cat >> /etc/ipsec.secrets <<EOF
+$ipsec_localsid $ipsec_remotegwip : PSK "$ipsec_key"
+EOF
+         fi
+         
+    fi
+    if [ "$righttype" = "ip-id" ]; then
+         rightstate="right=$ipsec_remotegwip"
+         rightidstate="rightid=$ipsec_remotesid"
+
+         if [ "$ipsec_remotegwip" = "$ipsec_remotesid" ]; then
+    cat >> /etc/ipsec.secrets <<EOF
+$leftsecrets $ipsec_remotesid : PSK "$ipsec_key"
+EOF
+            if [ "$lefttype" = "ip-id" ]; then
+    cat >> /etc/ipsec.secrets <<EOF
+$ipsec_localsid $ipsec_remotesid : PSK "$ipsec_key"
+EOF
+            fi
+         else
+    cat >> /etc/ipsec.secrets <<EOF
+$leftsecrets $ipsec_remotesid : PSK "$ipsec_key"
+$leftsecrets $ipsec_remotegwip : PSK "$ipsec_key"
+EOF
+            if [ "$lefttype" = "ip-id" ]; then
+    cat >> /etc/ipsec.secrets <<EOF
+$ipsec_localsid $ipsec_remotesid : PSK "$ipsec_key"
+$ipsec_localsid $ipsec_remotegwip : PSK "$ipsec_key"
+EOF
+            fi
+         fi
+         
+    fi
+    if [ "$righttype" = "dip-id" ]; then
+         rightstate="right=%any"
+         rightidstate="rightid=$ipsec_remotesid"
+
+    cat >> /etc/ipsec.secrets <<EOF
+$leftsecrets $ipsec_remotesid : PSK "$ipsec_key"
+EOF
+         if [ "$lefttype" = "ip-id" ]; then
+    cat >> /etc/ipsec.secrets <<EOF
+$ipsec_localsid $ipsec_remotesid : PSK "$ipsec_key"
+EOF
+         fi
+         
+    fi
+
+    auto="add"
+    if [ "$ipsec_mode" == "transport" ]; then
+        lpro="leftprotoport=gre"
+        rpro="rightprotoport=gre"
+        lsub=""
+        rsub=""
+        lsip=""
+    else
+        lpro=""
+        rpro=""
+        lsub="leftsubnet=${ipsec_localsbip}/${ipsec_localsbmask}"
+        rsub="rightsubnet=${ipsec_remotesbip}/${ipsec_remotesbmask}"
+        lsip="leftsourceip=$ipsec_localsip"
+        [ "$enableipsec" = "bgs" ] && auto="route"
+    fi
+
+    cat >> /etc/ipsec.conf <<EOF
+conn $cfg
+    authby=secret
+    auto=$auto
+    type=$ipsec_mode
+
+    pfs=${pfs:-no}                   
+    $aggressive
+    keyingtries=%forever
+    rekey=yes
+
+    ike=$ike
+    ikelifetime=${ikelifetime}s
+
+    esp=$esp
+    keylife=${keylife}s
+
+    $leftstate
+    $leftidstate
+    $lsip
+    leftnexthop=$ipsec_localnext
+    $lpro
+    $lsub
+        
+    $rightstate
+    $rightidstate
+    rightnexthop=$ipsec_remotenext
+    $rpro
+    $rsub
+
+    dpddelay=$dpddelay
+    dpdtimeout=$dpdtimeout
+    dpdaction=$dpdaction
+EOF
+
+}
+
+setup_configs() {
+    config_load ipsec
+    mkdir /var/run/mipsec 
+#fetch local wan2 ip
+    #wan2_ip="$(ifconfig br-wan2 | grep 'inet addr' | awk '{print $2}' | sed -e 's/.*://')"
+    wan2_ip=$(/sbin/uci -P /var/state get network.wan2.up)
+    if [ $wan2_ip = "1" ]; then
+       wan2_ip=$(/sbin/uci -P /var/state get network.wan2.ipaddr)
+    else
+       wan2_ip="x"
+    fi
+#fetch local wan ip
+    #wan_ip="$(ifconfig br-wan | grep 'inet addr' | awk '{print $2}' | sed -e 's/.*://')"
+    wan_ip=$(/sbin/uci -P /var/state get network.wan.up)
+    if [ $wan_ip = "1" ]; then
+       wan_ip=$(/sbin/uci -P /var/state get network.wan.ipaddr)
+    else
+       wan_ip="x"
+    fi
+    cat > /etc/ipsec.conf << EOF
+version 2.0
+
+config setup
+    nat_traversal=yes
+    oe=off
+    protostack=netkey
+
+conn %default
+    rekeymargin=3m
+    keyingtries=3
+    authby=secret
+
+conn block
+     auto=ignore
+conn clear
+     auto=ignore
+conn private
+     auto=ignore
+conn clear-or-private
+     auto=ignore
+conn private-or-clear
+     auto=ignore
+
+EOF
+    config_foreach setup_ipsec_s2s s2stunnel
+    config_load ipsec
+    config_foreach setup_ipsec_x2s x2stunnel
+    config_load ipsec
+    config_foreach setup_ipsec_x2c x2ctunnel
+    config_load gre-tunnels
+    config_foreach setup_ipsec_gre gretunnel
+
+}
+
+start () {
+    [ -f "/etc/ipsec.conf" ] && rm -f /etc/ipsec.conf
+
+    [ -f "/etc/ipsec.secrets" ] && rm -f /etc/ipsec.secrets
+
+    [ -f "/etc/xl2tpd/xl2tpd.conf" ] && rm -f /etc/xl2tpd/xl2tpd.conf
+
+    [ -f "/etc/xl2tpd/xl2tp-secrets" ] && rm -f /etc/xl2tpd/xl2tp-secrets
+
+    [ -f "/var/run/mipsec/cfgcnt" ] && rm -f /var/run/mipsec/cfgcnt
+
+    [ -d "/etc/xl2tpclient" ] && rm -rf /etc/xl2tpclient
+    
+    ws2scnt="0"
+    wx2scnt="0"
+    wx2ccnt="0"
+    w2s2scnt="0"
+    w2x2scnt="0"
+    w2x2ccnt="0"
+    wgrecnt="0"
+    w2grecnt="0"
+    setup_configs
+    echo "ws2scnt=$ws2scnt" > /var/run/mipsec/cfgcnt
+    echo "wx2scnt=$wx2scnt" >> /var/run/mipsec/cfgcnt
+    echo "wx2ccnt=$wx2ccnt" >> /var/run/mipsec/cfgcnt
+    echo "w2s2scnt=$w2s2scnt" >> /var/run/mipsec/cfgcnt
+    echo "w2x2scnt=$w2x2scnt" >> /var/run/mipsec/cfgcnt
+    echo "w2x2ccnt=$w2x2ccnt" >> /var/run/mipsec/cfgcnt
+    echo "wgrecnt=$wgrecnt" >> /var/run/mipsec/cfgcnt
+    echo "w2grecnt=$w2grecnt" >> /var/run/mipsec/cfgcnt
+
+    let cfgcnt=wx2scnt+wx2ccnt+ws2scnt+wgrecnt
+    if [ $cfgcnt -gt 0 ]; then
+             cmd="/usr/sbin/iptables -S | grep -c 'zone_wan -m policy --dir in --pol ipsec'"
+             fws=`eval $cmd`
+             if [ "$fws" -gt 0 ]; then
+                  logger -t "ipsec_vpn" "reload zone_wan the firewall rulepolicy ipsec exists"
+             else
+                  /usr/sbin/iptables -I zone_wan 1  -m policy --dir in --pol ipsec -j ACCEPT > /dev/null 2>&1
+             fi
+             cmd="/usr/sbin/iptables -S | grep -c 'zone_wan -p udp -m state --state NEW -m udp --dport 1701 -j ACCEPT'"
+             fws=`eval $cmd`
+             if [ "$fws" -gt 0 ]; then
+                  logger -t "ipsec_vpn" "reload zone_wan the firewall rule1701 exists"
+             else
+                  /usr/sbin/iptables -I zone_wan 1 -p udp -m state --state NEW -m udp --dport 1701 -j ACCEPT > /dev/null 2>&1
+             fi
+             cmd="/usr/sbin/iptables -S | grep -c 'zone_wan -p udp -m state --state NEW -m udp --dport 4500 -j ACCEPT'"
+             fws=`eval $cmd`
+             if [ "$fws" -gt 0 ]; then
+                  logger -t "ipsec_vpn" "reload zone_wan the firewall rule4500 exists"
+             else
+                  /usr/sbin/iptables -I zone_wan 1 -p udp -m state --state NEW -m udp --dport 4500 -j ACCEPT > /dev/null 2>&1
+             fi
+             cmd="/usr/sbin/iptables -S | grep -c 'zone_wan -p udp -m state --state NEW -m udp --dport 500 -j ACCEPT'"
+             fws=`eval $cmd`
+             if [ "$fws" -gt 0 ]; then
+                  logger -t "ipsec_vpn" "reload zone_wan the firewall rule500 exists"
+             else
+                  /usr/sbin/iptables -I zone_wan 1 -p udp -m state --state NEW -m udp --dport 500 -j ACCEPT > /dev/null 2>&1
+             fi
+             cmd="/usr/sbin/iptables -S | grep -c 'zone_wan -p esp -j ACCEP'"
+             fws=`eval $cmd`
+             if [ "$fws" -gt 0 ]; then
+                  logger -t "ipsec_vpn" "reload zone_wan the firewall rule esp exists"
+             else
+                  /usr/sbin/iptables -I zone_wan 1 -p esp -j ACCEPT > /dev/null 2>&1
+             fi
+             cmd="/usr/sbin/iptables -S | grep -c 'zone_wan -p ah -j ACCEP'"
+             fws=`eval $cmd`
+             if [ "$fws" -gt 0 ]; then
+                  logger -t "ipsec_vpn" "reload zone_wan the firewall rule ah exists"
+             else
+                  /usr/sbin/iptables -I zone_wan 1 -p ah -j ACCEPT > /dev/null 2>&1
+             fi
+             cmd="/usr/sbin/iptables -S | grep -c 'zone_wan_forward -p udp -m udp --dport 1701 -j ACCEPT'"
+             fws=`eval $cmd`
+             if [ "$fws" -gt 0 ]; then
+                  logger -t "ipsec_vpn" "reload zone_wan_forward the firewall rule1701 exists"
+             else
+                  /usr/sbin/iptables -I zone_wan_forward 1 -p udp -m udp --dport 1701 -j ACCEPT > /dev/null 2>&1
+             fi
+             cmd="/usr/sbin/iptables -S | grep -c 'zone_wan_forward -p udp -m udp --dport 4500 -j ACCEPT'"
+             fws=`eval $cmd`
+             if [ "$fws" -gt 0 ]; then
+                  logger -t "ipsec_vpn" "reload zone_wan_forward the firewall rule4500 exists"
+             else
+                  /usr/sbin/iptables -I zone_wan_forward 1 -p udp -m udp --dport 4500 -j ACCEPT > /dev/null 2>&1
+             fi
+             cmd="/usr/sbin/iptables -S | grep -c 'zone_wan_forward -p udp -m udp --dport 500 -j ACCEPT'"
+             fws=`eval $cmd`
+             if [ "$fws" -gt 0 ]; then
+                  logger -t "ipsec_vpn" "reload zone_wan_forward the firewall rule500 exists"
+             else
+                  /usr/sbin/iptables -I zone_wan_forward 1 -p udp -m udp --dport 500 -j ACCEPT > /dev/null 2>&1
+             fi
+                  echo "/usr/sbin/iptables -I zone_wan 1  -m policy --dir in --pol ipsec -j ACCEPT" > /etc/firewall.ipsecwan
+                  echo "/usr/sbin/iptables -I zone_wan 1 -p udp -m state --state NEW -m udp --dport 500 -j ACCEPT" >> /etc/firewall.ipsecwan
+                  echo "/usr/sbin/iptables -I zone_wan 1 -p esp -j ACCEPT" >> /etc/firewall.ipsecwan
+                  echo "/usr/sbin/iptables -I zone_wan 1 -p ah -j ACCEPT" >> /etc/firewall.ipsecwan
+                  echo "/usr/sbin/iptables -I zone_wan 1 -p udp -m state --state NEW -m udp --dport 4500 -j ACCEPT" >> /etc/firewall.ipsecwan
+                  echo "/usr/sbin/iptables -I zone_wan 1 -p udp -m state --state NEW -m udp --dport 1701 -j ACCEPT" >> /etc/firewall.ipsecwan
+                  echo "/usr/sbin/iptables -I zone_wan_forward 1 -p udp -m udp --dport 4500 -j ACCEPT" >> /etc/firewall.ipsecwan
+                  echo "/usr/sbin/iptables -I zone_wan_forward 1 -p udp -m udp --dport 1701 -j ACCEPT" >> /etc/firewall.ipsecwan
+                  echo "/usr/sbin/iptables -I zone_wan_forward 1 -p udp -m udp --dport 500 -j ACCEPT" >> /etc/firewall.ipsecwan
+
+    else
+
+                  rm -f /etc/firewall.ipsecwan
+                  echo "/usr/sbin/iptables -D zone_wan -p udp -m state --state NEW -m udp --dport 500 -j ACCEPT" > /etc/dfirewall.ipsecwan
+                  echo "/usr/sbin/iptables -D zone_wan -p esp -j ACCEPT" >> /etc/dfirewall.ipsecwan
+                  echo "/usr/sbin/iptables -D zone_wan -p ah -j ACCEPT" >> /etc/dfirewall.ipsecwan
+                  echo "/usr/sbin/iptables -D zone_wan -p udp -m state --state NEW -m udp --dport 4500 -j ACCEPT" >> /etc/dfirewall.ipsecwan
+                  echo "/usr/sbin/iptables -D zone_wan -p udp -m state --state NEW -m udp --dport 1701 -j ACCEPT" >> /etc/dfirewall.ipsecwan
+                  echo "/usr/sbin/iptables -D zone_wan_forward -p udp -m udp --dport 4500 -j ACCEPT" >> /etc/dfirewall.ipsecwan
+                  echo "/usr/sbin/iptables -D zone_wan_forward -p udp -m udp --dport 1701 -j ACCEPT" >> /etc/dfirewall.ipsecwan
+                  echo "/usr/sbin/iptables -D zone_wan_forward -p udp -m udp --dport 500 -j ACCEPT" >> /etc/dfirewall.ipsecwan
+                  echo "/usr/sbin/iptables -D zone_wan -m policy --dir in --pol ipsec -j ACCEPT" >> /etc/dfirewall.ipsecwan
+
+             [ -f /etc/dfirewall.ipsecwan ] && sh /etc/dfirewall.ipsecwan
+    fi
+
+    let cfgcnt2=w2x2scnt+w2x2ccnt+w2s2scnt+w2grecnt
+    if [ $cfgcnt2 -gt 0 ]; then
+             cmd="/usr/sbin/iptables -S | grep -c 'zone_wan2 -m policy --dir in --pol ipsec'"
+             fws=`eval $cmd`
+             if [ "$fws" -gt 0 ]; then
+                  logger -t "ipsec_vpn" "reload zone_wan2 the firewall rulepolicy ipsec exists"
+             else
+                  /usr/sbin/iptables -I zone_wan2 1  -m policy --dir in --pol ipsec -j ACCEPT > /dev/null 2>&1
+             fi
+             cmd="/usr/sbin/iptables -S | grep -c 'zone_wan2 -p udp -m state --state NEW -m udp --dport 1701 -j ACCEPT'"
+             fws=`eval $cmd`
+             if [ "$fws" -gt 0 ]; then
+                  logger -t "ipsec_vpn" "reload zone_wan2 the firewall rule1701 exists"
+             else
+                  /usr/sbin/iptables -I zone_wan2 1 -p udp -m state --state NEW -m udp --dport 1701 -j ACCEPT > /dev/null 2>&1
+             fi
+             cmd="/usr/sbin/iptables -S | grep -c 'zone_wan2 -p udp -m state --state NEW -m udp --dport 4500 -j ACCEPT'"
+             fws=`eval $cmd`
+             if [ "$fws" -gt 0 ]; then
+                  logger -t "ipsec_vpn" "reload zone_wan2 the firewall rule4500 exists"
+             else
+                  /usr/sbin/iptables -I zone_wan2 1 -p udp -m state --state NEW -m udp --dport 4500 -j ACCEPT > /dev/null 2>&1
+             fi
+             cmd="/usr/sbin/iptables -S | grep -c 'zone_wan2 -p udp -m state --state NEW -m udp --dport 500 -j ACCEPT'"
+             fws=`eval $cmd`
+             if [ "$fws" -gt 0 ]; then
+                  logger -t "ipsec_vpn" "reload zone_wan2 the firewall rule500 exists"
+             else
+                  /usr/sbin/iptables -I zone_wan2 1 -p udp -m state --state NEW -m udp --dport 500 -j ACCEPT > /dev/null 2>&1
+             fi
+             cmd="/usr/sbin/iptables -S | grep -c 'zone_wan2 -p esp -j ACCEP'"
+             fws=`eval $cmd`
+             if [ "$fws" -gt 0 ]; then
+                  logger -t "ipsec_vpn" "reload zone_wan2 the firewall rule esp exists"
+             else
+                  /usr/sbin/iptables -I zone_wan2 1 -p esp -j ACCEPT > /dev/null 2>&1
+             fi
+             cmd="/usr/sbin/iptables -S | grep -c 'zone_wan2 -p ah -j ACCEP'"
+             fws=`eval $cmd`
+             if [ "$fws" -gt 0 ]; then
+                  logger -t "ipsec_vpn" "reload zone_wan2 the firewall rule ah exists"
+             else
+                  /usr/sbin/iptables -I zone_wan2 1 -p ah -j ACCEPT > /dev/null 2>&1
+             fi
+             cmd="/usr/sbin/iptables -S | grep -c 'zone_wan2_forward -p udp -m udp --dport 1701 -j ACCEPT'"
+             fws=`eval $cmd`
+             if [ "$fws" -gt 0 ]; then
+                  logger -t "ipsec_vpn" "reload zone_wan2_forward the firewall rule1701 exists"
+             else
+                  /usr/sbin/iptables -I zone_wan2_forward 1 -p udp -m udp --dport 1701 -j ACCEPT > /dev/null 2>&1
+             fi
+             cmd="/usr/sbin/iptables -S | grep -c 'zone_wan2_forward -p udp -m udp --dport 4500 -j ACCEPT'"
+             fws=`eval $cmd`
+             if [ "$fws" -gt 0 ]; then
+                  logger -t "ipsec_vpn" "reload zone_wan2_forward the firewall rule4500 exists"
+             else
+                  /usr/sbin/iptables -I zone_wan2_forward 1 -p udp -m udp --dport 4500 -j ACCEPT > /dev/null 2>&1
+             fi
+             cmd="/usr/sbin/iptables -S | grep -c 'zone_wan2_forward -p udp -m udp --dport 500 -j ACCEPT'"
+             fws=`eval $cmd`
+             if [ "$fws" -gt 0 ]; then
+                  logger -t "ipsec_vpn" "reload zone_wan2_forward the firewall rule500 exists"
+             else
+                  /usr/sbin/iptables -I zone_wan2_forward 1 -p udp -m udp --dport 500 -j ACCEPT > /dev/null 2>&1
+             fi
+                  echo "/usr/sbin/iptables -I zone_wan2 1  -m policy --dir in --pol ipsec -j ACCEPT" > /etc/firewall.ipsec4g
+                  echo "/usr/sbin/iptables -I zone_wan2 1 -p udp -m state --state NEW -m udp --dport 500 -j ACCEPT" >> /etc/firewall.ipsec4g
+                  echo "/usr/sbin/iptables -I zone_wan2 1 -p esp -j ACCEPT" >> /etc/firewall.ipsec4g
+                  echo "/usr/sbin/iptables -I zone_wan2 1 -p ah -j ACCEPT" >> /etc/firewall.ipsec4g
+                  echo "/usr/sbin/iptables -I zone_wan2 1 -p udp -m state --state NEW -m udp --dport 4500 -j ACCEPT" >> /etc/firewall.ipsec4g
+                  echo "/usr/sbin/iptables -I zone_wan2 1 -p udp -m state --state NEW -m udp --dport 1701 -j ACCEPT" >> /etc/firewall.ipsec4g
+                  echo "/usr/sbin/iptables -I zone_wan2_forward 1 -p udp -m udp --dport 4500 -j ACCEPT" >> /etc/firewall.ipsec4g
+                  echo "/usr/sbin/iptables -I zone_wan2_forward 1 -p udp -m udp --dport 1701 -j ACCEPT" >> /etc/firewall.ipsec4g
+                  echo "/usr/sbin/iptables -I zone_wan2_forward 1 -p udp -m udp --dport 500 -j ACCEPT" >> /etc/firewall.ipsec4g
+
+    else
+                  rm -f /etc/firewall.ipsec4g
+                  echo "/usr/sbin/iptables -D zone_wan2 -p udp -m state --state NEW -m udp --dport 500 -j ACCEPT" > /etc/dfirewall.ipsec4g
+                  echo "/usr/sbin/iptables -D zone_wan2 -p esp -j ACCEPT" >> /etc/dfirewall.ipsec4g
+                  echo "/usr/sbin/iptables -D zone_wan2 -p ah -j ACCEPT" >> /etc/dfirewall.ipsec4g
+                  echo "/usr/sbin/iptables -D zone_wan2 -p udp -m state --state NEW -m udp --dport 4500 -j ACCEPT" >> /etc/dfirewall.ipsec4g
+                  echo "/usr/sbin/iptables -D zone_wan2 -p udp -m state --state NEW -m udp --dport 1701 -j ACCEPT" >> /etc/dfirewall.ipsec4g
+                  echo "/usr/sbin/iptables -D zone_wan2_forward -p udp -m udp --dport 4500 -j ACCEPT" >> /etc/dfirewall.ipsec4g
+                  echo "/usr/sbin/iptables -D zone_wan2_forward -p udp -m udp --dport 1701 -j ACCEPT" >> /etc/dfirewall.ipsec4g
+                  echo "/usr/sbin/iptables -D zone_wan2_forward -p udp -m udp --dport 500 -j ACCEPT" >> /etc/dfirewall.ipsec4g
+                  echo "/usr/sbin/iptables -D zone_wan2 -m policy --dir in --pol ipsec -j ACCEPT" >> /etc/dfirewall.ipsec4g
+
+             [ -f /etc/dfirewall.ipsec4g ] && sh /etc/dfirewall.ipsec4g
+    fi
+    if [ $cfgcnt2 -eq 0 -a $cfgcnt -eq 0 ]; then
+             [ -S "/var/run/pluto/pluto.ctl" ] && ipsec setup stop > /dev/null 2>&1
+    fi
+    let x2tpcnt=w2x2scnt+w2x2ccnt+wx2scnt+wx2ccnt
+    if [ $x2tpcnt -eq 0 ]; then
+             [ -p /var/run/xl2tpd/l2tp-control ] && /etc/init.d/xl2tpd stop > /dev/null 2>&1
+    fi
+}
+
+stop() {
+
+    # stop strongswan
+    [ -S "/var/run/pluto/pluto.ctl" ] && ipsec setup stop
+    [ -p /var/run/xl2tpd/l2tp-control ] && /etc/init.d/xl2tpd stop
+
+    # remove config files
+
+    [ -f "/etc/ipsec.conf" ] && rm -f /etc/ipsec.conf
+
+    [ -f "/etc/ipsec.secrets" ] && rm -f /etc/ipsec.secrets
+
+    [ -f "/etc/xl2tpd/xl2tpd.conf" ] && rm -f /etc/xl2tpd/xl2tpd.conf
+
+    [ -f "/etc/xl2tpd/xl2tp-secrets" ] && rm -f /etc/xl2tpd/xl2tp-secrets
+
+    [ -d "/var/run/mipsec" ] && rm -rf /var/run/mipsec
+
+    [ -d "/etc/xl2tpclient" ] && rm -rf /etc/xl2tpclient
+
+}

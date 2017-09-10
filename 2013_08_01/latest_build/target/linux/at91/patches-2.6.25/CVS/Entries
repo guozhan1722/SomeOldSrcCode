@@ -1,0 +1,11 @@
+/000-at91patches.patch/1.1/Thu Apr  1 22:08:44 2010/-kkv/Tar71xx_4g
+/001-vlink-machine.patch/1.1/Thu Apr  1 22:08:45 2010/-kkv/Tar71xx_4g
+/002-led-driver.patch/1.1/Thu Apr  1 22:08:45 2010/-kkv/Tar71xx_4g
+/003-gpio-driver.patch/1.1/Thu Apr  1 22:08:44 2010/-kkv/Tar71xx_4g
+/007-mtd-partition.patch/1.1/Thu Apr  1 22:08:45 2010/-kkv/Tar71xx_4g
+/008-fdl-serial.patch/1.1/Thu Apr  1 22:08:44 2010/-kkv/Tar71xx_4g
+/009-fdl-uartinit.patch/1.1/Thu Apr  1 22:08:44 2010/-kkv/Tar71xx_4g
+/010-dm9161a-phyfix.patch/1.1/Thu Apr  1 22:08:45 2010/-kkv/Tar71xx_4g
+/014-initpartition.patch/1.1/Thu Apr  1 22:08:45 2010/-kkv/Tar71xx_4g
+/017-usb_serial_endpoint_size.patch/1.1/Thu Apr  1 22:08:44 2010/-kkv/Tar71xx_4g
+D

@@ -1,0 +1,165 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+. /etc/version
+
+exec>/dev/null 2>&1
+ 
+config_load "localmonitor"
+config_get LOCMON_EN "localmon_conf" LocalMon_Enable
+config_get AUTOIP_EN "localmon_conf" LocalMon_AutoIP_En
+config_get LOCMON_IP "localmon_conf" LocalMon_IP
+config_get LOCMON_Timeout "localmon_conf" LocalMon_Timeout
+config_get WaitDHCP_Timeout "localmon_conf" LocalMon_WaitDHCP_Timeout
+
+ARPING_Result=""
+ARPING_Count=0
+ARPING_AutoTest_Count=0
+WaitDHCP_Count=0
+WaitDHCP_Process="0"
+
+arping_check()
+{
+    ARPING_Result=$(arping -c 1 -I br-lan $LOCMON_IP | grep Unicast |awk '{ print $4 }' )
+}
+
+
+arping_more()
+{
+    rm /tmp/run/arpinglist_lm
+    awk '{print $3}' /tmp/dhcp.leases >/tmp/run/arpinglist_lm
+    cat /proc/net/arp |grep 0x2| grep br-lan |awk '{print $1}' >>/tmp/run/arpinglist_lm
+    cat /tmp/run/arplist |grep 0x2 |grep br-lan |awk '{print $1}' >>/tmp/run/arpinglist_lm
+    cat /tmp/lan_arp |grep 0x2 |grep br-lan |awk '{print $1}' >>/tmp/run/arpinglist_lm
+    cat /tmp/run/arpinglist_lm | sort -u >/tmp/run/arpinglist_lm
+    
+    for list_ip in `cat /tmp/run/arpinglist_lm` ; do
+	LOCMON_IP=$(arping -c 1 -I br-lan $list_ip| grep Unicast |awk '{ print $4 }')
+	if [ "$LOCMON_IP" ]; then
+		break
+	fi
+    done
+}
+
+arping_scan()
+{
+	rm /tmp/run/arpinglist_lm
+	br_ip_base=$(ifconfig br-lan | grep inet |grep -v inet6 | awk -F'[: .]+' '{ip_str=$4"."$5"."$6"."} END {print ip_str}' )
+	fping -q -c 1 -g ${br_ip_base}1 ${br_ip_base}254  
+
+	cat /proc/net/arp |grep 0x2| grep br-lan |awk '{print $1}' >/tmp/run/arpinglist_lm
+
+	for list_ip in `cat /tmp/run/arpinglist_lm` ; do
+		LOCMON_IP=$(arping -c 1 -I br-lan $list_ip| grep Unicast |awk '{ print $4 }')
+		if [ "$LOCMON_IP" ]; then
+			break
+		fi
+	done
+}
+
+
+write2systemdebug(){
+   dfile_size=$(ls -s /etc/system.debug |awk '{print $1}')
+   if [ "$dfile_size" -gt "2" ];then
+      echo -n `date`>/etc/system.debug   
+   else
+      echo -n `date`>>/etc/system.debug   
+   fi
+   echo " local IP monitor exec reboot : DHCP timeout." >>/etc/system.debug
+}
+
+start()
+{
+if [ "$LOCMON_EN" = "B" ]; then
+
+if [ "$AUTOIP_EN" = "A" ]; then
+if [ "$LOCMON_IP" ]; then
+	while true
+	do
+		arping_check
+		if [ "$ARPING_Result" = "$LOCMON_IP" ]; then
+			ARPING_Count=0
+			WaitDHCP_Count=0
+			WaitDHCP_Process="0"
+		else
+			ARPING_Count=`expr $ARPING_Count + 1`
+			WaitDHCP_Count=`expr $WaitDHCP_Count + 1`
+		fi
+
+		if [ $WaitDHCP_Process = "1" ]; then
+			if [ $WaitDHCP_Count -gt $WaitDHCP_Timeout ]; then
+                                write2systemdebug
+				reboot
+				exit 0
+			fi
+		else
+			if [ $ARPING_Count -gt $LOCMON_Timeout ]; then
+				/etc/init.d/dnsmasq restart
+				sleep 10
+				WaitDHCP_Process="1"
+				WaitDHCP_Count=10
+			fi
+		fi
+		sleep 1
+	done
+fi	
+fi
+
+if [ "$AUTOIP_EN" = "B" ]; then
+	LOCMON_IP=""
+	sleep 10
+
+	while true
+	do
+		if [ "$LOCMON_IP" = "" ]; then
+			arping_more
+			if [ "$LOCMON_IP" = "" ]; then
+			    arping_scan
+			    ARPING_Count=`expr $ARPING_Count + 12 `
+			    WaitDHCP_Count=`expr $WaitDHCP_Count + 12 `
+			fi
+		fi
+
+		if [ "$LOCMON_IP" = "" ]; then
+			ARPING_Count=`expr $ARPING_Count + 1`
+			WaitDHCP_Count=`expr $WaitDHCP_Count + 1`
+		else
+			arping_check
+			if [ "$ARPING_Result" = "$LOCMON_IP" ]; then
+				ARPING_Count=0
+				WaitDHCP_Count=0
+				WaitDHCP_Process="0"
+				ARPING_AutoTest_Count=0
+			else
+				ARPING_Count=`expr $ARPING_Count + 1`
+				WaitDHCP_Count=`expr $WaitDHCP_Count + 1`
+				ARPING_AutoTest_Count=`expr $ARPING_AutoTest_Count + 1`
+				if [ $ARPING_AutoTest_Count -gt 3 ]; then
+					LOCMON_IP=""
+				fi
+			fi
+		fi
+
+		if [ $WaitDHCP_Process = "1" ]; then
+			if [ $WaitDHCP_Count -gt $WaitDHCP_Timeout ]; then
+                                write2systemdebug
+				reboot
+				exit 0
+			fi
+		else
+			if [ $ARPING_Count -gt $LOCMON_Timeout ]; then
+				/etc/init.d/dnsmasq restart
+				sleep 10
+				WaitDHCP_Process="1"
+				WaitDHCP_Count=10
+			fi
+		fi
+		sleep 1
+	done
+fi
+
+fi
+}
+
+start
+
+

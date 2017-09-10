@@ -1,0 +1,21 @@
+#!/bin/sh
+_mac=$(/sbin/ifconfig br-lan 2>/dev/null |grep HWaddr |awk '{print $5}')
+rm -rf /var/run/br_meshlist
+echo "DEST ADDR         NEXT HOP          IFACE       SN      METRIC  QLEN    EXPTIME         DTIM    DRET    FLAGS  MAC ADDR">/var/run/br_meshlist
+for dev in $(ls /sys/class/ieee80211); do
+        devidx=$(echo $dev|cut -c 4)
+        iw dev wlan$devidx mpath dump |grep -v "DEST ADDR" >/var/run/br_meshlist_tmp$devidx
+        result=$(cat /var/run/br_meshlist_tmp$devidx)
+        [ -n "$result" ] && {
+		cnt_line=1
+		last_line=$(cat /var/run/br_meshlist_tmp$devidx|tail -n 1)
+		cur_line=$(cat /var/run/br_meshlist_tmp$devidx | head -n $cnt_line |tail -n 1)
+		while [ "$cur_line" != "$last_line" ]; do
+			echo -e "$cur_line  \t$_mac" >>/var/run/br_meshlist
+			cnt_line=$(expr $cnt_line + 1 )
+			cur_line=$(echo "$result" | head -n $cnt_line |tail -n 1)
+                done
+		echo -e "$cur_line  \t$_mac" >> /var/run/br_meshlist
+        }
+done
+

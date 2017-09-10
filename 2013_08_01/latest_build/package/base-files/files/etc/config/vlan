@@ -1,0 +1,34 @@
+config general general
+   option disabled 1
+   option management vlan1
+
+config vlan vlan1
+   option id 1
+   option description native
+   
+config port eth0
+   option ifname eth0
+   option vlan '1'
+   option tag 1
+   
+config port eth1
+   option ifname eth1
+   option vlan '1'
+   option tag 1
+   
+config port wlan0
+   option ifname wlan0
+   option vlan '1'
+   option tag 1
+
+config port wlan1
+   option ifname wlan1
+   option vlan '1'
+   option tag 1
+
+
+config port wlan2
+   option ifname wlan2
+   option vlan '1'
+   option tag 1
+ 

@@ -1,0 +1,15 @@
+Source-Makefile: package/ftpd/Makefile
+Package: ftpd
+Version: 1
+Depends: 
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Microhard modified ftpd daemon
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  This package contains the microhard home grown ftpd server derived from IXP4xx based IP/VIP platform.
+@@
+
+

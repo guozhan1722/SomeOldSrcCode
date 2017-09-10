@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+
+START=99
+STOP=98
+
+start(){
+        killall -9 gpsrecorder
+	echo -n "Starting GPS Recorder Service ..."
+	/bin/gpsrecorder &
+}
+
+stop(){
+        killall -9 gpsrecorder
+}
+

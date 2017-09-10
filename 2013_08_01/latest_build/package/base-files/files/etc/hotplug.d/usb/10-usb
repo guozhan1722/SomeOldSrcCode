@@ -1,0 +1,47 @@
+#!/bin/sh
+
+# Copyright (C) 2009 OpenWrt.org
+case "$ACTION" in
+	add)
+		# update LEDs
+                if [ "$PRODUCT" = "1410/9011/3" -o "$PRODUCT" = "1410/9010/0" ];then
+                    echo -n "1" >>/tmp/run/usbcnt
+                    DEVICE_NAME=$(ls /sys/$DEVPATH | grep ttyUSB0)
+                    if [ -z ${DEVICE_NAME} ]; then
+                        exit
+                    else 
+                        [ -f "/var/run/ltereset" ] && {
+                            logger -t "USB Hotplug:" "Hotplug detected ttyUSB0 added into system"
+	                    /etc/init.d/lte start
+                        }
+                    fi
+                fi  
+		;;
+	remove)
+		# update LEDs
+               if [ "$PRODUCT" = "1410/9011/3" -o "$PRODUCT" = "1410/9010/0" ];then
+                    if [ "$DEVPATH" = "/devices/platform/ar71xx-ehci/usb1/1-1/1-1:1.0" ];then
+                        logger -t "USB Hotplug:" "Hotplug detected ttyUSB0 removed from system"
+
+                        rm -rf /tmp/run/usbcnt
+            		ifconfig eth2 down
+                        ifdown wan2
+                        /etc/init.d/lte stop
+                    fi     
+                    #DEVICE_NAME=$(ls /sys/$DEVPATH | grep ttyUSB0)
+                    #if [ -z ${DEVICE_NAME} ]; then
+                    #    logger "exit from devicename"
+                    #    exit
+                    #else
+                    #   logger "usb is removed in hotplug running the product is $PRODUCT device name is $DEVICE_NAME"
+                    #    ifconfig eth2 down
+                    #    /etc/init.d/dhcp_client stop
+                    #    killall -9 udhcpc
+	            #    /etc/init.d/lte stop
+                    #    ifup wan	        
+		    #    sed 's/'"`grep connect_status /var/run/VIP4G_status`"'/connect_status=_DISCONNECTED/g' /var/run/VIP4G_status > /tmp/run/VIP4G_status_tmp ;cp /var/run/VIP4G_status_tmp /var/run/VIP4G_status -rf
+                    #fi
+                fi
+                ;;
+esac	
+		

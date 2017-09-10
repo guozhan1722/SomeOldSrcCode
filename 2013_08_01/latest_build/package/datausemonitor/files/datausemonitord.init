@@ -1,0 +1,31 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+
+START=99
+STOP=99
+
+carrier_if="br-wan2"
+
+start(){
+        killall -9 datausemonitor
+	config_load "datausemonitor"
+        config_get monitor_en "datausage_conf" DataUseMonitor_Set
+    	if [ "${monitor_en}" = "B" ]; then
+            /bin/datausemonitor $carrier_if &            
+	fi
+
+	echo -n "Starting data usage monitor service ..."
+}
+
+stop(){
+        [ -f "/var/run/daystat" ] && {
+             #RX bytes:395081 (385.8 KiB)  TX bytes:267845 (261.5 KiB)
+            ifconfig $carrier_if | grep "RX bytes" >>/var/run/daystat
+            #2013.06.21
+            #date +%Y-%m-%d >>/var/run/daystat
+            cp /var/run/daystat /etc/carrierstat/daystat
+        }
+       killall -9 datausemonitor
+}
+

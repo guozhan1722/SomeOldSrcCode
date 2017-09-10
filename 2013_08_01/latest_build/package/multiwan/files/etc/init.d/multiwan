@@ -1,0 +1,53 @@
+#!/bin/sh /etc/rc.common
+START=99
+EXTRA_COMMANDS="single"
+
+#when ippassthrough enable do not start multiwan 
+local ippassthrough=$(uci get lte.connect.ippassthrough)
+
+start () {
+
+        UB_CONFIG=$(grep params /proc/mtd | cut -d: -f1)
+        Testlab=$(grep "TESTLAB" /dev/$UB_CONFIG | cut -d= -f2)
+
+        if [ "$Testlab" = "1" ]; then 
+            logger -t "multiwan" "Testlab board can not start multiwan"
+            exit 0
+        fi
+
+      config_load multiwan
+      config_get enabled config enabled 0
+
+      [ "$ippassthrough" = "Ethernet" ] || [ "$enabled" = "0" ] || /usr/bin/multiwan agent &
+}
+
+stop () {
+  sh /usr/bin/multiwan stop &
+  mwan_pid=$(ps |grep multiwan |grep -v grep |awk '{print $1}')
+  kill -9 $mwan_pid
+}
+
+restart () {
+
+        UB_CONFIG=$(grep params /proc/mtd | cut -d: -f1)
+        Testlab=$(grep "TESTLAB" /dev/$UB_CONFIG | cut -d= -f2)
+
+        if [ "$Testlab" = "1" ]; then 
+            logger -t "multiwan" "Testlab board can not restart multiwan"
+            exit 0
+        fi
+
+      config_load multiwan
+      config_get enabled config enabled 0
+
+      [ "$ippassthrough" = "Ethernet" ] || [ "$enabled" = "0" ] || /usr/bin/multiwan agent &
+}
+
+single () {
+
+      config_load multiwan
+      config_get enabled config enabled 0
+
+      [ "$ippassthrough" = "Ethernet" ] || [ "$enabled" = "0" ] || /usr/bin/multiwan agent &
+}
+  

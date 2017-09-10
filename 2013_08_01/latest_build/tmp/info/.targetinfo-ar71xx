@@ -1,0 +1,108 @@
+Source-Makefile: target/linux/ar71xx/Makefile
+Target: ar71xx
+Target-Board: ar71xx
+Target-Kernel: 2.6
+Target-Name: Atheros AR71xx/AR7240/AR913x
+Target-Path: /home/zguo/project/2013_08_01/latest_build
+Target-Arch: mips
+Target-Features: gpio pci squashfs usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time 
+Linux-Version: 2.6.32.9
+Linux-Release: 1
+Linux-Kernel-Arch: mips
+Target-Description:
+	Build firmware images for Atheros AR71xx/AR913x based boards.
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall kmod-leds-gpio kmod-input-core kmod-input-polldev kmod-input-gpio-buttons kmod-button-hotplug swconfig
+Target-Profile: IPnDDL
+Target-Profile-Name: IPnDDL
+Target-Profile-Packages: kmod-usb-core kmod-usb-ohci kmod-usb2
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Package set optimized for the Microhard microPCI IPnDDL  boards.
+@@
+
+Target-Profile: IPnVT
+Target-Profile-Name: IPnVT
+Target-Profile-Packages: kmod-usb-core kmod-usb-ohci kmod-usb2
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Package set optimized for the Microhard microPCI IPnVT  boards.
+@@
+
+Target-Profile: IPnVTEXP
+Target-Profile-Name: IPnVTEXP
+Target-Profile-Packages: kmod-usb-core kmod-usb-ohci kmod-usb2
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Package set optimized for the Microhard microPCI IPnVTEXP  boards.
+@@
+
+Target-Profile: IPnVTn3G
+Target-Profile-Name: IPnVTn3G
+Target-Profile-Packages: kmod-usb-core kmod-usb-ohci kmod-usb2
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Package set optimized for the Microhard microPCI IPnVTn3G  boards.
+@@
+
+Target-Profile: IPnVTn3GEXP
+Target-Profile-Name: IPnVTn3GEXP
+Target-Profile-Packages: kmod-usb-core kmod-usb-ohci kmod-usb2
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Package set optimized for the Microhard microPCI IPnVTn3GEXP  boards.
+@@
+
+Target-Profile: VIP4G
+Target-Profile-Name: VIP4G
+Target-Profile-Packages: kmod-usb-core kmod-usb-ohci kmod-usb2
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Package set optimized for the Microhard VIP4G  boards.
+@@
+
+Target-Profile: VIP4GEXP
+Target-Profile-Name: VIP4GEXP
+Target-Profile-Packages: kmod-usb-core kmod-usb-ohci kmod-usb2
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Package set optimized for the Microhard VIP4GEXP  boards.
+@@
+
+Target-Profile: WP543
+Target-Profile-Name: Compex WP543/WPJ543
+Target-Profile-Packages: kmod-usb-core kmod-usb-ohci kmod-usb2
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Package set optimized for the Compex WP543/WPJ543 boards.
+@@
+
+Target-Profile: MPCI71
+Target-Profile-Name: Microhard microPCI 71xx series
+Target-Profile-Packages: kmod-usb-core kmod-usb-ohci kmod-usb2
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+	Package set optimized for the Microhard microPCI 71xx  boards.
+@@
+
+

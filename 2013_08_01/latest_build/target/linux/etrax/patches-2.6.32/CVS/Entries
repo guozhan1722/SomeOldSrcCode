@@ -1,0 +1,10 @@
+/100-cris-makefiles.patch/1.1/Thu Apr  1 22:12:00 2010/-kkv/Tar71xx_4g
+/200-samsung_flash.patch/1.1/Thu Apr  1 22:12:00 2010/-kkv/Tar71xx_4g
+/201-flashsize.patch/1.1/Thu Apr  1 22:12:00 2010/-kkv/Tar71xx_4g
+/300-usb_support.patch/1.1/Thu Apr  1 22:12:00 2010/-kkv/Tar71xx_4g
+/400-Kconfig_source.patch/1.1/Thu Apr  1 22:12:00 2010/-kkv/Tar71xx_4g
+/500-i2c_gvc.patch/1.1/Thu Apr  1 22:12:00 2010/-kkv/Tar71xx_4g
+/600-create-device-serial.patch/1.1/Thu Apr  1 22:12:00 2010/-kkv/Tar71xx_4g
+/610-create-the-gpio-devices.patch/1.1/Thu Apr  1 22:12:00 2010/-kkv/Tar71xx_4g
+/620-create-the-i2c-devices.patch/1.1/Thu Apr  1 22:12:00 2010/-kkv/Tar71xx_4g
+D

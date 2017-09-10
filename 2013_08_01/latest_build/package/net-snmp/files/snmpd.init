@@ -1,0 +1,235 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008 OpenWrt.org
+START=50
+
+DEFAULT=/etc/default/snmpd
+LIB_D=/var/lib/snmp
+LOG_D=/var/log
+RUN_D=/var/run
+PID_F=$RUN_D/snmpd.pid
+RUN_C=$RUN_D/snmpd.conf
+
+snmpd_agent_add() {
+	local cfg="$1"
+
+	config_get agentaddress "$cfg" agentaddress
+	[ -n "$agentaddress" ] || return 0
+	echo "agentaddress $agentaddress" >> $RUN_C
+}
+snmpd_system_add() {
+	local cfg="$1"
+        config_get MODE "$cfg" NetWork_SNMP_MODE
+        if [ "$MODE" = "A" ]; then
+                return 0
+        fi
+	config_get rocommunity "$cfg" NetWork_SNMP_Read_Community_Name
+	[ -n "$rocommunity" ] && echo "rocommunity $rocommunity" >> $RUN_C
+	config_get rwcommunity "$cfg" NetWork_SNMP_Write_Community_Name
+	[ -n "$rwcommunity" ] && echo "rwcommunity $rwcommunity" >> $RUN_C
+	config_get V3_User_Name "$cfg" NetWork_SNMP_V3_User_Name
+	config_get V3_User_Auth_Level "$cfg" NetWork_SNMP_V3_User_Auth_Level
+	config_get V3_User_ReadWrite_Limit "$cfg" NetWork_SNMP_V3_User_ReadWrite_Limit
+
+        config_get Protocol snmpd NetWork_SNMP_Listen_Protocol UDP
+        config_get Port snmpd NetWork_SNMP_Listen_Port 161           
+                
+        if [ -n "$V3_User_Name" ]; then
+                case "$V3_User_Auth_Level" in 
+               "A")
+                        level="$V3_User_Name noauth" 
+                        ;;
+               "B")
+                        level="$V3_User_Name auth"
+                        ;;
+               "C")
+                        level="$V3_User_Name priv"
+                        ;;
+               *)
+                        ;;
+               esac
+
+               case "$V3_User_ReadWrite_Limit" in 
+               "A")
+                        eval echo "rouser $level" >> $RUN_C
+                        eval echo "rwuser " >> $RUN_C 
+                        ;;
+               "B")
+                        eval echo "rouser " >> $RUN_C
+                        eval echo "rwuser $level" >> $RUN_C 
+                        ;;
+               *)
+                        ;;
+               esac
+
+        fi
+
+	config_get Auth_Traps_Status "$cfg" NetWork_SNMP_Auth_Traps_Status
+        case "$Auth_Traps_Status" in 
+                "A")
+                        echo "authtrapenable 1" >> $RUN_C
+                        ;;
+                "B")
+                        echo "authtrapenable 2" >> $RUN_C
+                        ;;
+                *)
+                        ;;
+        esac
+
+	config_get Trap_Community_Name "$cfg" NetWork_SNMP_Trap_Community_Name
+	[ -n "$Trap_Community_Name" ] && echo "trapcommunity $Trap_Community_Name" >> $RUN_C
+
+	config_get Trap_Version "$cfg" NetWork_SNMP_Trap_Version
+	config_get Trap_Manage_Host "$cfg" NetWork_SNMP_Trap_Manage_Host
+        
+        case "$Trap_Version" in 
+               "A")
+                        echo "trapsink $Trap_Manage_Host" >> $RUN_C
+                        echo "trap2sink " >> $RUN_C
+                        echo "informsink " >> $RUN_C
+                        echo "trapsess " >> $RUN_C
+                        ;;          
+                "B")
+                        echo "trapsink " >> $RUN_C
+                        echo "trap2sink $Trap_Manage_Host" >> $RUN_C
+                        echo "informsink $Trap_Manage_Host" >> $RUN_C
+                        echo "trapsess " >> $RUN_C
+                        ;;
+                "C")
+                        echo "trapsink " >> $RUN_C
+                        echo "trap2sink " >> $RUN_C
+                        echo "informsink " >> $RUN_C
+                        echo "trapsess $Trap_Manage_Host" >> $RUN_C
+                        ;;
+                "D")
+                        echo "trapsink $Trap_Manage_Host" >> $RUN_C
+                        echo "trap2sink $Trap_Manage_Host" >> $RUN_C
+                        echo "informsink $Trap_Manage_Host" >> $RUN_C
+                        echo "trapsess " >> $RUN_C
+                        ;;
+                "E")
+                        echo "trapsink $Trap_Manage_Host" >> $RUN_C
+                        echo "trap2sink $Trap_Manage_Host" >> $RUN_C
+                        echo "informsink $Trap_Manage_Host" >> $RUN_C
+                        echo "trapsess $Trap_Manage_Host" >> $RUN_C
+                        ;;
+                *)
+                        ;;
+       esac
+
+	config_get V3_Auth_Password "$cfg" NetWork_SNMP_V3_Auth_Password
+	config_get V3_Privacy_Password "$cfg" NetWork_SNMP_V3_Privacy_Password
+
+        if [ "$V3_User_Auth_Level" = "C" ]; then
+                echo "createUser $V3_User_Name MD5 $V3_Auth_Password DES $V3_Privacy_Password" >> $RUN_C
+
+        else
+                echo "createUser $V3_User_Name MD5 $V3_Auth_Password DES" >> $RUN_C
+        fi
+}
+snmpd_com2sec_add() {
+	local cfg="$1"
+	config_get secname "$cfg" secname
+	[ -n "$secname" ] || return 0
+	config_get source "$cfg" source
+	[ -n "$source" ] || return 0
+	config_get community "$cfg" community
+	[ -n "$community" ] || return 0
+	echo "com2sec $secname $source $community" >> $RUN_C
+}
+snmpd_group_add() {
+	local cfg="$1"
+	config_get group "$cfg" group
+	[ -n "$group" ] || return 0
+	config_get version "$cfg" version
+	[ -n "$version" ] || return 0
+	config_get secname "$cfg" secname
+	[ -n "$secname" ] || return 0
+	echo "group $group $version $secname" >> $RUN_C
+}
+snmpd_view_add() {
+	local cfg="$1"
+	config_get viewname "$cfg" viewname
+	[ -n "$viewname" ] || return 0
+	config_get type "$cfg" type
+	[ -n "$type" ] || return 0
+	config_get oid "$cfg" oid
+	[ -n "$oid" ] || return 0
+	# optional mask
+	config_get mask "$cfg" mask
+	echo "view $viewname $type $oid $mask" >> $RUN_C
+}
+snmpd_access_add() {
+	local cfg="$1"
+	config_get group "$cfg" group
+	[ -n "$group" ] || return 0
+	config_get context "$cfg" context
+	[ -n $context ] || return 0
+	[ "$context" == "none" ] && context='""'
+	config_get version "$cfg" version
+	[ -n "$version" ] || return 0
+	config_get level "$cfg" level
+	[ -n "$level" ] || return 0
+	config_get prefix "$cfg" prefix
+	[ -n "$prefix" ] || return 0
+	config_get read "$cfg" read
+	[ -n "$read" ] || return 0
+	config_get write "$cfg" write
+	[ -n "$write" ] || return 0
+	config_get notify "$cfg" notify
+	[ -n "$notify" ] || return 0
+	echo "access $group $context $version $level $prefix $read $write $notify" >> $RUN_C
+}
+snmpd_pass_add() {
+	local cfg="$1"
+	local pass='pass'
+
+	config_get miboid "$cfg" miboid
+	[ -n "$miboid" ] || return 0
+	config_get prog "$cfg" prog
+	[ -n "$prog" ] || return 0
+	config_get_bool persist "$cfg" persist 0
+	[ $persist -ne 0 ] && pass='pass_persist'
+	config_get priority "$cfg" priority
+	priority=${priority:+-p $priority}
+	echo "$pass $priority $miboid $prog" >> $RUN_C
+}
+snmpd_exec_add() {
+	local cfg="$1"
+
+	config_get execname "$cfg" execname
+	[ -n "$execname" ] || return 0
+	config_get prog "$cfg" prog
+	[ -n "$prog" ] || return 0
+	config_get args "$cfg" args
+	config_get miboid "$cfg" miboid
+	echo "exec $miboid $execname $prog $args" >> $RUN_C
+}
+start() {
+	[ -d $LIB_D ] || mkdir -p $LIB_D
+	[ -d $LOG_D ] || mkdir -p $LOG_D
+	[ -d $RUN_D ] || mkdir -p $RUN_D
+	[ -f $RUN_C ] && rm -f $RUN_C
+
+	config_load snmpd
+        config_foreach snmpd_agent_add agent
+        config_foreach snmpd_system_add system
+        config_foreach snmpd_com2sec_add com2sec
+        config_foreach snmpd_group_add group
+        config_foreach snmpd_view_add view
+        config_foreach snmpd_access_add access
+        config_foreach snmpd_pass_add pass
+        config_foreach snmpd_exec_add exec
+
+        if [ "$MODE" = "B" ]; then
+                cp /rom/etc/config/tmpstatus /etc/config/tmpstatus
+                [ -f "/etc/config/snmpd.conf" ] && rm -rf "/etc/config/snmpd.conf"
+                [ -f $DEFAULT ] && . $DEFAULT
+                $DEBUG /usr/sbin/snmpd $Protocol:$Port $OPTIONS
+        else
+                stop
+        fi
+}
+stop() {
+	[ -f $PID_F ] && kill -9 $(cat $PID_F)
+	[ -f $RUN_C ] && rm -f $RUN_C
+}

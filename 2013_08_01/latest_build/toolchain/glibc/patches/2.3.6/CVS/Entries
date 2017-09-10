@@ -1,0 +1,5 @@
+/001-make_install_lib_all.patch/1.1/Thu Apr  1 22:12:35 2010/-kkv/Tar71xx_4g
+/002-mips_bootstrap_gcc_header_install.patch/1.1/Thu Apr  1 22:12:35 2010/-kkv/Tar71xx_4g
+/601-powerpc_socket_week_alias.patch/1.1/Thu Apr  1 22:12:34 2010/-kkv/Tar71xx_4g
+/602-powerpc_cflags_initfini.patch/1.1/Thu Apr  1 22:12:35 2010/-kkv/Tar71xx_4g
+D

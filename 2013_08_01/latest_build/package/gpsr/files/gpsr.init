@@ -1,0 +1,24 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+
+START=99
+STOP=98
+
+start(){
+	config_load "gpsd"
+        config_get GPS_STATUS "gpsd_conf" status
+    	if [ "${GPS_STATUS}" = "0" ]; then
+		exit 0
+	fi
+
+        config_get TCP_PORT "gpsd_conf" GPSD_TCP_Port
+	echo -n "Starting GPS Reporting service ..."
+	/bin/gpsreport $TCP_PORT &
+        echo "gps report start."
+}
+
+stop(){
+       killall -9 gpsreport
+}
+

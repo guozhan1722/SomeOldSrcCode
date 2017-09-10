@@ -1,0 +1,21 @@
+#!/bin/sh /etc/rc.common
+
+START=47
+STOP=90
+
+stop() {
+    killall -9 ripd 1>>/dev/null 2>>/dev/null
+    killall -9 zebra 1>>/dev/null 2>>/dev/null
+}
+
+start() {
+    stop
+    /usr/bin/ripconfread  1>>/dev/null 2>>/dev/null
+}
+
+restart() {
+    stop
+    start
+}
+
+

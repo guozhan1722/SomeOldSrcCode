@@ -1,0 +1,15 @@
+Source-Makefile: package/rmqctl/Makefile
+Package: rmqctl
+Version: 1.0.0-1
+Depends: 
+Provides: 
+Section: microhard
+Category: Microhard Packages
+Title: Microhard rmqctl
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description:  This package contains route mcast qos control utility.
+@@
+
+

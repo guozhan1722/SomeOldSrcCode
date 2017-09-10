@@ -1,0 +1,15 @@
+Source-Makefile: package/ath_info/Makefile
+Package: ath_info
+Version: 1
+Depends: 
+Provides: 
+Section: net
+Category: Network
+Title: Atheros wifi card utility
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: 
+Type: ipkg
+Description: Atheros wifi card utility
+@@
+
+

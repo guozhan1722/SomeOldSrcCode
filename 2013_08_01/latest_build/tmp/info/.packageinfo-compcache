@@ -1,0 +1,19 @@
+Source-Makefile: package/compcache/Makefile
+Package: kmod-compcache
+Submenu: Other modules
+Version: <LINUX_VERSION>--+0.5.4-1
+Depends: @LINUX_2_6 @BUSYBOX_CONFIG_SWAPONOFF
+Provides: 
+Section: kernel
+Category: Kernel modules
+Title: Driver for compressed ram swap device
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Source: compcache-0.5.4.tar.gz
+Type: ipkg
+Description: Driver for compressed ram swap device
+@@
+Config:
+	source "package/compcache/Config.in"
+@@
+
+

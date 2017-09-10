@@ -1,0 +1,660 @@
+#!/bin/sh
+
+. /usr/lib/webif/webif.sh
+. /usr/lib/webif/functions.sh
+. /etc/functions.sh
+. /etc/version
+
+uci_load tmpstatus
+
+get_human_time()
+{
+    local duration_second="$1"
+    FORM_connect_duration=""
+    duration_day=$(echo $duration_second |awk '{printf "%i",$1/(60*60*24)}')
+
+    if [ "$duration_day" -ge "1" ];then
+        FORM_connect_duration="$duration_day day(s)"
+        duration_second=$(echo $duration_second $duration_day  |awk '{printf "%i",$1-($2*60*60*24)}')
+    fi
+
+    duration_hour=$(echo $duration_second |awk '{printf "%i",$1/(60*60)}')
+    if [ "$duration_hour" -ge "1" ];then
+        FORM_connect_duration="$FORM_connect_duration $duration_hour hour"
+        duration_second=$(echo $duration_second $duration_hour|awk '{printf "%i",$1-($2*60*60)}')
+    fi
+
+    duration_min=$(echo $duration_second |awk '{printf "%i", $1/60}')
+    if [ "$duration_min" -ge "1" ];then
+        FORM_connect_duration="$FORM_connect_duration $duration_min min"
+        duration_second=$(echo $duration_second $duration_min |awk '{printf "%i",$1-($2 * 60)}')
+    fi
+
+    FORM_connect_duration="$FORM_connect_duration $duration_second sec"
+}
+
+detect_radio() {
+	devidx=0
+        found=0
+	config_load wireless
+	rstatus=""
+	for dev in $(ls /sys/class/ieee80211); do
+            let found=$found+1
+            devidx=$(echo $dev|cut -c 4)
+            mode_band="11bg"
+	    iw phy "$dev" info | grep -q '2412 MHz'  
+       	    if [ "$?" = 0 ]; then
+       	        mode_band="11bg"
+       	    else
+       	        mode_band="11a"
+       	    fi
+
+            if [ "$PRODUCT" = "IPnDDL" ];then
+       	        mode_band="IPnDDL"
+            fi
+	
+	    wlan_mac=$(/sbin/ifconfig wlan$devidx 2>/dev/null | grep HWaddr | cut -b39-)
+            empty "$rstatus" && {
+            	rstatus="$devidx,$mode_band,$wlan_mac"
+            } || {
+            	rstatus="$rstatus,$devidx,$mode_band,$wlan_mac"
+            }
+	done
+        rstatus="$found,$rstatus"
+}
+
+parse_asso_ddl() {
+awk -v "maclist_url=$MACLIST_URL" -v "fname=$2" '                                                     
+BEGIN { nc = 0; }                                                                                       
+    /^(#.*)?$/ {next}                                                                    
+    {                                                                                    
+        nc++;                                                                            
+        if($1 == "Station") {                                                            
+            macaddr[nc]= $2;                                                             
+            printf("%s ",$2)>>fname;                                       
+        }                                                                                
+
+        if($1 == "signal:") {                                                            
+                sig=$2;                                                                  
+         #       printf("%s ",$2)>>fname;                                  
+        }                                                                                
+        if($1 == "noise" && $2 == "floor:") {                                            
+                noi[nc]=$3;                                                              
+                if (noi[nc] == 0 ) noi[nc]=-95;
+                printf("     %d ",sig-noi[nc])>>fname;                               
+                printf("%s ",noi[nc])>>fname;                                   
+        }                                                                                
+        if($1 == "rssi:") {                                                              
+                rssi[nc]=$2;
+                if (rssi[nc] == 0) rssi[nc]=sig+95;                                                             
+            printf("  %s ",rssi[nc])>>fname;                                  
+        }                                                                                
+        if($1 == "tx" && $2 == "bitrate:") {              
+                txrate[nc]= $3;                           
+            #printf("  %s ",$3)>>fname;       
+        }                                                 
+    }                                                     
+END {                                                     
+                spc= " "                                  
+              for (i=1; i <= nc; i++) {                   
+#                printf("%s%s%s%s%s%s%s",macaddr[i],spc,sig[i],noi[i],rssi[i],txrate[i],rxrate[i])>>"/var/run/rrrr_tmp";
+#                printf("\n")>>"/var/run/rrrr_tmp"                                                                      
+            }                                                                                                           
+                                                                                                                        
+    }' "$1"                                    
+}                       
+
+
+parse_asso() {                                                                          
+awk -v "maclist_url=$MACLIST_URL" -v "fname=$2" '                                                     
+BEGIN { nc = 0; }                                                                                       
+    /^(#.*)?$/ {next}                                                                    
+    {                                                                                    
+        nc++;                                                                            
+        if($1 == "Station") {                                                            
+            macaddr[nc]= $2;                                                             
+            printf("%s ",$2)>>fname;                                       
+        }                                                                                
+
+	if($1 == "rx" && $2 == "packets:") {
+                rxpackets=$3
+                if ( rxpackets == 0) rxpackets=1;
+	}
+	if($1 == "rx" && $2 == "dropped:") {
+                rxfailed=$3
+                rxccq = rxpackets  * 100 / (rxpackets + rxfailed);
+                printf("%d ",rxccq)>>fname;
+	}
+
+	if($1 == "tx" && $2 == "packets:") {
+                txpackets=$3
+                if ( txpackets == 0) txpackets=1;
+	}
+	if($1 == "tx" && $2 == "retries:") {
+                txretries=$3
+	}
+
+	if($1 == "tx" && $2 == "failed:") {
+                txfailed=$3
+                txccq = txpackets  * 100 / (txpackets + txretries + txfailed);
+                printf("    %d ",txccq)>>fname;
+        }
+        if($1 == "signal:") {                                                            
+                sig=$2;                                                                  
+         #       printf("%s ",$2)>>fname;                                  
+        }                                                                                
+        if($1 == "noise" && $2 == "floor:") {                                            
+                noi[nc]=$3;                                                              
+                if (noi[nc] == 0 ) noi[nc]=-95;
+                printf("     %d ",sig-noi[nc])>>fname;                               
+                printf("%s ",noi[nc])>>fname;                                   
+        }                                                                                
+        if($1 == "rssi:") {                                                              
+                rssi[nc]=$2;
+                if (rssi[nc] == 0) rssi[nc]=sig+95;                                                             
+            printf("  %s ",rssi[nc])>>fname;                                  
+        }                                                                                
+        if($1 == "rx" && $2 == "bitrate:") {                                             
+                rxrate[nc]= $3;                                                          
+            printf("    %s",$3)>>fname;     
+            printf("\n") >> fname;          
+        }                                                 
+        if($1 == "tx" && $2 == "bitrate:") {              
+                txrate[nc]= $3;                           
+            printf("  %s ",$3)>>fname;       
+        }                                                 
+    }                                                     
+END {                                                     
+                spc= " "                                  
+              for (i=1; i <= nc; i++) {                   
+#                printf("%s%s%s%s%s%s%s",macaddr[i],spc,sig[i],noi[i],rssi[i],txrate[i],rxrate[i])>>"/var/run/rrrr_tmp";
+#                printf("\n")>>"/var/run/rrrr_tmp"                                                                      
+            }                                                                                                           
+                                                                                                                        
+    }' "$1"                                    
+}                       
+
+iface=$1
+if [ "$iface" = "LAN" ]; then
+    ## the Ethernet  status #############################
+    interface="br-lan"
+    fconfig=$(ifconfig "$interface" 2>/dev/null)
+    if [ "$fconfig" != "" ]; then
+        item=$2    
+        if [ "$item" = "rxp" -o "$item" = "Ethernet0_Received_packets" ];then
+            rx_pkts=$(echo "$fconfig" | grep "RX packets" | awk '{print $2}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Ethernet0_Received_packets" "$rx_pkts"
+        elif [ "$item" = "rxb" -o "$item" = "Ethernet0_Received_bytes" ];then
+            rx_bytes=$(echo "$fconfig" | grep "RX bytes" | awk '{print $2}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Ethernet0_Received_bytes" "$rx_bytes"
+        elif [ "$item" = "txp" -o "$item" = "Ethernet0_Transmitted_packets" ];then
+            tx_pkts=$(echo "$fconfig" | grep "TX packets" | awk '{print $2}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Ethernet0_Transmitted_packets" "$tx_pkts"
+        elif [ "$item" = "txb" -o "$item" = "Ethernet0_Transmitted_bytes" ];then
+            tx_bytes=$(echo "$fconfig" | grep "TX bytes" | awk '{print $6}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Ethernet0_Transmitted_bytes" "$tx_bytes"
+        fi
+        #rx_errs=$(echo "$fconfig" | grep "RX packets" | awk '{print $3}' | awk -F ":" '{print $2}')
+        #rx_dropped=$(echo "$fconfig" | grep "RX packets" | awk '{print $4}' | awk -F ":" '{print $2}')
+        #rx_overrun=$(echo "$fconfig" | grep "RX packets" | awk '{print $5}' | awk -F ":" '{print $2}')
+        #rx_frame=$(echo "$fconfig" | grep "RX packets" | awk '{print $6}' | awk -F ":" '{print $2}')
+        #tx_errs=$(echo "$fconfig" | grep "TX packets" | awk '{print $3}' | awk -F ":" '{print $2}')
+        #tx_dropped=$(echo "$fconfig" | grep "TX packets" | awk '{print $4}' | awk -F ":" '{print $2}')
+        #tx_overrun=$(echo "$fconfig" | grep "TX packets" | awk '{print $5}' | awk -F ":" '{print $2}')
+        #tx_carrier=$(echo "$fconfig" | grep "TX packets" | awk '{print $6}' | awk -F ":" '{print $2}')
+    fi    
+
+elif [ "$iface" = "WAN" ]; then
+    ## the Ethernet  status #############################
+    interface="br-wan"
+    fconfig=$(ifconfig "$interface" 2>/dev/null)
+    if [ "$fconfig" != "" ]; then
+        item=$2    
+        if [ "$item" = "rxp" -o "$item" = "Ethernet1_Received_packets" ];then
+            rx_pkts=$(echo "$fconfig" | grep "RX packets" | awk '{print $2}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Ethernet1_Received_packets" "$rx_pkts"
+        elif [ "$item" = "rxb" -o "$item" = "Ethernet1_Received_bytes" ];then
+            rx_bytes=$(echo "$fconfig" | grep "RX bytes" | awk '{print $2}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Ethernet1_Received_bytes" "$rx_bytes"
+        elif [ "$item" = "txp" -o "$item" = "Ethernet1_Transmitted_packets" ];then
+            tx_pkts=$(echo "$fconfig" | grep "TX packets" | awk '{print $2}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Ethernet1_Transmitted_packets" "$tx_pkts"
+        elif [ "$item" = "txb" -o "$item" = "Ethernet1_Transmitted_bytes" ];then
+            tx_bytes=$(echo "$fconfig" | grep "TX bytes" | awk '{print $6}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Ethernet1_Transmitted_bytes" "$tx_bytes"
+        fi
+    fi
+
+elif [ "$iface" = "WiFi0" ]; then
+    ## the wireless radio status #############################
+    #fconfig=$(ifconfig "$iface" 2>/dev/null)
+    interface="wlan0"
+    fconfig=$(cat /proc/net/dev |grep "$interface" |grep -v mon )
+    if [ "$fconfig" != "" ]; then
+        item=$2    
+        if [ "$item" = "rxp" -o "$item" = "Radio_Received_packets" ];then
+            rx_pkts=$(cat /proc/net/dev |grep "$interface" |grep -v mon |awk -F ':' '{print $2}' | awk '{rx_p+=$2 } END {print rx_p}')
+            #rx_pkts=$(echo "$fconfig" | grep "RX packets" | awk '{print $2}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Radio_Received_packets" "$rx_pkts"
+        elif [ "$item" = "rxb" -o "$item" = "Radio_Received_bytes" ];then
+            rx_bytes=$(cat /proc/net/dev |grep "$interface" |grep -v mon |awk -F ':' '{print $2}' | awk '{rx_b+=$1 } END {print rx_b}')
+            #rx_bytes=$(echo "$fconfig" | grep "RX bytes" | awk '{print $2}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Radio_Received_bytes" "$rx_bytes"
+        elif [ "$item" = "txp" -o "$item" = "Radio_Transmitted_packets" ];then
+            tx_pkts=$(cat /proc/net/dev |grep "$interface" |grep -v mon |awk -F ':' '{print $2}' |awk '{tx_p+=$10 } END {print tx_p}')
+            #tx_pkts=$(echo "$fconfig" | grep "TX packets" | awk '{print $2}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Radio_Transmitted_packets" "$tx_pkts"
+        elif [ "$item" = "txb" -o "$item" = "Radio_Transmitted_bytes" ];then
+            tx_bytes=$(cat /proc/net/dev |grep "$interface" |grep -v mon |awk -F ':' '{print $2}' |awk '{tx_b+=$9 } END {print tx_b}')
+            #tx_bytes=$(echo "$fconfig" | grep "TX bytes" | awk '{print $6}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Radio_Transmitted_bytes" "$tx_bytes"
+        elif [ "$item" = "chfrq" ];then
+            eval fre=$(iwlist "$interface" chan |grep Current |awk '{split($2, fre, ":");print fre[2]}')
+            eval ch=$(iwlist wlan0 chan |grep Current |awk '{split($5, ch, ")"); print ch[1]}')
+            [ "$PRODUCT" = "VIP421EXP49G" -o "$PRODUCT" = "VIP4214900X" -o "$PRODUCT" = "VIP4214900XEXP" ] && { 
+                config_load wireless
+                config_get exmode radio0 ex49gmode
+                 [ "$exmode" = "x" ] && ch=$(echo $ch|awk '{print $1*5}')
+            }
+            eval freq=$(echo $fre|awk '{print $1*1000}')MHz
+            chfrq=$ch-$freq
+            uci_set "tmpstatus" "$iface" "chfrq" "$chfrq"
+        fi
+    fi
+elif [ "$iface" = "WiFi1" ]; then
+    #fconfig=$(ifconfig "$iface" 2>/dev/null)
+    interface="wlan1"
+    fconfig=$(cat /proc/net/dev |grep "$interface" |grep -v mon )
+    if [ "$fconfig" != "" ]; then
+        item=$2    
+        if [ "$item" = "rxp" ];then
+            rx_pkts=$(cat /proc/net/dev |grep "$interface" |grep -v mon |awk -F ':' '{print $2}' | awk '{rx_p+=$2 } END {print rx_p}')
+            #rx_pkts=$(echo "$fconfig" | grep "RX packets" | awk '{print $2}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Radio_Received_packets" "$rx_pkts"
+        elif [ "$item" = "rxb" ];then
+            rx_bytes=$(cat /proc/net/dev |grep "$interface" |grep -v mon |awk -F ':' '{print $2}' | awk '{rx_b+=$1 } END {print rx_b}')
+            #rx_bytes=$(echo "$fconfig" | grep "RX bytes" | awk '{print $2}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Radio_Received_bytes" "$rx_bytes"
+        elif [ "$item" = "txp" ];then
+            tx_pkts=$(cat /proc/net/dev |grep "$interface" |grep -v mon |awk -F ':' '{print $2}' |awk '{tx_p+=$10 } END {print tx_p}')
+            #tx_pkts=$(echo "$fconfig" | grep "TX packets" | awk '{print $2}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Radio_Transmitted_packets" "$tx_pkts"
+        elif [ "$item" = "txb" ];then
+            tx_bytes=$(cat /proc/net/dev |grep "$interface" |grep -v mon |awk -F ':' '{print $2}' |awk '{tx_b+=$9 } END {print tx_b}')
+            #tx_bytes=$(echo "$fconfig" | grep "TX bytes" | awk '{print $6}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Radio_Transmitted_bytes" "$tx_bytes"
+        elif [ "$item" = "chfrq" ];then
+            eval fre=$(iwlist "$interface" chan |grep Current |awk '{split($2, fre, ":");print fre[2]}')
+            eval ch=$(iwlist wlan1 chan |grep Current |awk '{split($5, ch, ")"); print ch[1]}')
+            eval freq=$(echo $fre|awk '{print $1*1000}')MHz
+            chfrq=$ch-$freq
+            uci_set "tmpstatus" "$iface" "chfrq" "$chfrq"
+        fi
+    fi
+elif [ "$iface" = "WiFi2" ]; then
+    #fconfig=$(ifconfig "$iface" 2>/dev/null)
+    interface="wlan2"
+    fconfig=$(cat /proc/net/dev |grep "$interface" |grep -v mon )
+    if [ "$fconfig" != "" ]; then
+        item=$2    
+        if [ "$item" = "rxp" ];then
+            rx_pkts=$(cat /proc/net/dev |grep "$interface" |grep -v mon |awk -F ':' '{print $2}' | awk '{rx_p+=$2 } END {print rx_p}')
+            #rx_pkts=$(echo "$fconfig" | grep "RX packets" | awk '{print $2}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Radio_Received_packets" "$rx_pkts"
+        elif [ "$item" = "rxb" ];then
+            rx_bytes=$(cat /proc/net/dev |grep "$interface" |grep -v mon |awk -F ':' '{print $2}' | awk '{rx_b+=$1 } END {print rx_b}')
+            #rx_bytes=$(echo "$fconfig" | grep "RX bytes" | awk '{print $2}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Radio_Received_bytes" "$rx_bytes"
+        elif [ "$item" = "txp" ];then
+            tx_pkts=$(cat /proc/net/dev |grep "$interface" |grep -v mon |awk -F ':' '{print $2}' |awk '{tx_p+=$10 } END {print tx_p}')
+            #tx_pkts=$(echo "$fconfig" | grep "TX packets" | awk '{print $2}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Radio_Transmitted_packets" "$tx_pkts"
+        elif [ "$item" = "txb" ];then
+            tx_bytes=$(cat /proc/net/dev |grep "$interface" |grep -v mon |awk -F ':' '{print $2}' |awk '{tx_b+=$9 } END {print tx_b}')
+            #tx_bytes=$(echo "$fconfig" | grep "TX bytes" | awk '{print $6}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Radio_Transmitted_bytes" "$tx_bytes"
+        elif [ "$item" = "chfrq" ];then
+            eval fre=$(iwlist "$interface" chan |grep Current |awk '{split($2, fre, ":");print fre[2]}')
+            eval ch=$(iwlist wlan2 chan |grep Current |awk '{split($5, ch, ")"); print ch[1]}')
+            eval freq=$(echo $fre|awk '{print $1*1000}')MHz
+            chfrq=$ch-$freq
+            uci_set "tmpstatus" "$iface" "chfrq" "$chfrq"
+        fi
+    fi
+
+elif [ "$iface" = "WiFi3" ]; then
+    interface="wlan3"
+    #fconfig=$(ifconfig "$iface" 2>/dev/null)
+    fconfig=$(cat /proc/net/dev |grep "$interface" |grep -v mon )
+    if [ "$fconfig" != "" ]; then
+        item=$2    
+        if [ "$item" = "rxp" ];then
+            rx_pkts=$(cat /proc/net/dev |grep "$interface" |grep -v mon |awk -F ':' '{print $2}' | awk '{rx_p+=$2 } END {print rx_p}')
+            #rx_pkts=$(echo "$fconfig" | grep "RX packets" | awk '{print $2}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Radio_Received_packets" "$rx_pkts"
+        elif [ "$item" = "rxb" ];then
+            rx_bytes=$(cat /proc/net/dev |grep "$interface" |grep -v mon |awk -F ':' '{print $2}' | awk '{rx_b+=$1 } END {print rx_b}')
+            #rx_bytes=$(echo "$fconfig" | grep "RX bytes" | awk '{print $2}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Radio_Received_bytes" "$rx_bytes"
+        elif [ "$item" = "txp" ];then
+            tx_pkts=$(cat /proc/net/dev |grep "$interface" |grep -v mon |awk -F ':' '{print $2}' |awk '{tx_p+=$10 } END {print tx_p}')
+            #tx_pkts=$(echo "$fconfig" | grep "TX packets" | awk '{print $2}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Radio_Transmitted_packets" "$tx_pkts"
+        elif [ "$item" = "txb" ];then
+            tx_bytes=$(cat /proc/net/dev |grep "$interface" |grep -v mon |awk -F ':' '{print $2}' |awk '{tx_b+=$9 } END {print tx_b}')
+            #tx_bytes=$(echo "$fconfig" | grep "TX bytes" | awk '{print $6}' | awk -F ":" '{print $2}')
+            uci_set "tmpstatus" "$iface" "Radio_Transmitted_bytes" "$tx_bytes"
+        elif [ "$item" = "chfrq" ];then
+            eval fre=$(iwlist "$interface" chan |grep Current |awk '{split($2, fre, ":");print fre[2]}')
+            eval ch=$(iwlist wlan3 chan |grep Current |awk '{split($5, ch, ")"); print ch[1]}')
+            eval freq=$(echo $fre|awk '{print $1*1000}')MHz
+            chfrq=$ch-$freq
+            uci_set "tmpstatus" "$iface" "chfrq" "$chfrq"
+        fi
+    fi
+elif [ "$iface" = "com1" ]; then
+    item=$2
+    ## the comport com1 status ################################
+    if [ -f "/var/run/com1_packet" ]; then 
+        if [ "$item" = "rxb" ];then
+            com1_rx_b=`cat /var/run/com1_packet | head -n 1 |tail -n 1`
+            uci_set "tmpstatus" "com1" "Com1_Received_bytes" "$com1_rx_b"
+        elif [ "$item" = "rxp" ];then
+            com1_rx_p=`cat /var/run/com1_packet | head -n 2 |tail -n 1`
+            uci_set "tmpstatus" "com1" "Com1_Received_packets" "$com1_rx_p"
+        elif [ "$item" = "rxe" ];then
+            com1_rx_e=`cat /var/run/com1_packet | head -n 3 |tail -n 1`
+            uci_set "tmpstatus" "com1" "Com1_Received_errors" "$com1_rx_e"
+        elif [ "$item" = "rxd" ];then
+            com1_rx_d=`cat /var/run/com1_packet | head -n 4 |tail -n 1`
+            uci_set "tmpstatus" "com1" "Com1_Received_Droped_packets" "$com1_rx_d"
+        elif [ "$item" = "rxf" ];then
+            com1_rx_f=`cat /var/run/com1_packet | head -n 5 |tail -n 1`
+            uci_set "tmpstatus" "com1" "Com1_Received_fifo" "$com1_rx_f"
+        elif [ "$item" = "rxfr" ];then
+            com1_rx_fr=`cat /var/run/com1_packet | head -n 6 |tail -n 1`
+            uci_set "tmpstatus" "com1" "Com1_Received_frame" "$com1_rx_fr"
+        elif [ "$item" = "rxc" ];then
+            com1_rx_c=`cat /var/run/com1_packet | head -n 7 |tail -n 1`
+            uci_set "tmpstatus" "com1" "Com1_Compressed" "$com1_rx_c"
+        elif [ "$item" = "rxm" ];then
+            com1_rx_m=`cat /var/run/com1_packet | head -n 8 |tail -n 1`
+            uci_set "tmpstatus" "com1" "Com1_Received_multicast" "$com1_rx_m"
+
+        elif [ "$item" = "txb" ];then
+            com1_tx_b=`cat /var/run/com1_packet | head -n 9 |tail -n 1`
+            uci_set "tmpstatus" "com1" "Com1_Transmitted_bytes" "$com1_tx_b"
+        elif [ "$item" = "txp" ];then
+            com1_tx_p=`cat /var/run/com1_packet | head -n 10 |tail -n 1`
+            uci_set "tmpstatus" "com1" "Com1_Transmitted_packets" "$com1_tx_p"
+        elif [ "$item" = "txe" ];then
+            com1_tx_e=`cat /var/run/com1_packet | head -n 11 |tail -n 1`
+            uci_set "tmpstatus" "com1" "Com1_Transmitted_errors" "$com1_tx_e"
+        elif [ "$item" = "txd" ];then
+            com1_tx_d=`cat /var/run/com1_packet | head -n 12 |tail -n 1`
+            uci_set "tmpstatus" "com1" "Com1_Transmitted_Droped_packets" "$com1_tx_d"
+        elif [ "$item" = "txf" ];then
+            com1_tx_f=`cat /var/run/com1_packet | head -n 13 |tail -n 1`
+            uci_set "tmpstatus" "com1" "Com1_Transmitted_fifo" "$com1_tx_f"
+        elif [ "$item" = "txco" ];then
+            com1_tx_co=`cat /var/run/com1_packet | head -n 14 |tail -n 1`
+            uci_set "tmpstatus" "com1" "Com1_Collisions" "$com1_tx_co"
+        elif [ "$item" = "txca" ];then
+            com1_tx_ca=`cat /var/run/com1_packet | head -n 15 |tail -n 1`
+            uci_set "tmpstatus" "com1" "Com1_Transmitted_carrier" "$com1_tx_ca"
+        elif [ "$item" = "txc" ];then
+            com1_tx_c=`cat /var/run/com1_packet | head -n 16 |tail -n 1`
+            uci_set "tmpstatus" "com1" "Com1_Tras_compress" "$com1_tx_c"
+        fi    
+    fi    
+
+elif [ "$iface" = "com2" ]; then
+    item=$2
+    # the comport com1 status ################################
+    if [ -f "/var/run/com2_packet" ]; then 
+        if [ "$item" = "rxb" -o "$item" = "Com2_Received_bytes" ];then
+            com2_rx_b=`cat /var/run/com2_packet | head -n 1 |tail -n 1`
+            uci_set "tmpstatus" "com2" "Com2_Received_bytes" "$com2_rx_b"
+        elif [ "$item" = "rxp" -o "$item" = "Com2_Received_packets" ];then
+            com1_rx_p=`cat /var/run/com2_packet | head -n 2 |tail -n 1`
+            uci_set "tmpstatus" "com2" "Com2_Received_packets" "$com2_rx_p"
+        #elif [ "$item" = "rxe" ];then
+        #    com1_rx_e=`cat /var/run/com2_packet | head -n 3 |tail -n 1`
+        #    uci_set "tmpstatus" "com2" "Com2_Received_errors" "$com2_rx_e"
+        #elif [ "$item" = "rxd" ];then
+        #    com1_rx_d=`cat /var/run/com1_packet | head -n 4 |tail -n 1`
+        #    uci_set "tmpstatus" "com1" "Com1_Received_Droped_packets" "$com1_rx_d"
+        #elif [ "$item" = "rxf" ];then
+        #    com1_rx_f=`cat /var/run/com1_packet | head -n 5 |tail -n 1`
+        #    uci_set "tmpstatus" "com1" "Com1_Received_fifo" "$com1_rx_f"
+        #elif [ "$item" = "rxfr" ];then
+        #    com1_rx_fr=`cat /var/run/com1_packet | head -n 6 |tail -n 1`
+        #    uci_set "tmpstatus" "com1" "Com1_Received_frame" "$com1_rx_fr"
+        #elif [ "$item" = "rxc" ];then
+        #    com1_rx_c=`cat /var/run/com1_packet | head -n 7 |tail -n 1`
+        #    uci_set "tmpstatus" "com1" "Com1_Compressed" "$com1_rx_c"
+        #elif [ "$item" = "rxm" ];then
+        #    com1_rx_m=`cat /var/run/com1_packet | head -n 8 |tail -n 1`
+        #    uci_set "tmpstatus" "com1" "Com1_Received_multicast" "$com1_rx_m"
+        #
+        elif [ "$item" = "txb" -o "$item" = "Com2_Transmitted_bytes" ];then
+            com2_tx_b=`cat /var/run/com2_packet | head -n 9 |tail -n 1`
+            uci_set "tmpstatus" "com2" "Com2_Transmitted_bytes" "$com2_tx_b"
+        elif [ "$item" = "txp" -o "$item" = "Com2_Transmitted_packets" ];then
+            com2_tx_p=`cat /var/run/com2_packet | head -n 10 |tail -n 1`
+            uci_set "tmpstatus" "com2" "Com2_Transmitted_packets" "$com2_tx_p"
+        #elif [ "$item" = "txe" ];then
+        #    com1_tx_e=`cat /var/run/com1_packet | head -n 11 |tail -n 1`
+        #    uci_set "tmpstatus" "com1" "Com1_Transmitted_errors" "$com1_tx_e"
+        #elif [ "$item" = "txd" ];then
+        #    com1_tx_d=`cat /var/run/com1_packet | head -n 12 |tail -n 1`
+        #    uci_set "tmpstatus" "com1" "Com1_Transmitted_Droped_packets" "$com1_tx_d"
+        #elif [ "$item" = "txf" ];then
+        #    com1_tx_f=`cat /var/run/com1_packet | head -n 13 |tail -n 1`
+        #    uci_set "tmpstatus" "com1" "Com1_Transmitted_fifo" "$com1_tx_f"
+        #elif [ "$item" = "txco" ];then
+        #    com1_tx_co=`cat /var/run/com1_packet | head -n 14 |tail -n 1`
+        #    uci_set "tmpstatus" "com1" "Com1_Collisions" "$com1_tx_co"
+        #elif [ "$item" = "txca" ];then
+        #    com1_tx_ca=`cat /var/run/com1_packet | head -n 15 |tail -n 1`
+        #    uci_set "tmpstatus" "com1" "Com1_Transmitted_carrier" "$com1_tx_ca"
+        #elif [ "$item" = "txc" ];then
+        #    com1_tx_c=`cat /var/run/com1_packet | head -n 16 |tail -n 1`
+        #    uci_set "tmpstatus" "com1" "Com1_Tras_compress" "$com1_tx_c"
+        fi    
+    fi    
+
+elif [ "$iface" = "Carrier" ]; then
+        if [ "$PRODUCT" = "VIP4G" ];then
+            carrface="eth2"
+            carrbridge="br-wan2"                                 
+        elif [ "$PRODUCT" = "IPn4G" ];then
+            carrface="eth1"                                 
+            carrbridge="br-wan"                                 
+        fi
+        item=$2    
+        if [ "$item" = "Received_bytes" ];then
+            get_val=$(cat /proc/net/dev |grep "$carrface" |awk -F ':' '{print $2}' | awk '{print $1}')
+        elif [ "$item" = "Received_packets" ];then
+            get_val=$(cat /proc/net/dev |grep "$carrface" |awk -F ':' '{print $2}' | awk '{print $2}')
+        elif [ "$item" = "Transmitted_bytes" ];then
+            get_val=$(cat /proc/net/dev |grep "$carrface" |awk -F ':' '{print $2}' | awk '{print $9}')
+        elif [ "$item" = "Transmitted_packets" ];then
+            get_val=$(cat /proc/net/dev |grep "$carrface" |awk -F ':' '{print $2}' | awk '{print $10}')
+        elif [ "$item" = "RSSI" ];then
+            get_val=$(cat /tmp/run/std_lte_statue |grep rssi|awk -F '=' '{print $2}')
+        elif [ "$item" = "Core_Temperature" ];then
+            get_val=$(cat /tmp/run/std_lte_statue |grep temp|awk -F '=' '{print $2}')
+        elif [ "$item" = "Current_Tech" ];then
+            get_val=$(cat /tmp/run/std_lte_statue |grep "tech="|awk -F '=' '{print $2}')
+        elif [ "$item" = "Connect_Status" ];then
+            get_val=$(cat /tmp/run/std_lte_statue |grep connect_status|awk -F '=' '{print $2}')
+        elif [ "$item" = "Connect_Duration" ];then
+            get_val=$(cat /tmp/run/std_lte_statue |grep connect_duration|awk -F '=' '{print $2}')
+            get_human_time $get_val 
+            get_val=$FORM_connect_duration
+        elif [ "$item" = "IMEI" ];then
+            get_val=$(cat /tmp/run/std_lte_statue |grep "imei=" |awk -F '=' '{print $2}')
+        elif [ "$item" = "SIM_ID" ];then
+            get_val=$(cat /tmp/run/std_lte_statue |grep "simid="|awk -F '=' '{print $2}')
+        elif [ "$item" = "Network" ];then
+            get_val=$(cat /tmp/run/std_lte_statue |grep "network="|awk -F '=' '{print $2}')
+        elif [ "$item" = "IMSI" ];then
+            get_val=$(cat /tmp/run/std_lte_statue |grep "imsi="|awk -F '=' '{print $2}')
+        elif [ "$item" = "Phone_Number" ];then
+            get_val=$(cat /tmp/run/std_lte_statue |grep "phonenum="|awk -F '=' '{print $2}')
+        elif [ "$item" = "IP_Addr" ];then
+            get_val=$(ifconfig "$carrbridge" | grep inet | grep -v inet6 | awk -F'[: ]+' '{print $4}')
+        fi
+        uci_set "tmpstatus" "$iface" "$item" "$get_val" 
+
+elif [ "$iface" = "asso0" ]; then
+
+      netdevs=$(ls /sys/class/ieee80211/phy0/device/net)
+
+      if [ "$?" != 0 ]; then
+	    echo "None" >/var/run/radio0_association
+	    exit 1
+      fi
+
+      echo "ADDR              RX_CCQ TX_CCQ SNR NOISE RSSI TX_RATE RX_RATE" > /var/run/radio0_association
+
+      is_asso=0
+      for dev in $netdevs; do
+            asso=$(iw $dev station dump) 
+
+            [ "$asso" != "" ] && {
+                iw $dev station dump > /var/run/radio_asso_tmp
+                parse_asso "/var/run/radio_asso_tmp" "/var/run/radio0_association"
+                let is_asso=$is_asso+1
+            }
+       done               
+        
+       if [ "$is_asso" = "0" ]; then
+	    echo "None" >/var/run/radio0_association
+       fi
+
+elif [ "$iface" = "asso_ddl" ]; then
+
+      netdevs=$(ls /sys/class/ieee80211/phy0/device/net)
+
+      if [ "$?" != 0 ]; then
+	    echo "None" >/var/run/radio0_association
+	    exit 1
+      fi
+
+      echo "ADDR              SNR NOISE RSSI " > /var/run/radio0_association
+
+      is_asso=0
+      for dev in $netdevs; do
+            asso=$(iw $dev station dump) 
+
+            [ "$asso" != "" ] && {
+                iw $dev station dump > /var/run/radio_asso_tmp
+                parse_asso_ddl "/var/run/radio_asso_tmp" "/var/run/radio0_association"
+                let is_asso=$is_asso+1
+            }
+       done               
+        
+       if [ "$is_asso" = "0" ]; then
+	    echo "None" >/var/run/radio0_association
+       fi
+
+elif [ "$iface" = "asso1" ]; then
+      netdevs=$(ls /sys/class/ieee80211/phy1/device/net)
+
+      if [ "$?" != 0 ]; then
+	    echo "None" >/var/run/radio1_association
+	    exit 1
+      fi
+
+      echo "ADDR              RX_CCQ TX_CCQ SNR NOISE RSSI TX_RATE RX_RATE" > /var/run/radio1_association
+
+      is_asso=0
+      for dev in $netdevs; do
+            asso=$(iw $dev station dump) 
+
+            [ "$asso" != "" ] && {
+                iw $dev station dump > /var/run/radio_asso_tmp
+                parse_asso "/var/run/radio_asso_tmp" "/var/run/radio1_association"
+                let is_asso=$is_asso+1
+            }
+       done               
+        
+       if [ "$is_asso" = "0" ]; then
+	    echo "None" >/var/run/radio1_association
+       fi
+
+elif [ "$iface" = "asso2" ]; then
+
+      netdevs=$(ls /sys/class/ieee80211/phy2/device/net)
+
+      if [ "$?" != 0 ]; then
+	    echo "None" >/var/run/radio2_association
+	    exit 1
+      fi
+
+      echo "ADDR              RX_CCQ TX_CCQ SNR NOISE RSSI TX_RATE RX_RATE" > /var/run/radio2_association
+
+      is_asso=0
+      for dev in $netdevs; do
+            asso=$(iw $dev station dump) 
+
+            [ "$asso" != "" ] && {
+                iw $dev station dump > /var/run/radio_asso_tmp
+                parse_asso "/var/run/radio_asso_tmp" "/var/run/radio2_association"
+                let is_asso=$is_asso+1
+            }
+       done               
+        
+       if [ "$is_asso" = "0" ]; then
+	    echo "None" >/var/run/radio2_association
+       fi
+
+elif [ "$iface" = "asso3" ]; then
+
+      netdevs=$(ls /sys/class/ieee80211/phy3/device/net)
+
+      if [ "$?" != 0 ]; then
+	    echo "None" >/var/run/radio3_association
+	    exit 1
+      fi
+
+      echo "ADDR              RX_CCQ TX_CCQ SNR NOISE RSSI TX_RATE RX_RATE" > /var/run/radio3_association
+
+      is_asso=0
+      for dev in $netdevs; do
+            asso=$(iw $dev station dump) 
+
+            [ "$asso" != "" ] && {
+                iw $dev station dump > /var/run/radio_asso_tmp
+                parse_asso "/var/run/radio_asso_tmp" "/var/run/radio3_association"
+                let is_asso=$is_asso+1
+            }
+       done               
+        
+       if [ "$is_asso" = "0" ]; then
+	    echo "None" >/var/run/radio3_association
+       fi
+
+elif [ "$iface" = "radioinfo" ]; then
+    detect_radio
+    uci_set "tmpstatus" "$iface" "info" "$rstatus"
+
+
+#elif [ "$iface" = "hdware_ver" ]; then
+elif [ "$iface" = "version" ]; then
+    item=$2
+    if [ "$item" = "hdware_ver" ]; then
+    uci_set "tmpstatus" "version" "hdware_ver" "$HARDWARE"
+
+elif [ "$item" = "sfware_ver" ]; then
+      #elif [ "$iface" = "sfware_ver" ]; then
+      uci_set "tmpstatus" "version" "sfware_ver" "$SOFTWARE-$BUILD"
+    fi
+elif [ "$iface" = "reboot" ]; then
+    reboot
+else
+    echo "need ifname"
+fi
+

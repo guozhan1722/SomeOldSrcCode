@@ -1,0 +1,44 @@
+Source-Makefile: target/linux/omap35xx/Makefile
+Target: omap35xx
+Target-Board: omap35xx
+Target-Kernel: 2.6
+Target-Name: TI OMAP35xx
+Target-Path: /home/zguo/project/2013_08_01/latest_build
+Target-Arch: arm
+Target-Features: broken display gpio usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -march=armv5te -mtune=xscale -funit-at-a-time
+Linux-Version: 2.6.32.9
+Linux-Release: 1
+Linux-Kernel-Arch: arm
+Target-Description:
+	omap35xx arm
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 
+Target: omap35xx/generic
+Target-Board: omap35xx
+Target-Kernel: 2.6
+Target-Name: Generic
+Target-Path: target/linux/omap35xx
+Target-Arch: arm
+Target-Features: display ext2 gpio usb
+Target-Depends: 
+Target-Optimization: -Os -pipe -march=armv5te -mtune=xscale -funit-at-a-time
+Linux-Version: 2.6.32.9
+Linux-Release: 1
+Linux-Kernel-Arch: arm
+Target-Description:
+	Build firmware images for ti omap35xx based boards 
+@@
+Default-Packages: base-files libc libgcc busybox dropbear mtd uci opkg ucitrigger udevtrigger hotplug2 
+Target-Profile: Beagleboard
+Target-Profile-Name: beagleboard
+Target-Profile-Packages: 
+Target-Profile-Config: 
+
+@@
+Target-Profile-Description:
+        Beagleboard - www.beagleboard.org
+@@
+
+

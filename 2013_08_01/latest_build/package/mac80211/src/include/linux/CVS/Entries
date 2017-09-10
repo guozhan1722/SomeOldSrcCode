@@ -1,0 +1,31 @@
+/ath9k_platform.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+/bitops.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+/compat-2.6.14.h/1.1/Fri Dec 17 20:13:52 2010//Tar71xx_4g
+/compat-2.6.18.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+/compat-2.6.19.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+/compat-2.6.21.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+/compat-2.6.22.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+/compat-2.6.23.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+/compat-2.6.24.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+/compat-2.6.25.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+/compat-2.6.26.h/1.1/Fri Dec 17 20:13:52 2010//Tar71xx_4g
+/compat-2.6.27.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+/compat-2.6.28.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+/compat-2.6.29.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+/compat-2.6.30.h/1.1/Fri Dec 17 20:13:52 2010//Tar71xx_4g
+/compat-2.6.31.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+/compat-2.6.32.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+/compat-2.6.33.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+/compat-2.6.34.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+/compat-2.6.35.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+/compat-2.6.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+/compat_autoconf.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+/ieee80211.h/1.2/Fri Dec 17 20:38:25 2010//Tar71xx_4g
+/nl80211.h/1.4/Fri Feb 18 20:12:49 2011//Tar71xx_4g
+/pci_ids.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+/pm_qos_params.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+/rfkill_backport.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g
+D/spi////
+D/unaligned////
+D/usb////
+/wireless.h/1.1/Fri Dec 17 20:13:51 2010//Tar71xx_4g

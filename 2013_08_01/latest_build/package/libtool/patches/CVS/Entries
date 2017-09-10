@@ -1,0 +1,5 @@
+/001-force_dlopen_deplibs.patch/1.1/Thu Apr  1 22:14:46 2010/-kkv/Tar71xx_4g
+/100-libdir_path.patch/1.1/Thu Apr  1 22:14:47 2010/-kkv/Tar71xx_4g
+/110-no_rpath.patch/1.1/Thu Apr  1 22:14:46 2010/-kkv/Tar71xx_4g
+/120-libdir_search.patch/1.1/Thu Apr  1 22:14:47 2010/-kkv/Tar71xx_4g
+D
