@@ -1,0 +1,69 @@
+root@OpenWrt:/# lsusb                                                                                                       
+lsusb: cannot open "/usr/share/usb.ids", No such file or directory                                                          
+Bus 001 Device 001: ID 1d6b:0002                                                                                            
+Bus 001 Device 003: ID 05e3:0723                                                                                            
+Bus 002 Device 001: ID 1d6b:0001                                                                                            
+Bus 002 Device 002: ID 1410:5010                                                                                            
+Bus 003 Device 001: ID 1d6b:0002                                                                                            
+root@OpenWrt:/# lsusb -d 1410:5010 -v                                                                                       
+lsusb: cannot open "/usr/share/usb.ids", No such file or directory                                                          
+                                                                                                                            
+Bus 002 Device 002: ID 1410:5010                                                                                            
+Device Descriptor:                                                                                                          
+  bLength                18                                                                                                 
+  bDescriptorType         1                                                                                                 
+  bcdUSB               1.10                                                                                                 
+  bDeviceClass            0                                                                                                 
+  bDeviceSubClass         0                                                                                                 
+  bDeviceProtocol         0                                                                                                 
+  bMaxPacketSize0        64                                                                                                 
+  idVendor           0x1410                                                                                                 
+  idProduct          0x5010                                                                                                 
+  bcdDevice            0.00                                                                                                 
+  iManufacturer           1 Novatel Wireless                                                                                
+  iProduct                2 Novatel Wireless HSUPA Modem                                                                    
+  iSerial                 4 356846016376900                                                                                 
+  bNumConfigurations      1                                                                                                 
+  Configuration Descriptor:                                                                                                 
+    bLength                 9                                                                                               
+    bDescriptorType         2                                                                                               
+    wTotalLength           32                                                                                               
+    bNumInterfaces          1                                                                                               
+    bConfigurationValue     1                                                                                               
+    iConfiguration          0                                                                                               
+    bmAttributes         0xa0                                                                                               
+      (Bus Powered)                                                                                                         
+      Remote Wakeup                                                                                                         
+    MaxPower              500mA                                                                                             
+    Interface Descriptor:                                                                                                   
+      bLength                 9                                                                                             
+      bDescriptorType         4                                                                                             
+      bInterfaceNumber        0                                                                                             
+      bAlternateSetting       0                                                                                             
+      bNumEndpoints           2                                                                                             
+      bInterfaceClass         8                                                                                             
+      bInterfaceSubClass      6                                                                                             
+      bInterfaceProtocol     80                                                                                             
+      iInterface              0                                                                                             
+      Endpoint Descriptor:                                                                                                  
+        bLength                 7                                                                                           
+        bDescriptorType         5                                                                                           
+        bEndpointAddress     0x88  EP 8 IN                                                                                  
+        bmAttributes            2                                                                                           
+          Transfer Type            Bulk                                                                                     
+          Synch Type               None                                                                                     
+          Usage Type               Data                                                                                     
+        wMaxPacketSize     0x0040  1x 64 bytes                                                                              
+        bInterval               0                                                                                           
+      Endpoint Descriptor:                                                                                                  
+        bLength                 7                                                                                           
+        bDescriptorType         5                                                                                           
+        bEndpointAddress     0x09  EP 9 OUT                                                                                 
+        bmAttributes            2                                                                                           
+          Transfer Type            Bulk                                                                                     
+          Synch Type               None                                                                                     
+          Usage Type               Data                                                                                     
+        wMaxPacketSize     0x0040  1x 64 bytes                                                                              
+        bInterval               0                                                                                           
+Device Status:     0x0000                                                                                                   
+  (Bus Powered)                  
